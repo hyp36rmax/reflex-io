@@ -1,0 +1,8 @@
+# The USB drive's files go into the firmware image byte for byte: keep them LF
+# on every checkout, so install_maps.sh runs on MiSTer and the image is the
+# same on Windows and Linux.
+firmware/features/usb_drive/files/** text eol=lf
+CHANGELOG.md text eol=lf
+tools/adapt_manager/reflex_adapt_manager.sh.in text eol=lf
+tools/adapt_manager/reflex-adapt-manager.ini text eol=lf
+tools/release_assets/adapt-manager/mister/Scripts/Reflex_Adapt/*.sh text eol=lf

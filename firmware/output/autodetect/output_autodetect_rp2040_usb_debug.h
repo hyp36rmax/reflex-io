@@ -1,0 +1,18 @@
+#pragma once
+
+#include <stdint.h>
+
+#if defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_ARCH_MBED)
+extern "C" void rp2040_usb_install_debug_irq();
+void update_output_autodetect_rp2040_usb_debug(uint32_t ms_now, uint32_t auto_detect_elapsed_ms);
+uint8_t output_usb_device_live_hw_flags();
+uint8_t output_usb_device_live_irq_flags();
+bool output_autodetect_usb_attach_retry_attempted();
+bool output_autodetect_usb_attach_retry_needs_grace();
+#else
+inline void update_output_autodetect_rp2040_usb_debug(uint32_t, uint32_t) {}
+inline uint8_t output_usb_device_live_hw_flags() { return 0; }
+inline uint8_t output_usb_device_live_irq_flags() { return 0; }
+inline bool output_autodetect_usb_attach_retry_attempted() { return false; }
+inline bool output_autodetect_usb_attach_retry_needs_grace() { return false; }
+#endif

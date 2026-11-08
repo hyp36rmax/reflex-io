@@ -1,0 +1,27 @@
+Reflex Adapt Switch 2 Pro Research License
+
+Copyright (c) 2026 MiSTer Addons
+
+This license covers the Switch 2 Pro Controller protocol research written for
+Reflex Adapt: docs/internal/switch2-pro-output.md, and the notes, tables and
+constants MiSTer Addons wrote or measured for firmware/output/switch2/.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this research to use, copy, modify, merge, publish, distribute, sublicense and
+sell it, provided this notice is kept with every copy or substantial portion.
+
+THE RESEARCH IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM, OUT OF
+OR IN CONNECTION WITH THE RESEARCH OR ITS USE.
+
+Not covered by this license:
+
+- Firmware source code, which stays under the repository's GPL-3.0-or-later
+  license.
+- Material from other people, which keeps its own terms. MiSTer Addons claims no
+  rights in the captures and documentation of
+  ndeadly/switch2_controller_research, which declares no license, and grants
+  none here. NOTICE.md lists every upstream source.
+- Nintendo's trademarks and any rights Nintendo holds.

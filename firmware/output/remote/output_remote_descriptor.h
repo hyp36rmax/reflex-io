@@ -1,0 +1,22 @@
+#pragma once
+
+#if defined(ADAPT_BRIDGE_CLASSIC_TO_USB)
+// Button-only joystick: report ID 1, usages 1..64, exactly eight payload bytes.
+uint8_t const remote_report_descriptor[] = {
+  0x05, 0x01, 0x09, 0x04, 0xA1, 0x01, 0x85, 0x01,
+  0x05, 0x09, 0x19, 0x01, 0x29, 0x40, 0x15, 0x00,
+  0x25, 0x01, 0x75, 0x01, 0x95, 0x40, 0x81, 0x02,
+  // MiSTer's Stadia force-feedback driver binds this VID/PID and requires
+  // output report 5 even though a remote has no motor to drive.
+  0x05, 0x0F,        // Physical Interface Device
+  0x85, 0x05,        // Report ID (5)
+  0x09, 0x97,        // DC Enable Actuators
+  0x15, 0x00,
+  0x26, 0xFE, 0xFF,  // Logical Maximum (65534)
+  0x75, 0x10,
+  0x95, 0x02,
+  0x91, 0x02,        // Output (Data,Var,Abs): strong/weak 16-bit values
+  REFLEX_WEBHID_FEATURE_REPORT_DESC(),
+  0xC0
+};
+#endif

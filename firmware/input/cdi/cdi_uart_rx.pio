@@ -1,0 +1,22 @@
+; CD-i pointing-device receiver: one start bit, 7 data bits, 2 stop bits.
+; Based on the pico-examples uart_rx program (BSD-3-Clause, Raspberry Pi).
+; Run at 8 cycles per bit. The pin's input override inverts the line, so the
+; CD-i mark (low) reads as 1 and the start bit as 0.
+; Checks the first stop bit and re-arms in its second half, so a transmitter
+; a few percent fast can send characters back to back; the second stop bit is
+; idle time.
+
+.program cdi_uart_rx
+
+start:
+    wait 0 pin 0        ; Stall until the start bit
+    set x, 6    [10]    ; Then delay until halfway through the first data bit
+bitloop:
+    in pins, 1          ; Shift one data bit into the ISR
+    jmp x-- bitloop [6] ; 7 bits, 8 cycles each
+    jmp pin good_stop   ; First stop bit must be a mark
+    irq 4 rel           ; Framing error or break: set a sticky flag
+    wait 1 pin 0        ; and wait for the line to return to mark
+    jmp start           ; without pushing anything
+good_stop:
+    push                ; The character is in ISR bits 31..25

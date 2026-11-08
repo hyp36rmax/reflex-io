@@ -1,0 +1,9 @@
+.pio/
+.vscode/
+__pycache__/
+*.py[cod]
+*.uf2
+*.elf
+build/
+dist/
+firmware/features/usb_drive/generated/

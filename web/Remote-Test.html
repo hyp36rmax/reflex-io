@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reflex Remote — 64-button test</title>
+<style>
+body{font:16px system-ui;max-width:1000px;margin:2rem auto;padding:0 1rem;background:#15181c;color:#eee}
+button{font:inherit;padding:.6rem 1rem;cursor:pointer}#buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:.4rem}
+.key{border:1px solid #59616b;border-radius:4px;padding:.6rem;font-size:14px}.key.on{background:#137a4c;border-color:#4ff0a3}#state{min-height:1.5em;white-space:pre-wrap}p{line-height:1.5}
+</style>
+<h1>Reflex Remote</h1>
+<p>Set Classic2USB Output to <b>Remote</b>, or set <b>PS2 Remote → Remote</b> with Output Auto/DInput.
+Open this file in Chrome or Edge, connect below, and select <b>ReflexRemote</b>.
+Each key should light one button and clear when released. Buttons 50–64 are spare.</p>
+<button id="connect">Connect remote</button>
+<p id="state" role="status" aria-live="polite">Not connected. This tester only reads input reports.</p>
+<div id="buttons"></div>
+<script>
+'use strict';
+const labels = ['Select','L3','R3','Start','Up','Right','Down','Left','L2','R2','L1','R1','Triangle','Circle','Cross','Square',
+ 'Enter','Display','Title','DVD Menu','Return','Play','Pause','Stop','Previous','Next','Scan reverse','Scan forward','Slow reverse','Slow forward',
+ 'Audio','Subtitle','Angle','Time','Clear','Program','Shuffle','Repeat','A-B','1','2','3','4','5','6','7','8','9','0'];
+function pressedButtons(data) {
+  if (data.byteLength !== 8) throw new Error('Expected an 8-byte Remote report.');
+  return Array.from({length:64}, (_,i) => i).filter(i => (data.getUint8(i >> 3) & (1 << (i & 7))) !== 0).map(i => i+1);
+}
+const status = document.querySelector('#state');
+const keys = Array.from({length:64}, (_,i) => {
+  const key = document.createElement('div'); key.className='key';
+  key.textContent = `${i+1}: ${labels[i] || 'Spare'}`; document.querySelector('#buttons').append(key); return key;
+});
+function show(pressed) {
+  keys.forEach((key,i) => key.classList.toggle('on',pressed.includes(i+1)));
+}
+let remote;
+document.querySelector('#connect').addEventListener('click',async () => {
+  try {
+    if (!navigator.hid) throw new Error('WebHID unavailable. Use Chrome/Edge; if needed serve this folder on localhost.');
+    if (remote?.opened) await remote.close();
+    show([]);
+    const [selected] = await navigator.hid.requestDevice({filters:[{vendorId:0x16d0,productId:0x1460,usagePage:1,usage:4}]});
+    if (!selected) { status.textContent='No device selected.'; return; }
+    const report = selected.collections.flatMap(c => c.inputReports).find(r => r.reportId===1);
+    if (selected.productName !== 'ReflexRemote' || !report ||
+        report.items.reduce((n,item) => n+item.reportSize*item.reportCount,0)!==64) {
+      throw new Error('Select ReflexRemote with the 64-button report, not a Gamepad output.');
+    }
+    remote=selected;
+    await remote.open();
+    remote.oninputreport = event => {
+      if (event.device !== remote || event.reportId !== 1) return;
+      try {
+        const pressed=pressedButtons(event.data); show(pressed);
+        status.textContent=pressed.length ? `Pressed: ${pressed.map(n => `${n} (${labels[n-1] || 'Spare'})`).join(', ')}` : 'All buttons released.';
+      } catch (error) { show([]); status.textContent=error.message; }
+    };
+    status.textContent='Connected. Press and release a remote key.';
+  } catch (error) { show([]); status.textContent=error.message; }
+});
+if (navigator.hid) navigator.hid.addEventListener('disconnect',event => {
+  if (event.device===remote) { show([]); remote=undefined; status.textContent='Disconnected. Reconnect, then click Connect remote.'; }
+});
+</script>
+</html>

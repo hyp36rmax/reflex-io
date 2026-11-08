@@ -1,0 +1,13 @@
+#pragma once
+
+#include <cstdint>
+
+enum switch_device_selection_t : uint8_t {
+  SWITCH_DEVICE_PRO = 0,
+  SWITCH_DEVICE_GENESIS_NSO,
+  SWITCH_DEVICE_NES_NSO,
+  SWITCH_DEVICE_SNES_NSO,
+  SWITCH_DEVICE_N64_NSO,
+  SWITCH_DEVICE_GC_ADAPTER,
+  SWITCH_DEVICE_COUNT,
+};

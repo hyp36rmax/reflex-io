@@ -1,0 +1,34 @@
+#pragma once
+
+#include <stdint.h>
+
+struct RumbleRuntimePortDiag {
+  uint8_t raw_left;
+  uint8_t raw_right;
+  uint8_t scaled_left;
+  uint8_t scaled_right;
+  uint8_t test_left;
+  uint8_t test_right;
+  uint8_t test_active;
+  uint32_t update_count;
+};
+
+void rumbleRuntimeSetHostFeedback(uint8_t port, uint8_t left, uint8_t right,
+                                  bool extendShortLightPulse);
+// Arm after a host feedback update. Zero milliseconds leaves that motor
+// untimed; a later host update or clear cancels both previous timers.
+void rumbleRuntimeSetHostFeedbackDurations(uint8_t port, uint32_t leftMs,
+                                          uint32_t rightMs);
+void rumbleRuntimeClearAllHostFeedback();
+void rumbleRuntimeSetHostFeedbackSuppressed(bool suppressed);
+void rumbleRuntimeGetEffectiveFeedback(uint8_t port, uint8_t* left, uint8_t* right);
+void rumbleRuntimeStartTest(uint32_t portMask, uint8_t left, uint8_t right, uint16_t durationMs);
+void rumbleRuntimeStartHeavyRamp(uint32_t portMask);
+bool rumbleRuntimeGetPortDiag(uint8_t port, RumbleRuntimePortDiag* out);
+
+void rumbleTestStart(uint8_t left, uint8_t right, uint16_t durationMs);
+void rumbleTestStartHeavyRamp();
+void rumbleTestStop();
+void rumbleTestUpdate();
+bool rumbleTestActive();
+bool rumbleTestGetHeavyRampLevel(uint8_t* level);

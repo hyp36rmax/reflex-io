@@ -1,0 +1,23 @@
+#pragma once
+
+#include <stdint.h>
+
+enum Modern2UsbAnalogControllerFamily : uint8_t {
+  MODERN2USB_ANALOG_FAMILY_UNKNOWN = 0,
+  MODERN2USB_ANALOG_FAMILY_GENERIC,
+  MODERN2USB_ANALOG_FAMILY_DUALSHOCK3,
+  MODERN2USB_ANALOG_FAMILY_DUALSHOCK4,
+  MODERN2USB_ANALOG_FAMILY_DUALSENSE,
+  MODERN2USB_ANALOG_FAMILY_SWITCH,
+  MODERN2USB_ANALOG_FAMILY_SWITCH2,
+  MODERN2USB_ANALOG_FAMILY_XBOX,
+  MODERN2USB_ANALOG_FAMILY_WII_U_PRO,
+  MODERN2USB_ANALOG_FAMILY_WII,
+  MODERN2USB_ANALOG_FAMILY_8BITDO,
+};
+
+constexpr uint16_t MODERN2USB_ANALOG_FULL_SCALE = 32767u;
+
+const char* modern2usbAnalogFamilyName(Modern2UsbAnalogControllerFamily family);
+uint32_t modern2usbAnalogIntegerSqrt(uint64_t value);
+uint32_t modern2usbAnalogNoisePpm(uint16_t radialNoisePeak, uint16_t axisSpan);
