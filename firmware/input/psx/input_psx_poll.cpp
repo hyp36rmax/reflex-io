@@ -959,17 +959,31 @@ bool RZInputPSX::poll() {
       applyGuitarFreaksMapping(i);
     }
 
-    // Dance pad detection: U + D pressed simultaneously (impossible on regular d-pad)
+    // Dance pad detection: U + D held together (impossible on regular d-pad)
     // Pop'n holds L+R+D, Guitar Freaks holds L+R - exclude those cases
-    // Note: Auto-detection may not be reliable; user may need to select dance pad mode manually
+    // The pair must stay held for DANCE_PAD_ARM_HOLD_MS: a leverless pad
+    // without SOCD shows it for a moment on every roll between Up and Down.
+    // Only a fresh reply counts. A failed read keeps the last frame, so it
+    // restarts the hold rather than extending one stale sample.
+    // Note: Auto-detection may not be reliable; a dance pad that never holds
+    // the pair that long needs D-pad set to Buttons by hand
     // Once detected, stays detected until controller disconnects
     if (haveController[i] && !isMouse[i] && !isDancePad[i] && !isCrazyHit[i] && specialDpadMask[i] == 0) {
-      bool upDown = frame.PAD_U && frame.PAD_D;
-      bool leftRight = frame.PAD_L && frame.PAD_R;
+      const bool upDown = isReadSuccess && frame.PAD_U && frame.PAD_D;
+      const bool leftRight = frame.PAD_L && frame.PAD_R;
       if (upDown && !leftRight) {
-        // D-pad Buttons / SOCD Off are applied transiently while this pad
-        // stays connected (updateTransientDancePadOverride); never persisted.
-        isDancePad[i] = true;
+        const uint32_t heldNowMs = millis();
+        if (dancePadComboSinceMs[i] == 0) {
+          // 0 means "not held"; a start at 0 is stored 1 ms early, never late.
+          dancePadComboSinceMs[i] = heldNowMs ? heldNowMs : 0xFFFFFFFFu;
+        } else if ((uint32_t)(heldNowMs - dancePadComboSinceMs[i]) >= DANCE_PAD_ARM_HOLD_MS) {
+          // D-pad Buttons / SOCD Off are applied transiently while this pad
+          // stays connected (updateTransientDancePadOverride); never persisted.
+          isDancePad[i] = true;
+          dancePadComboSinceMs[i] = 0;
+        }
+      } else {
+        dancePadComboSinceMs[i] = 0;
       }
     }
 

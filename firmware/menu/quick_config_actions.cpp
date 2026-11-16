@@ -182,7 +182,7 @@ void QuickConfigMenu::cycleMainMenuItemNext() {
       break;
 
     case QCI_NEGCON_L:
-      temp_negcon_digital ^= NEGCON_INPUT_L;
+      toggleTempNegconInput(NEGCON_INPUT_L);
       break;
 #endif
 
@@ -208,7 +208,7 @@ void QuickConfigMenu::cycleMainMenuItemNext() {
       break;
 
     case QCI_START_LEFT: case QCI_START_RIGHT: case QCI_START_UP: case QCI_START_DOWN:
-    case QCI_JVS_MENU_HOLD: case QCI_JVS_HOME_HOTKEY:
+    case QCI_JVS_MENU_HOLD: case QCI_JVS_HOME_HOTKEY: case QCI_JVS_HOLD_START:
       cycleHotkeyItem(item, true);
       break;
     case QCI_N64_Z:
@@ -357,7 +357,7 @@ void QuickConfigMenu::cycleMainMenuItemPrev() {
       break;
 
     case QCI_NEGCON_L:
-      temp_negcon_digital ^= NEGCON_INPUT_L;
+      toggleTempNegconInput(NEGCON_INPUT_L);
       break;
 #endif
 
@@ -383,7 +383,7 @@ void QuickConfigMenu::cycleMainMenuItemPrev() {
       break;
 
     case QCI_START_LEFT: case QCI_START_RIGHT: case QCI_START_UP: case QCI_START_DOWN:
-    case QCI_JVS_MENU_HOLD: case QCI_JVS_HOME_HOTKEY:
+    case QCI_JVS_MENU_HOLD: case QCI_JVS_HOME_HOTKEY: case QCI_JVS_HOLD_START:
       cycleHotkeyItem(item, false);
       break;
     case QCI_N64_Z:
@@ -500,7 +500,7 @@ void QuickConfigMenu::cycleSettingValue() {
       break;
 
     case QCI_NEGCON_L:
-      temp_negcon_digital ^= NEGCON_INPUT_L;
+      toggleTempNegconInput(NEGCON_INPUT_L);
       break;
     case QCI_NEGCON_GAIN:
       temp_negcon_gain = (temp_negcon_gain + 1) % NEGCON_GAIN_COUNT;
@@ -636,7 +636,7 @@ void QuickConfigMenu::cycleSettingValueBack() {
       break;
 
     case QCI_NEGCON_L:
-      temp_negcon_digital ^= NEGCON_INPUT_L;
+      toggleTempNegconInput(NEGCON_INPUT_L);
       break;
     case QCI_NEGCON_GAIN:
       temp_negcon_gain =
@@ -934,6 +934,10 @@ void QuickConfigMenu::cycleHotkeyItem(QuickConfigItem item, bool forward) {
   }
   if (item == QCI_JVS_HOME_HOTKEY) {
     temp_jvs_home_hotkey = !temp_jvs_home_hotkey;
+    return;
+  }
+  if (item == QCI_JVS_HOLD_START) {
+    temp_jvs_hold_start = !temp_jvs_hold_start;
     return;
   }
 #endif

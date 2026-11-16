@@ -199,6 +199,9 @@ class SaturnController {
     uint8_t sixbtn_signature_hits = 0;
     uint8_t sixbtn_signature_window_misses = 0;
     bool sixbtn_confirmed = false;
+    // Set once a Mega Drive base page shows any direction released. A PC
+    // Engine device on the shared bus never does: it blanks D0-D3 on TH high.
+    bool megadrive_direction_page_seen = false;
 
     void reset(const bool resetId = false, bool resetPrevious = false) {
       if (resetId) {
@@ -206,6 +209,7 @@ class SaturnController {
         sixbtn_signature_hits = 0;
         sixbtn_signature_window_misses = 0;
         sixbtn_confirmed = false;
+        megadrive_direction_page_seen = false;
       }
 
       currentState.digital = 0xFFFF;
@@ -920,6 +924,9 @@ class SaturnPort {
       // base buttons but continue the extension probe and miss accounting.
       const bool basePageValid =
           (nibble_0 & 0b00001100) != 0b00000000;
+      if ((nibble_0 & 0b00001111) != 0) {
+        sc.megadrive_direction_page_seen = true;
+      }
       if (basePageValid) {
         // RLDU
         setControlValues(sc, 0, nibble_0 & 0b00001111);

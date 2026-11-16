@@ -13,6 +13,11 @@
 namespace {
 
 constexpr size_t kFirmwareUpdateTargetCapacity = 16;
+// How long a finished screen stays up. The menu ignores the buttons while any
+// firmware-update screen shows, so every final phase must expire on its own:
+// a failure that never did left the OLED stuck until a restart.
+constexpr uint32_t kFirmwareUpdateDoneHoldMs = 3000u;
+constexpr uint32_t kFirmwareUpdateFailedHoldMs = 10000u;
 char firmwareUpdateTargetLabel[kFirmwareUpdateTargetCapacity] = {};
 FirmwareUpdatePhase firmwareUpdatePhase = FirmwareUpdatePhase::Preparing;
 uint32_t firmwareUpdateCompletionDeadlineMs = 0;
@@ -120,7 +125,9 @@ void setFirmwareUpdateProgress(const char* targetLabel,
   firmwareUpdateCompletionDeadlineMs =
       (phase == FirmwareUpdatePhase::Complete ||
        phase == FirmwareUpdatePhase::Applying)
-          ? millis() + 3000u
+          ? millis() + kFirmwareUpdateDoneHoldMs
+      : phase == FirmwareUpdatePhase::Failed
+          ? millis() + kFirmwareUpdateFailedHoldMs
           : 0;
   firmwareUpdateScreenDirty = true;
   mainDisplayInitialized = false;

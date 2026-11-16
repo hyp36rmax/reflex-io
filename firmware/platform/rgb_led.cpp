@@ -62,6 +62,12 @@ void RgbLed::initPio() {
   sm = pio_claim_unused_sm(pio, true);
   uint offset = pio_add_program(pio, &ws2812_program);
 
+  // Drive the pin low from the PIO before handing the pad over. pio_gpio_init()
+  // first left the pin undriven for a moment; a board whose LED shifter pulls
+  // the line up (Modern2USB V1.1: R149, R150) then clocked stray bits into the
+  // chain, and its second pixel showed green until the next colour change.
+  pio_sm_set_pins_with_mask(pio, sm, 0u, 1u << pin);
+  pio_sm_set_pindirs_with_mask(pio, sm, 1u << pin, 1u << pin);
   pio_gpio_init(pio, pin);
   pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
 

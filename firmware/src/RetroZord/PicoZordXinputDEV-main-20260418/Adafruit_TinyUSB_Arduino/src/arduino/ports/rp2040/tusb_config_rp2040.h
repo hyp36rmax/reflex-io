@@ -131,9 +131,12 @@ extern "C" {
 // Size of buffer to hold descriptors and other data used for enumeration
 #define CFG_TUH_ENUMERATION_BUFSIZE 1343 // composite XInput/audio pads; 322 minimum for x360receiver
 
-// Reserve the onboard FE1.1S plus one downstream compound-device hub.
-// Original Xbox controllers expose their pad behind an internal USB hub.
+// Two hub slots: a hub plus an original Xbox pad's internal hub. Modern2USB
+// sets 3 in platformio.ini (its onboard FE1.1S plus two Duke or Controller S
+// pads, each behind its own internal hub); each slot costs about 380 B of RAM.
+#ifndef CFG_TUH_HUB
 #define CFG_TUH_HUB 2
+#endif
 
 // Non-hub devices supported across both hub levels.
 #define CFG_TUH_DEVICE_MAX 6

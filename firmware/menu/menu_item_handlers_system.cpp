@@ -2,6 +2,27 @@
 
 namespace menu_item_handlers_internal {
 
+namespace {
+
+// The remap answer, kept while the learned-map question is open.
+bool factoryResetEraseRemaps = false;
+
+void runFactoryReset(bool eraseRemaps, bool eraseLearnedMaps) {
+  factory_reset_stage = 0;
+  const bool resetComplete = factoryResetSettings(eraseRemaps, eraseLearnedMaps);
+  if (resetComplete) {
+    buzzer.playFactoryReset();
+  } else {
+    buzzer.playError();
+  }
+
+  drawFactoryResetResult(resetComplete, eraseRemaps, eraseLearnedMaps);
+  delayWithCooperativeOled(1500);
+  reboot();
+}
+
+}  // namespace
+
 void handle_item_factory_reset(menu_item_action action) {
   switch (action) {
     case item_action_display:
@@ -27,18 +48,18 @@ void handle_item_factory_reset(menu_item_action action) {
         factory_reset_selection = 0;
         drawFactoryResetRemapPrompt(factory_reset_selection);
       } else if (factory_reset_stage == 2) {
-        const bool eraseRemaps = factory_reset_selection == 1;
-        factory_reset_stage = 0;
-        const bool resetComplete = factoryResetSettings(eraseRemaps);
-        if (resetComplete) {
-          buzzer.playFactoryReset();
-        } else {
-          buzzer.playError();
-        }
-
-        drawFactoryResetResult(resetComplete);
-        delayWithCooperativeOled(1500);
-        reboot();
+        factoryResetEraseRemaps = factory_reset_selection == 1;
+#if ADAPT_POLICY_RESERVED_FEEDBACK_STORAGE
+        // Learned controller maps get their own answer too (owner,
+        // 2026-11-08); KEEP is the safe default.
+        factory_reset_stage = 3;
+        factory_reset_selection = 0;
+        drawFactoryResetLearnedMapPrompt(factory_reset_selection);
+#else
+        runFactoryReset(factoryResetEraseRemaps, true);
+#endif
+      } else if (factory_reset_stage == 3) {
+        runFactoryReset(factoryResetEraseRemaps, factory_reset_selection == 1);
       }
       break;
     case item_action_change_prev:
@@ -48,6 +69,9 @@ void handle_item_factory_reset(menu_item_action action) {
       } else if (factory_reset_stage == 2) {
         factory_reset_selection = (factory_reset_selection + 1) % 2;
         drawFactoryResetRemapPrompt(factory_reset_selection);
+      } else if (factory_reset_stage == 3) {
+        factory_reset_selection = (factory_reset_selection + 1) % 2;
+        drawFactoryResetLearnedMapPrompt(factory_reset_selection);
       }
       break;
     default:

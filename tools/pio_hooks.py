@@ -36,6 +36,12 @@ MODERN2USB_UPDATE_VERIFY_SCRIPT = os.path.join(
 MODERN2USB_RECOVERY_UF2_SCRIPT = os.path.join(
     PROJECT_DIR, "tools", "modern2usb_recovery_uf2.py"
 )
+MODERN2USB_SDL_TABLE_SCRIPT = os.path.join(
+    PROJECT_DIR, "tools", "modern2usb_sdl_table.py"
+)
+INTEGER_PRINTF_CHECK_SCRIPT = os.path.join(
+    PROJECT_DIR, "tools", "check_integer_printf.py"
+)
 OLED_LAYOUT_VERIFY_SCRIPT = os.path.join(
     PROJECT_DIR, "tools", "test_oled_shoulder_layouts.py"
 )
@@ -582,6 +588,12 @@ uint32_t reflex_tinyusb_host_enum_failure_count(void) {
             reset_recovery_needle, reset_recovery_replacement, 1
         )
         patch_groups.append("host-reset-recovery-delay")
+        # Last: a failed enumeration step ends the enumeration and is retried
+        # by the service's watchdog instead of blocking every later attach.
+        sys.path.insert(0, os.path.join(PROJECT_DIR, "tools"))
+        from tinyusb_enum_abort_patch import patch_enumeration_abort
+        patched = patch_enumeration_abort(patched, hub_patches_applied=True)
+        patch_groups.append("host-enumeration-abort")
 
     if not patch_groups:
         return node
@@ -907,6 +919,20 @@ if env_has_define("ENABLE_TINYUSB_HOST_ENUM_DIAGNOSTICS"):
         "*Adafruit_TinyUSB_Arduino*host*hub.c",
     )
 
+def append_modern2usb_sdl_table(uf2_path):
+    # The Linux SDL controller table goes after the recovery tail, into flash
+    # the application never uses (tools/modern2usb_sdl_table.py).
+    result = subprocess.run(
+        [sys.executable, MODERN2USB_SDL_TABLE_SCRIPT, "append", uf2_path],
+        cwd=PROJECT_DIR,
+    )
+    if result.returncode != 0:
+        raise Exception(
+            "MODERN2USB SDL table packaging failed with exit code "
+            f"{result.returncode}"
+        )
+
+
 def export_uf2(target=None, source=None, env=None, **kwargs):
     os.makedirs(UF2_EXPORT_DIR, exist_ok=True)
     result = subprocess.run(
@@ -925,6 +951,7 @@ def export_uf2(target=None, source=None, env=None, **kwargs):
                 "MODERN2USB recovery UF2 packaging failed with exit code "
                 f"{result.returncode}"
             )
+        append_modern2usb_sdl_table(UF2_EXPORT_PATH)
         result = subprocess.run(
             [
                 sys.executable,
@@ -1006,6 +1033,7 @@ def verify_modern2usb_update_layout(target=None, source=None, env=None, **kwargs
             "MODERN2USB recovery UF2 packaging failed with exit code "
             f"{result.returncode}"
         )
+    append_modern2usb_sdl_table(uf2_path)
     result = subprocess.run(
         [
             sys.executable,
@@ -1026,6 +1054,32 @@ def verify_modern2usb_update_layout(target=None, source=None, env=None, **kwargs
         )
 
     remove_stale_modern2usb_signed_package(firmware_path, env)
+
+def check_integer_printf(target=None, source=None, env=None, **kwargs):
+    elf_path = os.path.join(
+        env.subst("$BUILD_DIR"), f"{env.subst('$PROGNAME')}.elf"
+    )
+    result = subprocess.run(
+        [sys.executable, INTEGER_PRINTF_CHECK_SCRIPT, elf_path], cwd=PROJECT_DIR
+    )
+    if result.returncode != 0:
+        raise Exception(
+            "check_integer_printf.py failed with exit code "
+            f"{result.returncode}"
+        )
+
+
+if env_has_define("ADAPT_COMPACT_STDIO"):
+    # The string formatters run newlib's integer-only engine in these images
+    # (firmware/platform/compact_stdio.cpp), which cannot print a float.
+    env.AddPostAction(
+        "$BUILD_DIR/${PROGNAME}.elf",
+        env.VerboseAction(
+            check_integer_printf,
+            "Checking that no format string needs a float formatter",
+        ),
+    )
+
 
 if env_has_define("ENABLE_ESP32_RP2040_UPDATE"):
     # Stage3-v2 keeps the existing LittleFS command format, but the reviewed

@@ -94,3 +94,13 @@
      defined(ADAPT_HAS_NFC_BRIDGE) || defined(ADAPT_HAS_RAIL_MONITOR))
   #error "Hardware stubs cannot claim fitted peripherals"
 #endif
+
+// The Linux SDL controller table is compiled in (USB2DB15) or read from flash
+// (MODERN2USB), never both, and only the fixed-end reserved layout keeps the
+// sectors the flash copy uses (core/rp2040_update_rollback_format.h).
+#if defined(ADAPT_CAP_SDL_CONTROLLER_FLASH_TABLE) && \
+    (defined(ADAPT_CAP_SDL_CONTROLLER_MAPPINGS) || \
+     defined(ADAPT_CAP_SDL_CONTROLLER_IDENTITIES) || \
+     !ADAPT_POLICY_FIXED_END_RESERVED_FLASH_LAYOUT)
+  #error "The SDL controller table is either compiled in or read from the fixed-end flash layout"
+#endif

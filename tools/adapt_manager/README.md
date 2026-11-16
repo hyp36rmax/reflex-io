@@ -11,9 +11,15 @@ There is no separate Classic2USB updater or Legacy updater.
 
 ## Supported Products
 
-- Classic2USB and future RP2040 Adapt targets use hash-verified and structurally
-  validated UF2 downloads. The Manager rejects non-RP2040 images and images
-  that overlap preserved EEPROM/auth/mapping flash.
+- Classic2USB, JVSIO2USB and future RP2040 Adapt targets use hash-verified and
+  structurally validated UF2 downloads. The Manager rejects non-RP2040 images,
+  and images that overlap the preserved settings journal, EEPROM or
+  auth/mapping flash.
+- Each RP2040 image must be built for the product it is installed as: it must
+  carry exactly one hardware target, and that target must be the product's
+  own. A Classic2USB image is never written to a JVSIO2USB, or the reverse.
+  The Manager knows each product's INFO name and target itself; a catalog only
+  lists releases, and a product the Manager does not know is never installed.
 - Adapt V1 / Legacy uses the 32u4 Caterina backend.
 - Adapt V1 / Legacy requires an explicit choice between **MPG Firmware** and
   **Legacy Firmware**. Their shared bootloader identity cannot safely determine
@@ -22,13 +28,22 @@ There is no separate Classic2USB updater or Legacy updater.
 | Product | Firmware source | MiSTer maps | Management |
 |---------|-----------------|-------------|------------|
 | Classic2USB | Verified Reflex Adapt GitHub release descriptors and UF2 assets | Ten official core-specific maps | Firmware, rollback, recovery, and serial settings |
+| JVSIO2USB | Verified Reflex Adapt GitHub release descriptors and UF2 assets | None | Firmware, rollback, and recovery; settings are on the adapter's own menus |
 | Adapt V1 / Legacy | Exact-tag, size, and SHA256-verified assets from `Reflex-Adapt-Legacy` | Complete 346-file Legacy set | MPG or Legacy firmware selection plus MiSTer USB support |
 
-Classic2USB firmware becomes installable when its GitHub release includes the
-generated `adapt-manager-release.json` descriptor. Until a release is
-published, the manager correctly reports that no Classic2USB release is
-available. Adapt V1 / Legacy firmware is already described by the embedded
-catalog.
+Classic2USB and JVSIO2USB firmware becomes installable when its GitHub release
+includes the generated `adapt-manager-release.json` descriptor
+(`generate_release_descriptor.py --product`). Both products publish to the same
+release feed, so JVSIO2USB releases are tagged `jvsio2usb-vX.Y.Z` while
+Classic2USB keeps `vX.Y.Z`. Until a release is published, the manager reports
+that no release is available. Adapt V1 / Legacy firmware is already described by
+the embedded catalog.
+
+A JVSIO2USB exposes its management serial interface in MiSTer output mode;
+console output modes such as XInput do not. BOOTSEL cannot identify an RP2040 board, so recovery firmware
+first asks which product the board is. When the last verified installation at
+the same USB path was a different product, the Manager asks again before
+writing.
 
 Firmware binaries are not copied from `Reflex-Adapt-Legacy`. The generated
 catalog references sanctioned Git tags in that repository and records each
@@ -51,10 +66,13 @@ connected, or copy the `Scripts/Reflex_Adapt` folder directly onto the SD card
 from a PC. Install to the SD card before flashing because the adapter drive
 disappears during BOOTSEL/reboot. Installation changes no firmware, maps or
 Downloader configuration. Manager requires Python 3 on MiSTer and emits a
-clear prerequisite error if it is missing. The embedded version is 1.0.0, the
-first public release alongside Classic2USB 1.0.0. The optional Downloader entry
-follows the public version, so 1.0.0 has to publish with the firmware
-(`RELEASE_CHECKLIST.md`).
+clear prerequisite error if it is missing. The embedded version is 1.1.0,
+which adds JVSIO2USB; 1.0.0 was the first public release, alongside
+Classic2USB 1.0.0. The optional Downloader entry follows the public version, so
+a new Manager has to be published before the drive's copy is the newest
+(`RELEASE_CHECKLIST.md`). Release descriptors keep `manager_min_version` 1.0.0,
+because Manager 1.0.0 falls back to its cached catalog when any descriptor
+fails validation.
 
 `tools/generate_usb_drive_image.py` renders Manager directly from the template,
 Python, catalog and map bundle, using the same renderer as the standalone

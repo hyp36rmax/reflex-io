@@ -181,6 +181,11 @@ bool __not_in_flash_func(RZInputSaturn::poll)() {
       slotLastSeenMs[i] = millis();
       uint32_t now_ms = slotLastSeenMs[i];
       SatDeviceType_Enum detectedType = stabilizeMegadriveType(i, rawDetectedType);
+      if (megadrivePceAlias[i].drop(isMegadriveType(detectedType), inputAutoDetectModeActive(),
+                                    saturn[port]->getMultitapPorts() != 0,
+                                    sc.megadrive_direction_page_seen, now_ms)) {
+        detectedType = SAT_DEVICE_NOTSUPPORTED;
+      }
       if (detectedType != SAT_DEVICE_NONE)
         setClassicMouseInput(i, detectedType == SAT_DEVICE_MOUSE);
       genesisCaptureDecoded(port, c, uint8_t(rawDetectedType), uint8_t(detectedType), sc.digitalRaw());
@@ -514,6 +519,7 @@ bool __not_in_flash_func(RZInputSaturn::poll)() {
         resetClassicMouseMotion(i);
         dtype[i] = SAT_DEVICE_NONE;
         resetMegadriveTypeStability(i);
+        megadrivePceAlias[i].reset();
         m30Identity[i].reset();
         input_saturn_debug_clear_slot(i);
         slotLastSeenMs[i] = 0;
@@ -537,6 +543,7 @@ bool __not_in_flash_func(RZInputSaturn::poll)() {
       resetClassicMouseMotion(slotBase);
       dtype[slotBase] = SAT_DEVICE_NONE;
       resetMegadriveTypeStability(slotBase);
+      megadrivePceAlias[slotBase].reset();
       m30Identity[slotBase].reset();
       input_saturn_debug_clear_slot(slotBase);
       slotLastSeenMs[slotBase] = 0;

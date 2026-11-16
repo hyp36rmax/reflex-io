@@ -51,6 +51,9 @@
 #ifdef ENABLE_INPUT_CDI
 #include "../input/cdi/input_cdi_debug.h"
 #endif
+#ifdef ENABLE_INPUT_PCE
+#include "../input/pce/input_pce_runtime_state.h"
+#endif
 #include "../input/runtime/input_module_runtime.h"
 #ifdef ENABLE_INPUT_ESP32_SPI
 #include "../input/esp32_spi/esp32_service_uart.h"
@@ -476,6 +479,20 @@ void printCdcUpdateStatus(Print& out) {
   out.println(RP2040_CDC_UPDATE_MAX_CHUNK);
 }
 
+// D2-03: the new image's health trial needs the ESP32 link, so BEGIN is
+// refused while it is down; say what to do instead.
+void printCdcUpdateRefusal(Print& out) {
+  const uint8_t error = esp32Rp2040UpdateLastError();
+  if (error == ESP32_SPI_RP_UPDATE_ERROR_BRIDGE_DOWN) {
+    out.println(F("FWUPDATE CDC REFUSED=ESP32_LINK_DOWN "
+                  "Update or repair the ESP32 first, then the RP2040. "
+                  "BOOTSEL UF2 works without the ESP32."));
+  } else if (error == ESP32_SPI_RP_UPDATE_ERROR_PEER_TRIAL) {
+    out.println(F("FWUPDATE CDC REFUSED=ESP32_TRIAL "
+                  "Retry after the ESP32 confirms its new firmware."));
+  }
+}
+
 bool handleFirmwareUpdateSerialCommand(const char* command, Print& out) {
   char* remainder = nullptr;
   if (!serialCommandStartsWith(command, "FWUPDATE", &remainder)) {
@@ -642,9 +659,11 @@ bool handleCdcFirmwareUpdateSerialCommand(const char* command, Print& out) {
       out.println(F("ERR:BAD_FWUPDATE_CDC_BEGIN"));
       return true;
     }
-    if (esp32Rp2040UpdateActive() ||
+    const bool updateBusy = esp32Rp2040UpdateActive();
+    if (updateBusy ||
         !esp32Rp2040UpdateBeginDirect(packageSize, md5)) {
       out.println(F("ERR:FWUPDATE_CDC_BEGIN"));
+      if (!updateBusy) printCdcUpdateRefusal(out);
       printCdcUpdateStatus(out);
       return true;
     }
@@ -958,6 +977,11 @@ bool handleSerialDebugCommand(const char* command, Print& out) {
 #ifdef ENABLE_INPUT_AUTODETECT
   if (serialCommandStartsWith(command, "ADBENCH", &remainder)) {
     return handleAutoDetectBenchmarkCommand(remainder, out);
+  }
+#endif
+#if defined(ENABLE_INPUT_PCE) && defined(ENABLE_EXPERIMENTAL_CONSOLE_MOUSE)
+  if (serialCommandStartsWith(command, "PCEM", &remainder)) {
+    return input_pce_handle_mouse_serial_command(remainder, out);
   }
 #endif
   if (handleAutodetectSerialCommand(command, out)) {

@@ -6,10 +6,36 @@
 #include "../shared/input_button_bits.h"
 #include "../../core/classic_mouse_motion.h"
 #include "../../core/classic_mouse_source.h"
+#include "../../core/serial_command_parser.h"
 
 namespace {
 
 PceInputDebugSnapshot pce_debug_snapshot = {};
+
+// PCE mouse tuning (serial PCEM; RAM only, back to these on reboot). The bench
+// mouse needs about 5 us to switch nibbles after a SEL/CLR edge: at 2 us 45% of
+// moving sweeps tore an X nibble into a 15-16 count jump, at 4 us 22%, at 6, 10
+// and 20 us none (2026-11-15). Its counts are coarse, so motion is tripled.
+constexpr uint8_t kPceMouseDefaultSettleUs = 10;
+constexpr uint8_t kPceMouseDefaultGain = 3;
+uint8_t pceMouseSettleUs = kPceMouseDefaultSettleUs;
+uint8_t pceMouseGain = kPceMouseDefaultGain;
+
+struct PceMouseCaptureEntry {
+  uint8_t port;
+  uint8_t raw;
+  uint8_t data[4];
+  uint8_t buttons[4];
+};
+constexpr uint16_t kPceMouseCaptureSize = 256;
+PceMouseCaptureEntry pceMouseCapture[kPceMouseCaptureSize];
+uint16_t pceMouseCaptureCount = 0;
+bool pceMouseCaptureActive = false;
+
+int16_t pceMouseAxis(uint8_t high, uint8_t low) {
+  // PCE X grows left and Y grows up; USB grows right and down.
+  return -int16_t(static_cast<int8_t>((high << 4) | low));
+}
 
 }  // namespace
 
@@ -29,6 +55,94 @@ void input_pce_debug_update_slot(uint8_t slot, uint8_t stable_type,
   debug.source_index = source_index;
   if (pce_debug_snapshot.slot_count <= slot) {
     pce_debug_snapshot.slot_count = slot + 1;
+  }
+}
+
+uint8_t input_pce_mouse_settle_us() { return pceMouseSettleUs; }
+uint8_t input_pce_mouse_gain() { return pceMouseGain; }
+
+void input_pce_mouse_capture(uint8_t port, uint8_t raw, const uint8_t data[4],
+                             const uint8_t buttons[4]) {
+  if (!pceMouseCaptureActive) return;
+  bool idle = raw == 0;
+  for (uint8_t i = 0; i < 4; ++i) idle = idle && data[i] == 0 && buttons[i] == 0x0F;
+  if (idle) return;  // keep the buffer for sweeps that carry something
+  PceMouseCaptureEntry& entry = pceMouseCapture[pceMouseCaptureCount++];
+  entry.port = port;
+  entry.raw = raw;
+  for (uint8_t i = 0; i < 4; ++i) {
+    entry.data[i] = data[i];
+    entry.buttons[i] = buttons[i];
+  }
+  if (pceMouseCaptureCount >= kPceMouseCaptureSize) pceMouseCaptureActive = false;
+}
+
+bool input_pce_handle_mouse_serial_command(char* args, Print& out) {
+  char* rest = nullptr;
+  long value = 0;
+  if (serialCommandStartsWith(args, "DELAY", &rest)) {
+    if (serialParseLongToken(rest, &value) && value >= 1 && value <= 60) {
+      pceMouseSettleUs = static_cast<uint8_t>(value);
+    } else {
+      out.println(F("ERR:PCEM_DELAY 1-60"));
+      return true;
+    }
+  } else if (serialCommandStartsWith(args, "GAIN", &rest)) {
+    if (serialParseLongToken(rest, &value) && value >= 1 && value <= 16) {
+      pceMouseGain = static_cast<uint8_t>(value);
+    } else {
+      out.println(F("ERR:PCEM_GAIN 1-16"));
+      return true;
+    }
+  } else if (serialTextEqualsExact(args, "CAPTURE")) {
+    pceMouseCaptureCount = 0;
+    pceMouseCaptureActive = true;
+  } else if (serialTextEqualsExact(args, "DUMP")) {
+    for (uint16_t n = 0; n < pceMouseCaptureCount; ++n) {
+      const PceMouseCaptureEntry& entry = pceMouseCapture[n];
+      out.print(F("PCEC "));
+      out.print(n);
+      out.print(F(" P="));
+      out.print(entry.port);
+      out.print(' ');
+      out.print(entry.raw, HEX);
+      out.print(' ');
+      for (uint8_t i = 0; i < 4; ++i) out.print(entry.data[i], HEX);
+      out.print(' ');
+      for (uint8_t i = 0; i < 4; ++i) out.print(entry.buttons[i], HEX);
+      out.print(F(" DX="));
+      out.print(pceMouseAxis(entry.data[0], entry.data[1]));
+      out.print(F(" DY="));
+      out.println(pceMouseAxis(entry.data[2], entry.data[3]));
+    }
+  } else if (*args != '\0') {
+    out.println(F("ERR:PCEM DELAY <us>|GAIN <n>|CAPTURE|DUMP"));
+    return true;
+  }
+  out.print(F("PCEM DELAY="));
+  out.print(pceMouseSettleUs);
+  out.print(F(" GAIN="));
+  out.print(pceMouseGain);
+  out.print(F(" CAPTURE="));
+  out.print(pceMouseCaptureCount);
+  out.print('/');
+  out.print(kPceMouseCaptureSize);
+  out.println(pceMouseCaptureActive ? F(" RECORDING") : F(""));
+  return true;
+}
+
+void input_pce_debug_record_mouse_miss(uint8_t port, uint8_t raw, const uint8_t data[4],
+                                       const uint8_t buttons[4], bool open_bus) {
+  if (port >= kPceDebugMousePorts) {
+    return;
+  }
+  PceMouseDebugPort& debug = pce_debug_snapshot.mouse[port];
+  if (debug.raw_misses < 0xFFFF) ++debug.raw_misses;
+  if (open_bus && debug.open_sweeps < 0xFFFF) ++debug.open_sweeps;
+  debug.last_raw = raw;
+  for (uint8_t i = 0; i < 4; ++i) {
+    debug.last_data[i] = data[i];
+    debug.last_buttons[i] = buttons[i];
   }
 }
 
@@ -153,6 +267,7 @@ bool __not_in_flash_func(RZInputPce::poll)() {
 #ifdef ENABLE_EXPERIMENTAL_CONSOLE_MOUSE
   bool portSkipped[input_ports] = {};
   bool sweepFresh[input_ports] = {};
+  bool sweepPresent[input_ports] = {};
   bool sweepValid[input_ports][PCE_MAX_CTRL] = {};
 #endif
 
@@ -183,9 +298,23 @@ bool __not_in_flash_func(RZInputPce::poll)() {
         } else {
           mouseIdlePending[port] = false;
           nextMouseProbeMs[port] = millis() + 250;
+          pce[port]->setMouseSettleUs(pceMouseSettleUs);
           pce[port]->readMouseSweep(mouseSweep[port]);
           sweepFresh[port] = true;
           const PceMouseSweep& sweep = mouseSweep[port];
+          input_pce_mouse_capture(port, sweep.rawNibble, sweep.data[0], sweep.buttons[0]);
+          // A recognised mouse can fail the CLR-high read while it moves or
+          // clicks; keep it until the bus looks unplugged for a while.
+          const bool openBus = pceMouseSweepOpenBus(sweep.rawNibble, sweep.data[0], sweep.buttons[0]);
+          if (hasMouse) {
+            sweepPresent[port] = mousePresence[port].present(openBus, millis());
+            if (!sweep.rawPresent) {
+              input_pce_debug_record_mouse_miss(port, sweep.rawNibble, sweep.data[0], sweep.buttons[0], openBus);
+            }
+          } else {
+            mousePresence[port].reset();
+            sweepPresent[port] = sweep.rawPresent;
+          }
           for (uint8_t c = sweep.count; c < PCE_MAX_CTRL; ++c) {
             mouseType[port][c] = false;
             mouseConfirm[port][c] = 0;
@@ -194,7 +323,7 @@ bool __not_in_flash_func(RZInputPce::poll)() {
             const uint8_t* d = sweep.data[c];
             const uint8_t* b = sweep.buttons[c];
             const bool equalButtons = b[0] == b[1] && b[1] == b[2] && b[2] == b[3];
-            sweepValid[port][c] = sweep.rawPresent && equalButtons;
+            sweepValid[port][c] = sweepPresent[port] && !openBus && equalButtons;
             // Require a stationary packet three times. An ordinary six-button
             // pad alternates zero and direction, so cannot satisfy this.
             const bool stationary = sweep.rawPresent && equalButtons &&
@@ -213,7 +342,7 @@ bool __not_in_flash_func(RZInputPce::poll)() {
       }
       if (!portSkipped[port]) {
         port_controller_count[port] = pce[port]->getControllerCount();
-        port_raw_present[port] = sweepFresh[port] ? mouseSweep[port].rawPresent : rawControllerPresent(port);
+        port_raw_present[port] = sweepFresh[port] ? sweepPresent[port] : rawControllerPresent(port);
       }
 #else
       pce[port]->update();
@@ -292,9 +421,12 @@ bool __not_in_flash_func(RZInputPce::poll)() {
 #ifdef ENABLE_EXPERIMENTAL_CONSOLE_MOUSE
       if (observedType == PCE_DEVICE_MOUSE && sweepFresh[port] && sweepValid[port][c]) {
         const PceMouseSweep& sample = mouseSweep[port];
-        // PCE X grows left; USB X grows right (BlueRetro wire notes).
-        const int16_t dx = -int16_t(static_cast<int8_t>((sample.data[c][0] << 4) | sample.data[c][1]));
-        const int8_t dy = static_cast<int8_t>((sample.data[c][2] << 4) | sample.data[c][3]);
+        // PCE X grows left and Y grows up (BlueRetro wire notes; the owner's
+        // mouse moved the pointer the wrong way vertically, 2026-11-15). The
+        // mouse counts coarsely, so its motion is scaled for a PC pointer.
+        const int16_t gain = pceMouseGain;
+        const int16_t dx = int16_t(pceMouseAxis(sample.data[c][0], sample.data[c][1]) * gain);
+        const int16_t dy = int16_t(pceMouseAxis(sample.data[c][2], sample.data[c][3]) * gain);
         queueClassicMouseMotion(i, dx, dy);
         if (dx || dy) setUpdated(i);
       }
@@ -334,9 +466,10 @@ bool __not_in_flash_func(RZInputPce::poll)() {
 #ifdef ENABLE_EXPERIMENTAL_CONSOLE_MOUSE
             if (sweepFresh[port] && sweepValid[port][c]) {
               const PceMouseSweep& sample = mouseSweep[port];
-              const int16_t mouseX = -int16_t(static_cast<int8_t>((sample.data[c][0] << 4) | sample.data[c][1]));
-              frame.mouse_x = mouseX > 127 ? 127 : mouseX;
-              frame.mouse_y = static_cast<int8_t>((sample.data[c][2] << 4) | sample.data[c][3]);
+              const int16_t mouseX = int16_t(pceMouseAxis(sample.data[c][0], sample.data[c][1]) * pceMouseGain);
+              frame.mouse_x = mouseX > 127 ? 127 : (mouseX < -127 ? -127 : mouseX);
+              const int16_t mouseY = int16_t(pceMouseAxis(sample.data[c][2], sample.data[c][3]) * pceMouseGain);
+              frame.mouse_y = mouseY > 127 ? 127 : (mouseY < -127 ? -127 : mouseY);
               frame.digital_buttons = mapDigitalToButtons(PCE_DEVICE_PAD2, uint16_t(sample.buttons[c][0] << 4) | 0x0f);
               frame.HAS_BTN_START = 1;
               frame.HAS_BTN_SELECT = 1;

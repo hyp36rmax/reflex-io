@@ -15,7 +15,7 @@ void updatePlatformRgbLedFromInput(bool updated) {
 
   bool analogAssigned = false;
   uint8_t rumbleMax = 0;
-  for (uint8_t i = 0; i < max_devices; ++i) {
+  for (uint8_t i = 0; i < max_devices && i < MAX_USB_OUT; ++i) {
     controller_state_t& frame = controllerFrame(i);
     if (!frame.connected) {
       continue;

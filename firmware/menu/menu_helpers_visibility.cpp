@@ -138,6 +138,10 @@ bool should_hide_menu_item(menu_item_enum item) {
       is_mode_specific_setting(item)) {
     return true;
   }
+#if !ADAPT_POLICY_USB_BT_OUTPUT_SETTINGS
+  // No Bluetooth output in this image, so nothing to choose.
+  if (item == menu_item_output_transport) return true;
+#endif
 #else
   if (item == menu_item_players ||
       item == menu_item_controller_leds ||
@@ -176,6 +180,7 @@ bool should_hide_menu_item(menu_item_enum item) {
     case menu_item_menu_hotkey:
     case menu_item_system_menu_hotkey:
     case menu_item_home_hotkey:
+    case menu_item_hold_start_hotkey:
     case menu_item_capture_hotkey:
       return true;
 #if !defined(ENABLE_BLUETOOTH_PAIRING)
@@ -452,6 +457,7 @@ bool is_system_setting(menu_item_enum item) {
     case menu_item_menu_hotkey:
     case menu_item_system_menu_hotkey:
     case menu_item_home_hotkey:
+    case menu_item_hold_start_hotkey:
     case menu_item_capture_hotkey:
     case menu_item_bluetooth_pairing:
     case menu_item_bluetooth_forget:

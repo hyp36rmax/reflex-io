@@ -38,6 +38,7 @@
 #include "../../input/jvs/jvs_analog_config.h"
 #include "../../input/jvs/jvs_panel_map.h"
 #endif
+#include "../../features/output_trial/output_trial.h"
 #include "boot_storage_product.h"
 
 namespace {
@@ -87,6 +88,9 @@ void applyGlobalBootConfiguration(const GlobalSettingsRecord& settings) {
   configuredOutputMode = sanitizeConfiguredOutputMode(
       (outputMode_t)settings.configured_output_mode);
   productAdjustBootConfiguration(deviceMode, savedDeviceMode, configuredOutputMode);
+#if defined(ADAPT_FEATURE_OUTPUT_TRIAL)
+  configuredOutputMode = outputTrialBootOutput(configuredOutputMode);
+#endif
   outputMode_t forcedOutputMode = configuredOutputMode;
   if (productForcedRuntimeOutputMode(forcedOutputMode)) configuredOutputMode = forcedOutputMode;
 #if ADAPT_POLICY_PS5_DIAGNOSTIC_RUNTIME && !defined(PS5_DIAG_USE_PERSISTED_SETTINGS)
@@ -159,6 +163,7 @@ void initializeCoreRuntimeSettingsFromStorage(const GlobalSettingsRecord& global
   menu_menu_hotkey = (uint8_t)loadSettingValue(SettingId::MenuHotkey, RZORD_NONE);
   menu_system_menu_hotkey = (uint8_t)loadSettingValue(SettingId::SystemMenuHotkey, RZORD_NONE);
   menu_home_hotkey = (uint8_t)loadSettingValue(SettingId::HomeHotkey, RZORD_NONE);
+  menu_hold_start_hotkey = (uint8_t)loadSettingValue(SettingId::HoldStartHotkey, RZORD_NONE);
   menu_capture_hotkey = (uint8_t)loadSettingValue(SettingId::CaptureHotkey, RZORD_NONE);
   menu_kiosk_mode = (uint8_t)loadSettingValue(SettingId::KioskMode, RZORD_NONE);
 #if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
@@ -336,10 +341,11 @@ void beginPersistentStorage() {
 
   GlobalSettingsRecord globalSettings{};
   if (!readGlobalSettings(globalSettings)) {
-    // Without the journal, power lost during a save can blank the settings
-    // sector. Remaps have their own flash sector, which that save did not
-    // touch.
-    factoryResetSettings(false);
+    // A first boot, or a settings sector power loss blanked on a build
+    // without the journal. Only that sector's records get defaults: remaps,
+    // learned maps, profiles and bonds live in sectors that save never
+    // touched, and the ESP32's bonds and Wi-Fi are not the RP2040's to drop.
+    (void)repairBlankSettingsAtBoot();
   }
   migrateLegacyPerModeSettings();
 

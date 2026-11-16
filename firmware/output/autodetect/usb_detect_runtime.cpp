@@ -355,15 +355,11 @@ uint8_t usb_host_detection_task(void) {
     if (host_detection.any == 0) {
       if (host_detection.hid_descriptor_report_read &&
           !host_detection.string_manufacturer_read) {
-#ifndef ENABLE_EXPERIMENTAL_XBOXONE_OUTPUT
+        // The Switch 2 train (2026-10-22 capture): report descriptor, no
+        // string, no WCID, no endpoint clear. On Xbox One builds the Xbox
+        // candidate needs the WCID request (DETECT_WINDOWS above), so this
+        // train is not an Xbox fingerprint there either.
         return DETECT_SWITCH2;
-#else
-        // A generic host may read only the HID report descriptor. Without the
-        // shared WCID request this is not an Xbox fingerprint; fall back to
-        // the configured generic-host personality instead of adding a false
-        // Xbox probe reboot.
-        return DETECT_TIMEOUT;
-#endif
       } else {
         return DETECT_TIMEOUT;
       }

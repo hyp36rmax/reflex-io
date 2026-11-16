@@ -213,9 +213,12 @@ SerialSemanticStatus serialWriteNegconInputs(
 
   PerModeSettingsRecord settings{};
   readPerModeSettings(mode, settings);
-  // SET NEGCON edits I/II/L only; the Quick Menu gain stays.
+  // SET NEGCON edits I/II/L only; the Quick Menu gain and L right-stick
+  // opt-in stay.
+  const uint8_t kept =
+      negconDigitalInputsFromRaw(settings.psx_negcon_inputs) & NEGCON_INPUT_L_STICK;
   settings.psx_negcon_inputs =
-      encodeNegconInputs(digital, negconGainFromRaw(settings.psx_negcon_inputs));
+      encodeNegconInputs(digital | kept, negconGainFromRaw(settings.psx_negcon_inputs));
   if (!writePerModeSettingsDurable(mode, settings)) {
     return SerialSemanticStatus::WriteFailed;
   }
@@ -223,7 +226,7 @@ SerialSemanticStatus serialWriteNegconInputs(
   PerModeSettingsRecord verified{};
   readPerModeSettings(mode, verified);
   const uint8_t stored = negconDigitalInputsFromRaw(verified.psx_negcon_inputs);
-  if (stored != digital) {
+  if (stored != (digital | kept)) {
     return SerialSemanticStatus::WriteFailed;
   }
   if (mode == deviceMode) {

@@ -6,13 +6,17 @@
   <title>Reflex Adapt Configuration</title>
   <script>
     (function () {
+      // The service-menu colour and Light, applied before the page draws.
+      const themes = { midnight: ["midnight", "midnight-light"], reflex: ["reflex", "reflex-light"],
+        green: ["", "lab"], amber: ["amber", "amber-light"], white: ["white", "white-light"] };
+      let theme = "midnight";
       try {
-        const theme = localStorage.getItem("reflex-theme");
-        if (theme === "lab" || theme === "light") {
-          document.documentElement.setAttribute("data-reflex-theme", "lab");
-        }
+        const light = ["lab", "light"].includes(localStorage.getItem("reflex-theme"));
+        const colour = localStorage.getItem("adapt-svc-colour");
+        theme = (Object.hasOwn(themes, colour || "") ? themes[colour] : themes.midnight)[light ? 1 : 0];
       } catch (error) {
       }
+      if (theme) document.documentElement.setAttribute("data-reflex-theme", theme);
     })();
   </script>
   <link rel="stylesheet" href="reflex.css">
@@ -76,158 +80,6 @@
       padding: 0;
     }
 
-    body {
-      font-family: var(--font-body);
-      background: var(--page-bg);
-      color: var(--text-primary);
-      min-height: 100vh;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: var(--page-max-width);
-      margin: 0 auto;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 30px;
-      padding: 24px 20px;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      background: var(--surface-strong);
-    }
-
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 10px;
-      color: var(--brand-secondary);
-      font-family: var(--font-display);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .subtitle {
-      color: var(--text-secondary);
-      letter-spacing: 0.04em;
-    }
-
-    .card {
-      background: var(--bg-card);
-      border-radius: 12px;
-      padding: 28px;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
-    }
-
-    .card-title {
-      font-size: 1.2rem;
-      margin-bottom: 15px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border);
-      color: var(--brand-secondary-soft);
-    }
-
-    /* Collapsible card styles */
-    .card-title.collapsible {
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      user-select: none;
-    }
-
-    .card-title.collapsible:hover {
-      color: var(--accent);
-    }
-
-    .card-title.collapsible::before {
-      content: '▶';
-      font-size: 0.7rem;
-      transition: transform 0.2s;
-    }
-
-    .card-content {
-      overflow: hidden;
-      transition: max-height 0.3s ease-out, opacity 0.2s;
-    }
-
-    .card-content.collapsed {
-      max-height: 0;
-      opacity: 0;
-    }
-
-    .btn {
-      background: var(--accent);
-      color: var(--accent-contrast);
-      border: 1px solid rgba(144, 111, 255, 0.35);
-      padding: 12px 24px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: var(--button-font-size);
-      font-weight: 600;
-      font-family: var(--font-body);
-      transition: background-color 0.2s, transform 0.2s, border-color 0.2s;
-    }
-
-    .btn:hover:not(:disabled) {
-      background: var(--accent-hover);
-      border-color: rgba(230, 255, 30, 0.35);
-      transform: translateY(-1px);
-    }
-
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-
-    .btn-secondary {
-      background: transparent;
-      border: 1px solid var(--border);
-    }
-
-    .btn-secondary:hover:not(:disabled) {
-      background: rgba(80, 0, 220, 0.12);
-      border-color: rgba(127, 64, 255, 0.55);
-    }
-
-    .btn-danger {
-      background: var(--error);
-      border-color: rgba(255, 107, 138, 0.35);
-    }
-
-    .btn-danger:hover:not(:disabled) {
-      background: var(--error-hover);
-    }
-
-    .btn-sm {
-      padding: 6px 12px;
-      font-size: var(--button-font-size-sm);
-    }
-
-    .btn-xs {
-      padding: 4px 8px;
-      font-size: var(--button-font-size-xs);
-    }
-
-    .warning-box {
-      background: var(--warning-bg);
-      border: 1px solid var(--warning-border);
-      color: var(--brand-secondary-soft);
-      padding: 10px 12px;
-      border-radius: 6px;
-      font-size: 0.85rem;
-    }
-
-    input[type="range"] {
-      accent-color: var(--brand-secondary);
-    }
-
-    input[type="range"]::-webkit-slider-runnable-track {
-      cursor: pointer;
-    }
-
     .wide-config-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -239,244 +91,6 @@
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
-    }
-
-    .status {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 0.9rem;
-    }
-
-    .status-disconnected {
-      background: rgba(197, 45, 89, 0.18);
-      color: #ff93b3;
-    }
-
-    .status-connected {
-      background: rgba(230, 255, 30, 0.14);
-      color: var(--success);
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: currentColor;
-    }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 15px;
-    }
-
-    .device-info-grid {
-      grid-template-columns: repeat(5, minmax(calc(18ch + 2rem), 1fr));
-      gap: 12px;
-    }
-
-    .info-item {
-      background: var(--surface-soft);
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid var(--line-strong);
-    }
-
-    .info-label {
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-      margin-bottom: 4px;
-    }
-
-    .info-value {
-      font-size: 1.1rem;
-      font-weight: 500;
-    }
-
-    .device-info-grid .info-item {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      min-width: 0;
-      min-height: 78px;
-      padding: 12px 14px;
-    }
-
-    .device-info-grid .info-label {
-      margin-bottom: 0;
-    }
-
-    .device-info-grid .info-value,
-    .device-info-grid .info-select {
-      display: flex;
-      align-items: center;
-      min-height: 34px;
-      margin: 0;
-      line-height: 1.2;
-      min-width: 0;
-    }
-
-    .device-info-grid .info-value {
-      overflow-wrap: anywhere;
-    }
-
-    .device-info-grid .info-select {
-      width: 100%;
-    }
-
-    .device-info-actions {
-      margin-top: 14px;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 10px;
-      align-items: end;
-    }
-
-    .device-info-mode-controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-      min-width: 0;
-    }
-
-    .device-info-actions .btn {
-      min-height: 40px;
-      padding: 10px 16px;
-      white-space: nowrap;
-    }
-
-    #connect-btn {
-      min-width: 156px;
-    }
-
-    .firmware-update-panel {
-      margin-top: 12px;
-      padding: 12px;
-      border: 1px solid var(--border);
-      background: var(--bg-tertiary);
-    }
-
-    .firmware-update-row {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 12px;
-      align-items: center;
-    }
-
-    .firmware-update-status {
-      margin-top: 3px;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      line-height: 1.35;
-    }
-
-    .firmware-update-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      justify-content: flex-end;
-      flex-wrap: wrap;
-    }
-
-    .firmware-release-notes {
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid var(--border);
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-      line-height: 1.4;
-      white-space: pre-wrap;
-      max-height: 8.5rem;
-      overflow: auto;
-    }
-
-    /* Mode dropdowns in Device Information - styled to match info-value */
-    .info-select {
-      background: transparent;
-      border: none;
-      color: var(--text-primary);
-      font-size: 1.1rem;
-      font-weight: 500;
-      padding: 4px 24px 4px 0;
-      cursor: pointer;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23E6FF1E' d='M2 4l4 4 4-4z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 0 center;
-    }
-
-    .device-info-grid .output-mode-select {
-      min-height: 40px;
-      font-size: 1.05rem;
-      line-height: 1.2;
-      min-width: calc(18ch + 2rem);
-      box-sizing: border-box;
-    }
-
-    .info-select:focus {
-      outline: none;
-    }
-
-    .info-select option {
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      padding: 8px;
-    }
-
-    .memory-info-select {
-      width: 100%;
-      margin-top: 2px;
-    }
-
-    .form-group {
-      margin-bottom: 15px;
-    }
-
-    .form-label {
-      display: block;
-      margin-bottom: 6px;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-    }
-
-    .form-select, .form-input {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      font-size: 1rem;
-    }
-
-    .form-select:focus, .form-input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(80, 0, 220, 0.22);
-    }
-
-    input[type="file"] {
-      color: var(--text-primary);
-      font-size: 0.9rem;
-    }
-
-    input[type="file"]::file-selector-button {
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-right: 10px;
-      transition: background 0.2s;
-    }
-
-    input[type="file"]::file-selector-button:hover {
-      background: rgba(80, 0, 220, 0.18);
     }
 
     .hidden {
@@ -1670,33 +1284,6 @@
       text-align: right;
     }
 
-    /* Debug Panel Styles */
-    .debug-tabs .debug-tab {
-      padding: 10px 14px;
-      font-size: 0.85rem;
-      min-width: 0;
-      background: rgba(255,255,255,0.04);
-      color: var(--text-primary);
-      border-color: var(--line-strong);
-    }
-
-    .debug-tabs .debug-tab.active {
-      background: var(--brand-secondary);
-      border-color: var(--brand-secondary);
-      color: #08060d;
-    }
-
-    .debug-tabs {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
-      gap: 8px;
-      margin-bottom: 15px;
-    }
-
-    .debug-panel.hidden {
-      display: none;
-    }
-
     .gpio-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
@@ -1740,1324 +1327,255 @@
   <link rel="stylesheet" href="adapt.css">
   <style id="adapt-page-layer">
     /*
-      Page layer. Layout, depth and control finish for this page only: reflex.css
-      and adapt.css are synced from the shared Reflex stylesheet, so edits there
-      are lost. Colours come from their tokens, so the theme stays theirs.
+      Adapt on the Reflex service-menu layer (web/adapt.css carries it).
+      The body is the .svc shell. These rules hold the page's own layout and
+      map the older component classes, which the script still writes, onto
+      the layer's tokens.
     */
-    :root {
-      --page-max-width: 1200px;
-      --app-bar-height: 68px;
-      --card-radius: 16px;
-      --accent-text: var(--brand-secondary);
-      --range-accent: var(--brand-secondary);
-      --error-text: #ff93b3;
-      --chip-bg: rgba(255, 255, 255, 0.05);
-      --card-depth: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 22px 44px -32px rgba(4, 1, 18, 0.95);
-      --hover-tint: color-mix(in srgb, var(--brand-secondary) 10%, transparent);
-      --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%23E6FF1E' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E");
-    }
-
-    :root[data-reflex-theme="lab"] {
-      --accent-text: var(--brand-primary);
-      --range-accent: var(--brand-primary);
-      --error-text: #a8154a;
-      --chip-bg: rgba(255, 255, 255, 0.42);
-      --card-depth: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 18px 34px -30px rgba(28, 20, 48, 0.7);
-      --hover-tint: color-mix(in srgb, var(--brand-primary) 9%, transparent);
-      --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%235000DC' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E");
-    }
-
-    body {
-      padding: 0;
-      background:
-        radial-gradient(64rem 30rem at 88% -10rem, color-mix(in srgb, var(--brand-primary) 26%, transparent), transparent 72%),
-        radial-gradient(46rem 26rem at -8% 16rem, color-mix(in srgb, var(--brand-primary) 13%, transparent), transparent 72%),
-        var(--page-bg);
-      background-attachment: fixed;
-      line-height: 1.45;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    :focus-visible {
-      outline: 2px solid var(--focus-ring);
-      outline-offset: 2px;
-    }
-
-    a {
-      color: var(--accent-text);
-    }
-
-    code {
-      padding: 1px 5px;
-      border-radius: 5px;
-      background: var(--chip-bg);
-      font-family: var(--font-mono);
-      font-size: 0.86em;
-    }
-
-    .skip-link {
-      position: absolute;
-      left: 12px;
-      top: -48px;
-      z-index: 60;
-      padding: 8px 12px;
-      border-radius: 8px;
-      background: var(--brand-secondary);
-      color: var(--brand-primary-deep);
-      font-weight: 700;
-    }
-
-    .skip-link:focus {
-      top: 12px;
-    }
-
-    /* App bar */
-    .app-bar {
-      position: sticky;
-      top: 0;
-      z-index: 40;
-      border-bottom: 1px solid var(--line);
-      background: color-mix(in srgb, var(--page-bg) 80%, transparent);
-      backdrop-filter: blur(14px) saturate(1.3);
-    }
-
-    [data-reflex-ui] .app-bar {
-      margin: 0;
-      padding: 0;
-      border-width: 0 0 1px;
-      border-radius: 0;
-      text-align: left;
-    }
-
-    .app-bar-inner {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      width: min(var(--page-max-width), 100%);
-      min-height: var(--app-bar-height);
-      margin: 0 auto;
-      padding: 10px 20px;
-    }
-
-    .app-brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 0;
-      margin-right: auto;
-    }
-
-    .app-logo {
-      flex: none;
-      width: 38px;
-      height: 38px;
-      border-radius: 11px;
-      background: var(--brand-primary);
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
-    }
-
-    .app-brand-text {
-      min-width: 0;
-    }
-
-    [data-reflex-ui] .app-bar h1 {
-      margin: 0;
-      overflow: hidden;
-      font-size: 1.08rem;
-      line-height: 1.2;
-      letter-spacing: 0.06em;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .app-bar .subtitle {
-      overflow: hidden;
-      font-size: 0.76rem;
-      letter-spacing: 0.02em;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .app-bar-actions {
-      display: flex;
-      flex: none;
-      align-items: center;
-      gap: 10px;
-    }
-
-    [data-reflex-ui] .rx-theme-toolbar {
+    .adapt-svc {
+      --text: var(--svc-ink);
+      --text-primary: var(--svc-ink);
+      --muted: var(--svc-muted);
+      --text-secondary: var(--svc-muted);
+      --page-bg: var(--svc-screen);
+      --bg-primary: var(--svc-screen);
+      --surface: var(--svc-screen);
+      --surface-strong: var(--svc-panel);
+      --surface-soft: var(--svc-screen);
+      --bg-card: var(--svc-screen);
+      --bg-secondary: var(--svc-panel);
+      --bg-elevated: var(--svc-panel);
+      --chip-bg: transparent;
+      --line: var(--svc-dim);
+      --line-strong: var(--svc-muted);
+      --border: var(--svc-dim);
+      --border-strong: var(--svc-muted);
+      --border-color: var(--svc-dim);
+      --row-line: var(--svc-dim);
+      --interactive-border-hover: var(--svc-hi);
+      --brand-primary: var(--svc-hi);
+      --brand-primary-bright: var(--svc-hi);
+      --brand-primary-deep: var(--svc-on-hi);
+      --brand-secondary: var(--svc-hi);
+      --brand-secondary-soft: var(--svc-ink);
+      --accent: var(--svc-hi);
+      --accent-hover: var(--svc-hi);
+      --accent-contrast: var(--svc-on-hi);
+      --accent-text: var(--svc-ink);
+      --range-accent: var(--svc-hi);
+      --pad-highlight: var(--svc-hi);
+      --pad-highlight-edge: var(--svc-on-hi);
+      --hover-tint: var(--svc-panel);
+      --success: var(--svc-ink);
+      --warning: var(--svc-ink);
+      --warning-bg: transparent;
+      --warning-border: var(--svc-ink);
+      --error: var(--svc-danger);
+      --error-hover: var(--svc-danger);
+      --error-text: var(--svc-danger);
+      --font-display: var(--svc-mono);
+      --font-body: var(--svc-mono);
+      --font-mono: var(--svc-mono);
+      min-height: 100vh;
       margin: 0;
     }
-
-    .connection-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      min-height: 32px;
-      padding: 0 12px;
-      border: 1px solid var(--line-strong);
-      border-radius: 999px;
-      background: var(--chip-bg);
-      color: var(--text-secondary);
-      font-size: 0.8rem;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-
-    .connection-pill::before {
-      content: '';
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--error-text);
-    }
-
-    .connection-pill.is-connected {
-      border-color: color-mix(in srgb, var(--accent-text) 42%, transparent);
-      color: var(--text-primary);
-    }
-
-    .connection-pill.is-connected::before {
-      background: var(--accent-text);
-      box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-text) 55%, transparent);
-      animation: connection-pulse 2.6s ease-out infinite;
-    }
-
-    @keyframes connection-pulse {
-      0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-text) 55%, transparent); }
-      70%, 100% { box-shadow: 0 0 0 7px transparent; }
-    }
-
-    /* Shell */
-    .app-shell {
-      display: grid;
-      grid-template-columns: 176px minmax(0, 1fr);
-      gap: 24px;
-      width: min(var(--page-max-width), 100%);
-      margin: 0 auto;
-      padding: 22px 20px 56px;
-    }
-
-    .app-shell.no-nav {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .app-nav {
-      position: sticky;
-      top: calc(var(--app-bar-height) + 22px);
-      align-self: start;
-      display: grid;
-      gap: 2px;
-    }
-
-    .app-nav a {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-height: 38px;
-      padding: 0 12px;
-      border-radius: 10px;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      font-weight: 600;
-      text-decoration: none;
-    }
-
-    .app-nav a[hidden] {
-      display: none;
-    }
-
-    .app-nav a:hover {
-      background: var(--chip-bg);
-      color: var(--text-primary);
-    }
-
-    .app-nav a[aria-current="true"] {
-      background: var(--hover-tint);
-      box-shadow: inset 2px 0 0 var(--accent-text);
-      color: var(--text-primary);
-    }
-
-    .app-nav svg {
-      flex: none;
-      width: 18px;
-      height: 18px;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 1.8;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .container {
-      max-width: none;
-      min-width: 0;
-      margin: 0;
-    }
-
-    /* Cards */
-    .card {
-      padding: 22px 24px;
-      margin-bottom: 18px;
-      scroll-margin-top: calc(var(--app-bar-height) + 16px);
-      border-radius: var(--card-radius);
-      background: linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 58%, var(--surface)), var(--surface) 96px);
-      box-shadow: var(--card-depth);
-    }
-
-    .card-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 18px;
-      padding-bottom: 0;
-      border-bottom: 0;
-      color: var(--text-primary);
-      font-family: var(--font-display);
-      font-size: 1.08rem;
-      font-weight: 700;
-    }
-
-    .card-title.collapsible {
-      gap: 10px;
-      margin: -6px -8px 12px;
-      padding: 6px 8px;
-      border-radius: 10px;
-    }
-
-    .card-title.collapsible:hover {
-      background: var(--chip-bg);
-      color: var(--text-primary);
-    }
-
-    .card-title::before,
-    .card-title.collapsible::before {
-      content: '';
-      flex: none;
-      width: 20px;
-      height: 20px;
-      background: var(--accent-text);
-      font-size: 0;
-      transform: none;
-      -webkit-mask: var(--card-icon) center / contain no-repeat;
-      mask: var(--card-icon) center / contain no-repeat;
-    }
-
-    .card-title:not(.collapsible):not([data-has-icon])::before {
-      display: none;
-    }
-
-    #device-info-card { --card-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='7' width='18' height='11' rx='3'/%3E%3Cpath d='M8 7V4h8v3M7 12h4M9 10v4'/%3E%3Ccircle cx='16' cy='12.5' r='1.2'/%3E%3C/svg%3E"); }
-    #controller-card { --card-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 8h10a5 5 0 0 1 4.9 6l-.5 2.6a2.2 2.2 0 0 1-3.8 1L15.5 15h-7l-2.1 2.6a2.2 2.2 0 0 1-3.8-1L2.1 14A5 5 0 0 1 7 8Z'/%3E%3Cpath d='M8 10.5v3M6.5 12h3'/%3E%3Ccircle cx='16.5' cy='11' r='.6'/%3E%3Ccircle cx='14.5' cy='13' r='.6'/%3E%3C/svg%3E"); }
-    #memory-card-card { --card-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h9l4 4v14H6z'/%3E%3Cpath d='M9 3v5h6V3M9 21v-7h7v7'/%3E%3C/svg%3E"); }
-    #controller-settings-card { --card-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2'/%3E%3C/svg%3E"); }
-    #commands-card { --card-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 8l4 4-4 4M12 17h7'/%3E%3C/svg%3E"); }
-    #log-card { --card-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 4h14v16H5zM9 9h6M9 13h6M9 17h3'/%3E%3C/svg%3E"); }
-
-    .card-title.collapsible::after {
-      content: '';
-      flex: none;
-      width: 9px;
-      height: 9px;
-      margin-left: auto;
-      margin-right: 6px;
-      border-right: 2px solid currentColor;
-      border-bottom: 2px solid currentColor;
-      opacity: 0.72;
-      transform: rotate(-45deg);
-      transition: transform 0.18s ease;
-    }
-
-    .card-title.collapsible.expanded::after {
-      transform: translateY(-2px) rotate(45deg);
-    }
-
-    .card-title.collapsible:not(.expanded) {
-      margin-bottom: -6px;
-    }
-
-    /* Buttons */
-    .btn {
-      min-height: 40px;
-      padding: 9px 18px;
-      border-radius: 10px;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
-      font-size: 0.94rem;
-      line-height: 1.15;
-    }
-
-    .btn:hover:not(:disabled) {
-      transform: none;
-      filter: brightness(1.06);
-    }
-
-    .btn:active:not(:disabled) {
-      transform: translateY(1px);
-    }
-
-    .btn-secondary {
-      border-color: var(--line-strong);
-      background: var(--chip-bg);
-      box-shadow: none;
-      color: var(--text-primary);
-    }
-
-    [data-reflex-ui] .btn-secondary:hover:not(:disabled) {
-      border-color: var(--interactive-border-hover);
-      background: var(--hover-tint);
-      filter: none;
-    }
-
-    .btn-sm {
-      min-height: 32px;
-      padding: 6px 12px;
-      font-size: var(--button-font-size-sm);
-    }
-
-    #connect-btn {
-      min-width: 148px;
-      white-space: nowrap;
-    }
-
-    body.is-connected #connect-btn {
-      border-color: var(--line-strong);
-      background: var(--chip-bg);
-      box-shadow: none;
-      color: var(--text-primary);
-    }
-
-    /* Form controls */
-    .select,
-    .form-select,
-    .form-input {
-      width: 100%;
-      min-height: 40px;
-      padding: 8px 12px;
-      border: 1px solid var(--line-strong);
-      border-radius: 10px;
-      background-color: var(--surface-soft);
-      color: var(--text-primary);
-      font-family: var(--font-body);
-      font-size: 0.94rem;
-      transition: border-color 0.15s ease, background-color 0.15s ease;
-    }
-
-    .select,
-    .form-select,
-    .info-select {
-      appearance: none;
-      padding-right: 32px;
-      background-image: var(--select-arrow);
-      background-repeat: no-repeat;
-      background-position: right 11px center;
-      cursor: pointer;
-    }
-
-    .select:hover:not(:disabled),
-    .form-select:hover:not(:disabled),
-    .form-input:hover:not(:disabled) {
-      border-color: var(--interactive-border-hover);
-    }
-
-    .select:focus-visible,
-    .form-select:focus-visible,
-    .form-input:focus-visible,
-    .info-select:focus-visible {
-      outline: 2px solid var(--focus-ring);
-      outline-offset: 1px;
-      box-shadow: none;
-    }
-
-    .select:disabled,
-    .form-select:disabled,
-    .info-select:disabled {
-      cursor: not-allowed;
-      opacity: 0.55;
-    }
-
-    .select option,
-    .form-select option {
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-    }
-
-    .form-label {
-      margin-bottom: 6px;
-      color: var(--text-secondary);
-      font-size: 0.84rem;
-      font-weight: 600;
-    }
-
-    input[type="range"] {
-      width: 100%;
-      min-height: 24px;
-      accent-color: var(--range-accent);
-    }
-
-    input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: var(--range-accent);
-    }
-
-    .settings-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr));
-      gap: 14px 16px;
-    }
-
-    .settings-grid .form-group {
-      margin-bottom: 0;
-    }
-
-    .settings-grid > h4 {
-      grid-column: 1 / -1;
-      margin: 8px 0 -4px;
-      color: var(--text-secondary);
-      font-size: 0.76rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .wide-config-grid {
-      grid-template-columns: repeat(auto-fill, minmax(min(210px, 100%), 1fr));
-    }
-
-    /* Device summary */
-    [data-reflex-ui] .device-info-grid {
-      grid-template-columns: repeat(auto-fit, minmax(min(136px, 100%), 1fr));
-      gap: 10px;
-    }
-
-    .info-item {
-      border-color: var(--line-strong);
-      border-radius: 12px;
-      background: var(--surface-soft);
-    }
-
-    .info-label {
-      color: var(--text-secondary);
-      font-size: 0.74rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-    }
-
-    .info-select {
-      border-radius: 6px;
-      background-position: right 2px center;
-    }
-
-    .info-select:hover:not(:disabled) {
-      background-color: var(--hover-tint);
-    }
-
-    .identity-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 12px;
-      color: var(--text-secondary);
-      font-family: var(--font-mono);
-      font-size: 0.76rem;
-    }
-
-    .identity-row #info-management-identity {
-      min-width: 0;
-      color: inherit;
-      font: inherit;
-      letter-spacing: 0;
-      overflow-wrap: anywhere;
-    }
-
-    .firmware-update-panel {
-      margin-top: 12px;
-      padding: 12px 14px;
-      border: 1px solid var(--line-strong);
-      border-radius: 12px;
-      background: var(--surface-soft);
-    }
-
-    .device-info-actions:empty {
-      display: none;
-    }
-
-    /* Before anything is connected the card explains how to start. */
-    .welcome-panel {
-      display: grid;
-      gap: 16px;
-      padding: 8px 0 4px;
-    }
-
-    .welcome-title {
-      color: var(--text-primary);
-      font-family: var(--font-display);
-      font-size: 1.5rem;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-
-    .welcome-lede {
-      max-width: 44rem;
-      color: var(--text-secondary);
-    }
-
-    .welcome-steps {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
-      gap: 10px;
-      margin: 0;
-      padding: 0;
-      list-style: none;
-      counter-reset: welcome-step;
-    }
-
-    .welcome-steps li {
-      display: grid;
-      grid-template-columns: 28px minmax(0, 1fr);
-      gap: 10px;
-      padding: 12px;
-      border: 1px solid var(--line-strong);
-      border-radius: 12px;
-      background: var(--surface-soft);
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      counter-increment: welcome-step;
-    }
-
-    .welcome-steps li::before {
-      content: counter(welcome-step);
-      display: grid;
-      place-items: center;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--brand-primary);
-      color: #fff;
-      font-weight: 700;
-    }
-
-    .welcome-steps strong {
-      display: block;
-      color: var(--text-primary);
-    }
-
-    .welcome-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    body:not(.is-connected) .connected-only,
-    body.is-connected .disconnected-only {
-      display: none !important;
-    }
-
-    /* Tabs */
-    .debug-tabs {
-      display: flex;
-      gap: 2px;
-      padding: 4px;
-      margin-bottom: 16px;
-      overflow-x: auto;
-      border: 1px solid var(--line-strong);
-      border-radius: 12px;
-      background: var(--surface-soft);
-      scrollbar-width: none;
-    }
-
-    .debug-tabs::-webkit-scrollbar {
-      display: none;
-    }
-
-    .debug-tabs .debug-tab {
-      flex: 1 0 auto;
-      min-height: 36px;
-      padding: 6px 14px;
-      border: 0;
-      border-radius: 9px;
-      background: transparent;
-      color: var(--text-secondary);
-      font-size: 0.88rem;
-      white-space: nowrap;
-    }
-
-    .debug-tabs .debug-tab:hover:not(.active):not(:disabled) {
-      background: var(--chip-bg);
-      color: var(--text-primary);
-    }
-
-    [data-reflex-ui] .debug-tabs .debug-tab.active {
-      border-color: transparent;
-    }
-
-    .panel-intro {
-      margin-bottom: 14px;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-    }
-
-    /* Controller stage */
-    .split-controller-container {
-      gap: 16px;
-    }
-
-    .controller-panel {
-      flex: 1 1 320px;
-      width: auto;
-      min-width: 0;
-      padding: 14px;
-      border: 1px solid var(--line-strong);
-      border-radius: 14px;
-      background: var(--surface-soft);
-    }
-
-    .controller-tools-section {
-      margin-top: 18px;
-      padding-top: 0;
-      border-top: 0;
-    }
-
-    .oled-preview-canvas {
-      border-color: var(--line-strong);
-      border-radius: 10px;
-      box-shadow: 0 10px 30px -16px rgba(0, 0, 0, 0.8);
-    }
-
-    .oled-control-btn {
-      border-radius: 10px;
-      background: var(--chip-bg);
-    }
-
-    .oled-control-btn:hover {
-      transform: none;
-      background: var(--hover-tint);
-    }
-
-    /* Log */
-    .log {
-      border-radius: 10px;
-      max-height: 280px;
-      font-size: 0.8rem;
-    }
-
-    .log-entry {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      gap: 10px;
-      border-bottom-color: var(--row-line);
-    }
-
-    .log-error {
-      color: var(--error-text);
-    }
-
-    .log-warning {
-      color: var(--warning);
-    }
-
-    .log-tools {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .log-tools .select {
-      width: auto;
-      min-height: 32px;
-      padding-top: 4px;
-      padding-bottom: 4px;
-      font-size: 0.84rem;
-    }
-
-    #log.only-problems .log-entry:not(.log-error):not(.log-warning) {
-      display: none;
-    }
-
-    /* Toasts */
-    .toast-region {
-      position: fixed;
-      right: 16px;
-      bottom: 16px;
-      z-index: 50;
-      display: grid;
-      gap: 8px;
-      width: min(380px, calc(100vw - 32px));
-      pointer-events: none;
-    }
-
-    .toast {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 10px;
-      align-items: start;
-      padding: 10px 12px;
-      border: 1px solid var(--line-strong);
-      border-left: 3px solid var(--accent-text);
-      border-radius: 10px;
-      background: var(--surface-strong);
-      box-shadow: 0 18px 38px -18px rgba(0, 0, 0, 0.75);
-      color: var(--text-primary);
-      font-size: 0.88rem;
-      overflow-wrap: anywhere;
-      pointer-events: auto;
-      animation: toast-in 0.16s ease-out;
-    }
-
-    .toast-error {
-      border-left-color: var(--error-text);
-    }
-
-    .toast-warning {
-      border-left-color: var(--warning);
-    }
-
-    .toast-close {
-      padding: 0 4px;
-      border: 0;
-      background: none;
-      color: var(--text-secondary);
-      cursor: pointer;
-      font-size: 1rem;
-      line-height: 1.2;
-    }
-
-    @keyframes toast-in {
-      from { opacity: 0; transform: translateY(6px); }
-    }
-
-    /* Status colours that must read on both themes */
-    .status-disconnected,
-    .memory-file-delete-btn {
-      color: var(--error-text);
-    }
-
-    .gpio-pin.low {
-      border-color: var(--error-text);
-    }
-
-    #commands-card .btn-danger,
-    .btn-danger {
-      background: var(--error);
-    }
-
-    /* Memory card tools */
-    .memory-file-card,
-    .memory-decode-panel,
-    .memory-progress-panel,
-    .memory-console-details,
-    .memory-diagnostics-details,
-    .advanced-details {
-      border-color: var(--line-strong);
-      border-radius: 12px;
-    }
-
-    .memory-file-card {
-      transition: border-color 0.15s ease, transform 0.15s ease;
-    }
-
-    .memory-file-card:hover {
-      border-color: var(--interactive-border-hover);
-    }
-
-    .memory-progress-track {
-      border: 0;
-    }
-
-    .memory-card-tab {
-      border-radius: 10px;
-    }
-
-    /* Settings and controller tools */
-    #debug-auth-keys .form-group > div > div {
-      flex-wrap: wrap;
-    }
-
-    #debug-auth-keys input[type="file"] {
-      min-width: 0;
-      max-width: 100%;
-    }
-
-    .device-notice {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    .settings-footer,
-    .tool-actions {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-      margin-top: 15px;
-    }
-
-    .tool-actions .form-label {
-      margin: 0;
-    }
-
-    .tool-actions .select {
-      width: auto;
-      max-width: 100%;
-    }
-
-    .settings-save-state {
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-    }
-
-    .settings-save-state.is-failed {
-      color: var(--error-text);
-    }
-
-    .settings-footer [disabled],
-    #settings-grid [disabled] {
-      cursor: not-allowed;
-    }
-
-    .live-view-bar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
-    .live-view-bar .form-label {
-      margin: 0;
-    }
-
-    .live-view-bar .select {
-      width: auto;
-      max-width: 100%;
-    }
-
-    #live-view-status {
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-    }
-
-    .live-view-bar.single-player label,
-    .live-view-bar.single-player select {
-      display: none;
-    }
-
-    .tool-result:empty {
-      display: none;
-    }
-
-    .tool-heading {
-      margin: 16px 0 8px;
-    }
-
-    .tool-row {
-      padding: 10px;
-      border: 1px solid var(--line-strong);
-      border-radius: 10px;
-      background: var(--surface-soft);
-      min-width: 0;
-    }
-
-    .tool-row .form-label {
-      display: block;
-      margin-bottom: 8px;
-    }
-
-    .tool-row .select {
-      width: 100%;
-      min-width: 0;
-    }
-
-    .tool-row-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 8px;
-    }
-
-    .tool-row.is-listening {
-      border-color: var(--accent-text);
-    }
-
-    .pad-test-counts {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(min(120px, 100%), 1fr));
-      gap: 6px;
-    }
-
-    .pad-test-count {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 6px 10px;
-      border-radius: 8px;
-      background: var(--chip-bg);
-      font-size: 0.85rem;
-    }
-
-    .pad-test-history {
-      margin: 0 0 12px;
-      padding: 0;
-      list-style: none;
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-    }
-
-    .pad-test-history li {
-      overflow-wrap: anywhere;
-      padding: 2px 0;
-    }
-
-    .backup-preview {
-      margin-top: 14px;
-      padding: 12px 14px;
-      border: 1px solid var(--line-strong);
-      border-radius: 12px;
-      background: var(--surface-soft);
-    }
-
-    .backup-preview ul {
-      margin: 0 0 10px 18px;
-      font-size: 0.88rem;
-    }
-
-    .wide-config-grid {
-      grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
-    }
-
-
-
-    /* Serial, OLED and Remote */
-    .oled-serial-bar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px 12px;
-      width: min(100%, 640px);
-      margin: 10px auto 0;
-    }
-
-    .oled-serial-state {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px 10px;
-      min-width: 0;
-    }
-
-    .oled-serial-pill {
-      padding: 3px 10px;
-      border: 1px solid var(--line-strong);
-      border-radius: 999px;
-      background: var(--chip-bg);
-      color: var(--text-secondary);
-      font-size: 0.78rem;
-      font-weight: 700;
-    }
-
-    .oled-serial-pill.is-connected {
-      color: var(--accent-text);
-    }
-
-    .oled-serial-running {
-      color: var(--text-secondary);
-      font-size: 0.78rem;
-      overflow-wrap: anywhere;
-    }
-
-    .oled-preview-canvas:focus-visible,
-    .oled-control-btn:focus-visible {
-      outline: 2px solid var(--accent-text);
-      outline-offset: 2px;
-    }
-
-    .oled-control-btn.is-pressed {
-      border-color: var(--accent-text);
-      background: var(--hover-tint);
-      color: var(--accent-text);
-    }
-
-    .oled-control-btn.is-failed,
-    .oled-menu-row .btn.is-failed {
-      border-color: var(--error-text);
-      color: var(--error-text);
-    }
-
-    .oled-menu-row .btn.is-pressed {
-      border-color: var(--accent-text);
-      color: var(--accent-text);
-    }
-
-    .oled-menu-row {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .serial-setting-note {
-      grid-column: 1 / -1;
-      margin-bottom: 0;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-    }
+    /* Square everything inside the screen, as the layer does. */
+    .adapt-svc :is(.svc-screen, .toast-region) *:not(svg, svg *) { border-radius: 0 !important; }
+    .adapt-svc .hidden { display: none; }
+    body.adapt-svc:not(.is-connected) .connected-only,
+    body.adapt-svc.is-connected .disconnected-only { display: none; }
+    .adapt-page-group { display: contents; }
+    .adapt-pages { display: grid; min-width: 0; align-content: start; }
+    .adapt-svc :where(h4) { margin: 0; color: var(--svc-muted); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; }
+    .adapt-svc :where(label) { color: inherit; }
+    .adapt-svc :where(ul, ol) { margin: 0; padding-left: 20px; }
+    .adapt-svc :where(details > summary) { cursor: pointer; }
+
+    .skip-link { position: absolute; left: 16px; top: -60px; z-index: 60; padding: 8px 12px; background: var(--svc-hi); color: var(--svc-on-hi); }
+    .skip-link:focus { top: 8px; }
+    .adapt-svc .connection-pill { color: var(--svc-muted); }
+    .adapt-svc .connection-pill::before { content: "\25CB "; }
+    .adapt-svc .connection-pill.is-connected { color: var(--svc-ink); }
+    .adapt-svc .connection-pill.is-connected::before { content: "\25CF "; }
+    /* A count after a menu item, such as active remaps. */
+    .adapt-svc .svc-menu [role="tab"][data-count]:not([data-count=""]):not([data-count="0"])::after {
+      content: attr(data-count); margin-left: auto; padding-left: var(--svc-s2); color: var(--svc-muted); font-weight: 400; letter-spacing: 0;
+    }
+    .adapt-svc .svc-menu [role="tab"][aria-selected="true"][data-count]::after { color: var(--svc-on-hi); }
+
+    /* The older button classes: plain .btn is the main action. */
+    .adapt-svc .btn:not(.btn-secondary):not(.btn-danger) { border-color: var(--svc-hi); background: var(--svc-hi); color: var(--svc-on-hi); text-shadow: none; }
+    .adapt-svc .btn:not(.btn-secondary):not(.btn-danger):disabled { border-color: var(--svc-muted); background: transparent; color: var(--svc-muted); }
+    .adapt-svc .btn-danger { border-color: var(--svc-danger); background: var(--svc-danger); color: var(--svc-on-danger); text-shadow: none; }
+    .adapt-svc .btn-danger:disabled { border-color: var(--svc-danger); background: transparent; color: var(--svc-danger); }
+    .adapt-svc :is(.btn:not(.btn-secondary), .btn-danger):hover:not(:disabled) { outline: 2px solid var(--svc-hi); outline-offset: 2px; }
+    .adapt-svc :is(.btn-sm, .btn-xs) { min-height: 28px; padding: 0 8px; border-width: 1px; font-size: 11px; }
+    .adapt-svc a.btn { text-decoration: none; }
+    /* The theme picker sits in the header row with the buttons, so it takes
+       their width and lettering, not the layer's full-width select. */
+    .adapt-svc .adapt-theme { width: auto; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+    body.adapt-svc.is-connected #connect-btn { border-color: var(--svc-muted); background: transparent; color: var(--svc-ink); text-shadow: inherit; }
+    .adapt-svc :where(input[type="file"]) { max-width: 100%; color: var(--svc-muted); font: 13px var(--svc-mono); }
+    .adapt-svc input[type="file"]::file-selector-button {
+      min-height: 32px; margin-right: 10px; padding: 0 10px; border: 2px solid var(--svc-muted); border-radius: 0;
+      background: transparent; color: var(--svc-ink); font: 700 12px var(--svc-mono); letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+    }
+    .adapt-svc :where(input[type="checkbox"]) { width: 18px; height: 18px; margin: 0; accent-color: var(--svc-hi); }
+    .adapt-svc :where(textarea) {
+      width: 100%; padding: var(--svc-s3); border: 2px solid var(--svc-dim); background: var(--svc-screen); color: var(--svc-ink); font: 13px/1.5 var(--svc-mono);
+    }
+
+    /* Settings: the layer's field grid, label left, control right. */
+    .adapt-svc .settings-grid { display: grid; gap: var(--svc-s3); }
+    #settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--svc-s3) var(--svc-s5); align-items: start; }
+    .adapt-svc .form-group { display: grid; grid-template-columns: minmax(130px, 190px) minmax(0, 1fr); align-items: center; gap: 6px var(--svc-s4); min-width: 0; margin: 0; }
+    .adapt-svc .form-group > .form-label,
+    .adapt-svc .form-group > label:first-child,
+    .adapt-svc .form-group > span:first-child { grid-column: 1; margin: 0; color: var(--svc-muted); font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
+    .adapt-svc .form-group > :not(.form-label):not(label:first-child):not(span:first-child) { grid-column: 2; min-width: 0; }
+    .adapt-svc .form-group > div:not(.svc-rangeline):not([role="group"]):not(.warning-box) { color: var(--svc-muted); font-size: 12px; line-height: 1.45; }
+    .adapt-svc .form-group :where(select, input:not([type="checkbox"]):not([type="range"]):not([type="file"]):not([type="color"])) { width: 100%; }
+    .adapt-svc .form-group input[type="color"] { width: 100%; height: var(--svc-ctl); padding: 2px; border: 2px solid var(--svc-muted); background: var(--svc-screen); }
+    #setting-sound-events, #setting-sound-events > div { grid-column: 1 / -1 !important; }
+    #settings-sound-events label { display: flex; align-items: center; gap: var(--svc-s2); font-size: 13px; }
+    .adapt-svc .adapt-fieldset:not(:has(.form-group:not(.device-setting-hidden):not(.hidden):not([style*="display: none"])))
+      { display: none; }
+    .adapt-svc .settings-footer, .adapt-svc .tool-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--svc-s2); }
+    #settings-players { margin-left: auto; color: var(--svc-muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .adapt-svc .settings-save-state { color: var(--svc-muted); font-size: 12px; }
+    .adapt-svc .settings-save-state.is-failed { color: var(--svc-danger); }
+    .adapt-svc :is(#settings-grid, .settings-footer) [disabled] { cursor: not-allowed; }
+    .adapt-svc .serial-setting-note { grid-column: 1 / -1; color: var(--svc-muted); font-size: 12px; }
+    .adapt-svc .wide-config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: var(--svc-s3) var(--svc-s5); }
+    .adapt-svc .btn-group { display: flex; flex-wrap: wrap; align-items: center; gap: var(--svc-s2); }
+    .adapt-svc .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: var(--svc-s3); }
+    .adapt-svc .info-item { display: grid; gap: 4px; min-width: 0; }
+    .adapt-svc .info-label { color: var(--svc-muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .adapt-svc .info-value { font-weight: 700; overflow-wrap: anywhere; }
+    .adapt-svc .panel-intro { color: var(--svc-muted); font-size: 13px; }
+    .adapt-svc .tool-result:empty { display: none; }
+    .adapt-svc .tool-heading { color: var(--svc-muted); }
+    .adapt-svc .warning-box { padding: var(--svc-s3) var(--svc-s4); border: 2px solid var(--svc-ink); color: var(--svc-ink); font-size: 13px; }
+    .adapt-svc .device-notice { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--svc-s2) var(--svc-s3); }
+    .adapt-svc .adapt-mode-form { padding-bottom: var(--svc-s4); border-bottom: 2px dotted var(--svc-dim); }
+
+    /* Tables of rows: Remap, Turbo, 2P Merge. */
+    .adapt-svc .svc-table td { vertical-align: middle; }
+    .adapt-svc .svc-table .svc-name label { color: inherit; }
+    .adapt-svc .svc-table select { min-width: 18ch; }
+    .adapt-svc .svc-table .svc-num { white-space: nowrap; }
+    .adapt-svc .svc-table tr.is-listening td { background: var(--svc-hi); color: var(--svc-on-hi); text-shadow: none; }
+    .adapt-svc .svc-table tr.is-listening :is(.svc-muted, .svc-name) { color: var(--svc-on-hi); }
+    .adapt-svc .svc-table td[colspan] { padding: var(--svc-s3); white-space: normal; }
+
+    /* Status and firmware update. */
+    .adapt-svc .welcome-panel { display: grid; gap: var(--svc-s3); }
+    .adapt-svc .welcome-steps li strong { color: var(--svc-ink); }
+    .adapt-svc .firmware-update-panel { display: grid; gap: var(--svc-s3); }
+    .adapt-svc .firmware-update-status { color: var(--svc-ink); font-size: 13px; }
+    .adapt-svc .firmware-update-help { color: var(--svc-muted); font-size: 12px; line-height: 1.45; white-space: pre-line; }
+    .adapt-svc .firmware-write-confirm { align-items: flex-start; }
+    .adapt-svc .firmware-release-notes { max-height: 240px; overflow: auto; padding: var(--svc-s3); border: 2px dashed var(--svc-dim); color: var(--svc-muted); font-size: 12px; white-space: pre-wrap; }
+    .adapt-svc .firmware-steps li[data-state="done"] { border-style: solid; border-color: var(--svc-muted); color: var(--svc-ink); }
+    .adapt-svc .firmware-steps li[data-state="done"]::before { content: "\2713\00A0"; }
+    .adapt-svc .firmware-steps li[data-state="active"] { border-style: solid; border-color: var(--svc-hi); background: var(--svc-hi); color: var(--svc-on-hi); text-shadow: none; }
+    .adapt-svc .firmware-steps li[data-state="active"]::before { color: var(--svc-on-hi); }
+    .adapt-notices { display: grid; gap: var(--svc-s2); margin-bottom: var(--svc-s4); }
+    .adapt-notices:has(> #restart-prompt.hidden):has(> #info-mode-status:empty) { display: none; }
+    #info-mode-status:empty { display: none; }
+
+    /* Live view: the adapter's screen and the remote. */
+    .adapt-svc .controller-panel-title { margin: 0; text-align: left; }
+    .adapt-svc .controller-panel-title span { color: var(--svc-muted); }
+    .adapt-svc .live-view-bar.single-player :is(label, select) { display: none; }
+    .adapt-svc .oled-preview-canvas { border: 2px solid var(--svc-dim); }
+    .adapt-svc .oled-preview-canvas:focus-visible { outline: 2px solid var(--svc-focus); outline-offset: 2px; }
+    .adapt-svc .oled-serial-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--svc-s2) var(--svc-s3); }
+    .adapt-svc .oled-serial-state { display: flex; flex-wrap: wrap; align-items: center; gap: 6px var(--svc-s3); min-width: 0; }
+    .adapt-svc .oled-serial-pill { color: var(--svc-muted); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .adapt-svc .oled-serial-pill::before { content: "\25CB "; }
+    .adapt-svc .oled-serial-pill.is-connected { color: var(--svc-ink); }
+    .adapt-svc .oled-serial-pill.is-connected::before { content: "\25CF "; }
+    .adapt-svc .oled-serial-running { color: var(--svc-muted); font-size: 12px; overflow-wrap: anywhere; }
+    .adapt-svc .oled-remote-section { display: grid; gap: var(--svc-s3); }
+    .adapt-svc .oled-control-btn.is-pressed,
+    .adapt-svc .oled-menu-row .btn.is-pressed { border-color: var(--svc-hi); background: var(--svc-hi); color: var(--svc-on-hi); text-shadow: none; }
+    .adapt-svc :is(.oled-control-btn, .oled-menu-row .btn).is-failed { border-color: var(--svc-danger); color: var(--svc-danger); }
+    .adapt-svc .bonus-btn { border: 2px solid var(--svc-dim); background: transparent; color: var(--svc-muted); }
+    .adapt-svc .bonus-btn.pressed { border-color: var(--svc-hi); background: var(--svc-hi); color: var(--svc-on-hi); }
+    .adapt-svc .analog-value { border: 2px solid var(--svc-dim); background: transparent; }
+    .adapt-svc .analog-label { color: var(--svc-muted); }
+
+    /* Pad Test */
+    .adapt-svc .pad-test-counts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(130px, 100%), 1fr)); gap: 4px var(--svc-s4); }
+    .adapt-svc .pad-test-count { display: flex; justify-content: space-between; gap: var(--svc-s2); border-bottom: 1px dotted var(--svc-dim); font-size: 13px; }
+    .adapt-svc .pad-test-history { max-height: 320px; overflow: auto; margin: 0; padding: 0; list-style: none; color: var(--svc-ink); font-size: 12px; }
+    .adapt-svc .pad-test-history li { padding: 2px 0; overflow-wrap: anywhere; }
 
     /* Memory cards */
-    .memory-visually-hidden {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip-path: inset(50%);
-      white-space: nowrap;
+    .adapt-svc .memory-card-content { display: grid; gap: var(--svc-s3); min-width: 0; }
+    .adapt-svc .memory-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .adapt-svc .memory-write-note { padding: 6px 10px; border-left: 3px solid var(--svc-ink); color: var(--svc-ink); font-size: 12px; }
+    .adapt-svc .memory-card-message { color: var(--svc-muted); font-size: 13px; overflow-wrap: anywhere; }
+    .adapt-svc .memory-card-message:empty { display: none; }
+    .adapt-svc .memory-card-message.is-error { color: var(--svc-danger); font-weight: 700; }
+    #memory-card-card.is-card-busy :is(.memory-card-tab, .memory-file-card) { opacity: 0.6; }
+    .adapt-svc :is(.memory-file-card, .memory-decode-panel, .memory-progress-panel, .memory-console-details, .memory-diagnostics-details, .advanced-details) { border: 2px solid var(--svc-dim); background: transparent; }
+    .adapt-svc .memory-file-card:hover { border-color: var(--svc-hi); }
+    .adapt-svc .memory-card-tab { border: 2px solid var(--svc-muted); background: transparent; color: var(--svc-ink); }
+    .adapt-svc .memory-card-tab.is-active { border-color: var(--svc-hi); background: var(--svc-hi); color: var(--svc-on-hi); text-shadow: none; }
+    .adapt-svc .memory-tool-pill { border: 1px dashed var(--svc-dim); background: transparent; color: var(--svc-muted); }
+    .adapt-svc .memory-view-btn.active { border-color: var(--svc-hi); background: var(--svc-hi); color: var(--svc-on-hi); }
+    .adapt-svc :is(.memory-progress-track, .adapt-progress-track) { height: 12px; border: 2px solid var(--svc-muted); background-color: var(--svc-screen); background-image: repeating-linear-gradient(90deg, var(--svc-dim) 0 2px, transparent 2px 6px); }
+    .adapt-svc :is(.memory-progress-bar, .adapt-progress-bar) { height: 100%; background: var(--svc-ink); }
+    .adapt-svc .memory-file-table tbody tr:hover { background: var(--svc-panel); }
+    .adapt-svc .memory-file-table th { color: var(--svc-muted); }
+    .adapt-svc .memory-upload-thumb { display: flex; align-items: center; justify-content: center; padding: 0; color: var(--svc-ink); cursor: pointer; }
+    .adapt-svc .memory-file-warning { padding: 0 6px; border: 1px solid var(--svc-danger); color: var(--svc-danger); font-size: 11px; font-weight: 700; }
+    .adapt-svc :is(.memory-file-delete-btn, .gpio-pin.low) { border-color: var(--svc-danger); color: var(--svc-danger); }
+    .adapt-svc .memory-gb-cart-hero { border: 2px solid var(--svc-muted); background: transparent; }
+    .adapt-svc .memory-console-log { min-height: 140px; }
+
+    /* Backup, keys, log */
+    .adapt-svc .backup-preview { display: grid; gap: var(--svc-s2); padding: var(--svc-s3) var(--svc-s4); border: 2px solid var(--svc-ink); }
+    .adapt-svc .backup-preview ul { font-size: 13px; }
+    .adapt-svc .log { max-height: 460px; overflow: auto; font-size: 12px; }
+    .adapt-svc .log-entry { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--svc-s3); padding: 2px 0; border-bottom: 1px dotted var(--svc-dim); }
+    .adapt-svc .log-entry:last-child { border-bottom: 0; }
+    .adapt-svc .log-time { color: var(--svc-muted); }
+    .adapt-svc :is(.log-error, .log-warning) { color: var(--svc-danger); }
+    .adapt-svc .log-success { color: var(--svc-ink); }
+    #log.only-problems .log-entry:not(.log-error):not(.log-warning) { display: none; }
+    #commands-card:not(.hidden) { display: grid; gap: var(--svc-s3); }
+
+    /* Toasts */
+    .toast-region { position: fixed; right: 16px; bottom: 16px; z-index: 50; display: grid; gap: 8px; width: min(380px, calc(100vw - 32px)); pointer-events: none; }
+    .toast {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 12px;
+      border: 2px solid var(--svc-muted); border-left: 6px solid var(--svc-ink); background: var(--svc-screen); box-shadow: 0 18px 38px -18px rgba(0, 0, 0, 0.75);
+      color: var(--svc-ink); font: 13px/1.45 var(--svc-mono); overflow-wrap: anywhere; pointer-events: auto; animation: toast-in 0.18s ease-out;
     }
+    .toast-error, .toast-warning { border-left-color: var(--svc-danger); }
+    .adapt-svc .toast-close { min-height: 0; padding: 0 4px; border: 0; background: none; color: var(--svc-muted); font-size: 16px; line-height: 1.2; }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(6px); } }
 
-    .memory-write-note {
-      margin: 0 0 10px;
-      padding: 7px 10px;
-      border-left: 3px solid var(--warning);
-      border-radius: 6px;
-      background: var(--chip-bg);
-      color: var(--text-primary);
-      font-size: 0.84rem;
-      line-height: 1.35;
+    @media (max-width: 1100px) {
+      #settings-grid { grid-template-columns: minmax(0, 1fr); }
     }
-
-    .memory-card-message {
-      margin-bottom: 10px;
-      color: var(--text-secondary);
-      font-size: 0.86rem;
-      line-height: 1.35;
-      overflow-wrap: anywhere;
+    @media (max-width: 560px) {
+      .adapt-svc .svc-top .svc-row button { min-height: 32px; padding: 0 10px; font-size: 12px; }
+      .adapt-svc .svc-top .adapt-theme { height: 32px; font-size: 12px; }
+      .adapt-svc .form-group { grid-template-columns: minmax(0, 1fr); }
+      .adapt-svc .form-group > * { grid-column: 1 !important; }
+      .adapt-svc .svc-table .svc-name { min-width: 0; }
+      .adapt-svc .svc-table select { min-width: 11ch; max-width: 16ch; }
+      .adapt-svc .svc-table .svc-num { white-space: normal; }
+      .adapt-svc .svc-table .svc-num .btn { display: flex; width: 100%; margin: 2px 0; }
+      .adapt-svc .memory-card-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .toast-region { right: 12px; bottom: 12px; width: calc(100vw - 24px); }
     }
-
-    .memory-card-message:empty {
-      display: none;
-    }
-
-    .memory-card-message.is-error {
-      color: var(--error-text);
-      font-weight: 600;
-    }
-
-    #memory-card-card.is-card-busy .memory-card-tab,
-    #memory-card-card.is-card-busy .memory-file-card {
-      opacity: 0.6;
-    }
-
-    .memory-file-card {
-      min-height: 0;
-      background: var(--surface-soft);
-    }
-
-    .memory-file-table tbody tr:hover {
-      background: var(--chip-bg);
-    }
-
-    .memory-upload-thumb {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      color: var(--accent-text);
-      cursor: pointer;
-    }
-
-    .memory-file-card:hover {
-      transform: translateY(-1px);
-    }
-
-    .memory-file-warning {
-      padding: 2px 8px;
-      border: 1px solid var(--error-text);
-      border-radius: 999px;
-      color: var(--error-text);
-      font-size: 0.74rem;
-      font-weight: 700;
-    }
-
-    @media (max-width: 600px) {
-      .memory-card-tabs {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    .memory-file-icon-button:focus-visible,
-    .memory-card-tab:focus-visible,
-    .memory-upload-select-btn:focus-visible {
-      outline: 2px solid var(--accent-text);
-      outline-offset: 2px;
-    }
-
-
-    /* Firmware update */
-    .firmware-steps {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin: 12px 0 0;
-      padding: 0;
-      list-style: none;
-      counter-reset: firmware-step;
-    }
-
-    .firmware-steps li {
-      counter-increment: firmware-step;
-      padding: 3px 10px;
-      border: 1px solid var(--line-strong);
-      border-radius: 999px;
-      background: var(--chip-bg);
-      color: var(--text-secondary);
-      font-size: 0.8rem;
-      line-height: 1.35;
-    }
-
-    .firmware-steps li::before {
-      content: counter(firmware-step) ". ";
-    }
-
-    .firmware-steps li[data-state="done"]::before {
-      content: "\2713  ";
-    }
-
-    .firmware-steps li[data-state="active"] {
-      border-color: var(--accent-text);
-      color: var(--accent-text);
-      font-weight: 600;
-    }
-
-    .firmware-update-help {
-      margin-top: 10px;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-      line-height: 1.4;
-      white-space: pre-line;
-    }
-
-    .firmware-write-confirm {
-      display: flex;
-      gap: 8px;
-      align-items: flex-start;
-      margin-top: 10px;
-      color: var(--text-primary);
-      font-size: 0.85rem;
-      line-height: 1.4;
-    }
-
-    .firmware-update-links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px 14px;
-      align-items: center;
-      margin-top: 10px;
-      font-size: 0.85rem;
-    }
-
-    .firmware-update-links a {
-      color: var(--accent-text);
-    }
-
-    a.firmware-download-link {
-      display: inline-flex;
-      align-items: center;
-      text-decoration: none;
-    }
-
-    @media (max-width: 980px) {
-      .app-shell {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 12px;
-        padding-top: 12px;
-      }
-
-      .app-nav {
-        position: static;
-        display: flex;
-        gap: 4px;
-        overflow-x: auto;
-        scrollbar-width: none;
-      }
-
-      .app-nav a {
-        flex: none;
-        min-height: 34px;
-        font-size: 0.84rem;
-      }
-
-      .app-nav a[aria-current="true"] {
-        box-shadow: inset 0 -2px 0 var(--accent-text);
-      }
-    }
-
-    @media (max-width: 720px) {
-      :root {
-        --app-bar-height: 58px;
-      }
-
-      .app-bar-inner {
-        flex-wrap: wrap;
-        gap: 8px 10px;
-        padding: 8px 12px;
-      }
-
-      .app-bar .subtitle,
-      .connection-pill {
-        display: none;
-      }
-
-      .app-bar-actions {
-        width: 100%;
-        justify-content: space-between;
-      }
-
-      .app-shell {
-        padding: 10px 12px 40px;
-      }
-
-      .app-logo {
-        width: 30px;
-        height: 30px;
-        border-radius: 9px;
-      }
-
-      .card {
-        padding: 16px;
-      }
-
-      .app-bar {
-        position: static;
-      }
-
-      .firmware-update-row {
-        grid-template-columns: minmax(0, 1fr);
-      }
-
-      .firmware-update-actions {
-        justify-content: flex-start;
-      }
-
-      .toast-region {
-        right: 12px;
-        bottom: 12px;
-        width: calc(100vw - 24px);
-      }
-    }
-
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
+      .adapt-svc *, .adapt-svc *::before, .adapt-svc *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
     }
   </style>
   <!-- other-products:begin -->
@@ -3150,262 +1668,248 @@
 </script>
 <!-- END GENERATED MANAGEMENT IDENTITY -->
 </head>
-<body data-reflex-ui data-reflex-theme-scope>
+<body class="svc adapt-svc" data-reflex-ui data-reflex-theme-scope>
   <a class="skip-link" href="#main">Skip to settings</a>
-  <header class="app-bar">
-    <div class="app-bar-inner">
-      <div class="app-brand">
-        <svg class="app-logo" viewBox="0 0 38 38" aria-hidden="true"><path fill="#E6FF1E" d="M11 9h10.5c4.6 0 7.5 2.6 7.5 6.5 0 2.8-1.5 4.9-4.1 5.9L29.5 29h-5.8l-4.1-7H16v7h-5zm5 4.2v4.7h5c1.8 0 2.9-.9 2.9-2.4s-1.1-2.3-2.9-2.3z"/></svg>
-        <div class="app-brand-text">
-          <h1 id="adapt-product-title">Reflex Adapt</h1>
-          <p class="subtitle">Settings, remaps and memory cards</p>
-        </div>
+  <div class="svc-frame"><div class="svc-screen">
+  <div>
+    <header class="svc-top">
+      <div class="svc-wordmark"><h1>Adapt</h1><span>Service menu</span></div>
+      <div class="svc-row">
+        <select id="theme-colour" class="adapt-theme" aria-label="Theme colour">
+          <option value="midnight">Theme: Midnight</option>
+          <option value="amber">Theme: Amber</option>
+          <option value="reflex">Theme: Reflex</option>
+          <option value="green">Theme: Green</option>
+          <option value="white">Theme: White</option>
+        </select>
+        <button type="button" id="theme-light-btn" aria-pressed="false">Light</button>
+        <button type="button" class="connected-only" data-open-tab="status">Update Firmware</button>
+        <button id="connect-btn" class="btn" type="button">Connect Device</button>
       </div>
-      <div class="app-bar-actions">
-        <span id="connection-pill" class="connection-pill" role="status">Not connected</span>
-        <div class="rx-theme-toolbar">
-          <div class="rx-theme-toggle" role="group" aria-label="Color theme">
-            <button type="button" data-reflex-theme-option="dark" aria-pressed="true">Dark</button>
-            <button type="button" data-reflex-theme-option="lab" aria-pressed="false">Light</button>
-          </div>
-        </div>
-        <button id="connect-btn" class="btn">Connect Device</button>
-      </div>
+    </header>
+    <div class="svc-ident">
+      <strong id="adapt-product-title">Reflex Adapt</strong>
+      <span id="connection-pill" class="connection-pill" role="status">Not connected</span>
+      <span class="connected-only">Firmware: <span id="ident-firmware">-</span></span>
+      <span class="connected-only">Input: <span id="ident-input">-</span></span>
+      <span class="connected-only">Output: <span id="ident-output">-</span></span>
+      <span class="connected-only">Controller: <span id="ident-controller">-</span></span>
     </div>
-  </header>
+  </div>
 
-  <div class="app-shell">
-    <nav class="app-nav" aria-label="Page sections">
-        <a href="#device-info-card" data-nav-target="device-info-card"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="11" rx="3"/><path d="M8 7V4h8v3M7 12h4M9 10v4"/><circle cx="16" cy="12.5" r="1.2"/></svg><span>Device</span></a>
-        <a href="#controller-card" data-nav-target="controller-card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8h10a5 5 0 0 1 4.9 6l-.5 2.6a2.2 2.2 0 0 1-3.8 1L15.5 15h-7l-2.1 2.6a2.2 2.2 0 0 1-3.8-1L2.1 14A5 5 0 0 1 7 8Z"/><path d="M8 10.5v3M6.5 12h3"/><circle cx="16.5" cy="11" r=".6"/><circle cx="14.5" cy="13" r=".6"/></svg><span>Controller</span></a>
-        <a href="#memory-card-card" data-nav-target="memory-card-card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M9 3v5h6V3M9 21v-7h7v7"/></svg><span>Memory Cards</span></a>
-        <a href="#controller-settings-card" data-nav-target="controller-settings-card"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg><span>System</span></a>
-        <a href="#commands-card" data-nav-target="commands-card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8l4 4-4 4M12 17h7"/></svg><span>Commands</span></a>
-        <a href="#log-card" data-nav-target="log-card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM9 9h6M9 13h6M9 17h3"/></svg><span>Activity Log</span></a>
+  <div class="svc-body">
+    <nav id="adapt-menu" class="svc-menu svc-menu-tight" role="tablist" aria-orientation="vertical" aria-label="Adapt menu">
+      <span class="svc-menu-group">Device</span>
+      <button type="button" role="tab" class="debug-tab active" data-tab="status" data-page="device-info-card">Status</button>
+      <span class="svc-menu-group">Controller</span>
+      <button type="button" role="tab" class="debug-tab" data-tab="live" data-page="controller-test-card">Live View</button>
+      <button type="button" role="tab" id="mode-settings-tab" class="debug-tab" data-tab="mode-settings" title="Settings for the active input mode">Mode Settings</button>
+      <button type="button" role="tab" class="debug-tab" data-tab="remap" title="Button remapping">Remap</button>
+      <button type="button" role="tab" class="debug-tab" data-tab="turbo" title="Auto-fire button settings">Turbo</button>
+      <button type="button" role="tab" class="debug-tab" data-tab="rumble" title="Motor vibration test">Rumble</button>
+      <button type="button" role="tab" class="debug-tab" data-tab="dual-merge" title="Choose whether each merged output button comes from player 1 or player 2">2P Merge</button>
+      <button type="button" role="tab" class="debug-tab hidden" data-tab="pad-test" title="Poll rate, press counts and recent input">Pad Test</button>
+      <button type="button" role="tab" class="debug-tab hidden" data-tab="overlay" title="Configure the PC input overlay profile">Overlay</button>
+      <button type="button" role="tab" class="debug-tab hidden" data-tab="gpio" title="GPIO pin states">GPIO</button>
+      <span class="svc-menu-group">Storage</span>
+      <button type="button" role="tab" class="debug-tab" data-tab="memory-cards" data-page="memory-card-card">Memory Cards</button>
+      <button type="button" role="tab" class="debug-tab" data-tab="backup" title="Save settings to a file or load them back">Backup</button>
+      <span class="svc-menu-group">System</span>
+      <button type="button" role="tab" class="debug-tab" data-tab="system-settings" title="Global device settings">System Settings</button>
+      <button type="button" role="tab" class="debug-tab" data-tab="auth-keys" title="Authentication key storage">Authentication Keys</button>
+      <!-- other-products:begin -->
+      <button type="button" role="tab" class="debug-tab modern2usb-management-tab hidden" data-tab="modern2usb-management" title="Bluetooth, feedback, RGB, and unknown-controller profiles">Modern2USB</button>
+      <!-- other-products:end -->
+      <button type="button" role="tab" class="debug-tab" data-tab="log" data-page="log-card">Commands &amp; Log</button>
     </nav>
-    <main id="main" class="container">
-    <!-- Browser Support Warning -->
-    <div id="browser-warning" class="card hidden" style="border-color: var(--warning);">
-      <h2 class="card-title" style="color: var(--warning);">Browser Not Supported</h2>
-      <p>WebHID is only supported in Chrome, Edge, and Opera. Please use one of these browsers on a desktop computer.</p>
-    </div>
 
-    <!-- Device Info Card -->
-    <div id="device-info-card" class="card">
-      <h2 class="card-title" data-has-icon>Device</h2>
-      <div class="welcome-panel disconnected-only">
-        <div>
-          <p class="welcome-title">Connect your adapter</p>
-          <p class="welcome-lede">Change settings, remap buttons, back up memory cards and update firmware from this page. Nothing is installed, and your settings stay on the adapter.</p>
-        </div>
-        <ol class="welcome-steps">
-          <li><div><strong>Plug it in</strong>Use a USB data cable.</div></li>
-          <li><div><strong>Set the output</strong>In the Quick Menu, choose Auto or DInput/MiSTer.</div></li>
-          <li><div><strong>Connect</strong>Click Connect Device and pick the adapter.</div></li>
-        </ol>
-      </div>
-      <div class="info-grid device-info-grid connected-only">
-        <div class="info-item">
-          <div class="info-label">Firmware Version</div>
-          <div class="info-value" id="info-firmware">-</div>
-        </div>
-        <div class="info-item">
-          <label class="info-label" for="info-input-select">Input Mode</label>
-          <select id="info-input-select" class="select info-select input-mode-select">
-            <!-- Populated by JavaScript -->
-          </select>
-        </div>
-        <div class="info-item">
-          <label class="info-label" for="info-output-select">Output</label>
-          <select id="info-output-select" class="select info-select output-mode-select">
-            <!-- Populated by JavaScript -->
-          </select>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Controller</div>
-          <div class="info-value" id="info-controller">-</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Max Players</div>
-          <div class="info-value" id="info-max-players">-</div>
-        </div>
-      </div>
-      <!-- Mode change controls -->
-      <div class="identity-row connected-only">
-        <span id="info-management-identity">Identity not queried</span>
-        <button id="copy-device-info-btn" class="btn btn-secondary btn-sm" type="button">Copy Details</button>
-      </div>
-      <p id="info-direct-board" class="subtitle connected-only" style="display: none;"></p>
-      <div id="limited-mode-banner" class="warning-box device-notice connected-only hidden" role="status">
-        <span><strong>Limited mode.</strong> This output shows live input only. To change settings, set Output to Auto or DInput/MiSTer in the adapter's Quick Menu.</span>
-      </div>
+    <main id="main" class="adapt-pages">
+    <!-- Notices for the whole device, shown above every page -->
+    <div class="adapt-notices">
       <div id="restart-prompt" class="warning-box device-notice connected-only hidden" role="status">
         <span id="restart-prompt-text"></span>
         <button id="restart-now-btn" class="btn btn-secondary btn-sm" type="button">Restart Adapter</button>
       </div>
-      <div id="firmware-update-panel" class="firmware-update-panel">
-        <div class="firmware-update-row">
-          <div>
-            <div class="info-label">Firmware Update</div>
-            <div id="firmware-update-status" class="firmware-update-status" role="status" aria-live="polite">Connect device to check firmware.</div>
-          </div>
-          <div class="firmware-update-actions">
-            <input id="firmware-file-input" class="hidden" type="file" accept=".signed,.bin,application/octet-stream" aria-label="Signed updater package">
-            <input id="firmware-uf2-input" class="hidden" type="file" accept=".uf2" aria-label="Firmware UF2 file">
-            <button id="firmware-check-update-btn" class="btn btn-secondary btn-sm" disabled>Check Update</button>
-            <a id="firmware-download-link" class="btn btn-secondary btn-sm firmware-download-link hidden" rel="noopener">Download UF2</a>
-            <button id="firmware-choose-uf2-btn" class="btn btn-secondary btn-sm hidden" type="button">Choose UF2 file</button>
-            <button id="firmware-update-btn" class="btn btn-sm hidden" disabled>Update Firmware</button>
-            <button id="firmware-write-uf2-btn" class="btn btn-sm hidden" disabled>Write to RPI-RP2</button>
-          </div>
+      <span id="info-mode-status" class="svc-meta" role="status"></span>
+    </div>
+    <!-- Device: status, firmware update -->
+    <section id="device-info-card" class="svc-page debug-panel" role="tabpanel" aria-label="Status">
+      <div class="svc-title"><h2>Status</h2><button id="copy-device-info-btn" class="btn btn-secondary btn-sm connected-only" type="button">Copy Details</button></div>
+      <div id="browser-warning" class="warning-box hidden">
+        <strong>Browser not supported.</strong> WebHID is only supported in Chrome, Edge, and Opera. Please use one of these browsers on a desktop computer.
+      </div>
+      <div class="welcome-panel disconnected-only">
+        <div class="svc-big">
+          <span class="svc-label">Not connected</span>
+          <div class="svc-value">Connect your adapter</div>
+          <span class="svc-note">Change settings, remap buttons, back up memory cards and update firmware from this page. Nothing is installed, and your settings stay on the adapter.</span>
         </div>
-        <ol id="firmware-steps" class="firmware-steps hidden" aria-label="Firmware update steps">
+        <ol class="svc-steps welcome-steps">
+          <li><strong>Plug it in</strong> Use a USB data cable.</li>
+          <li><strong>Set the output</strong> In the Quick Menu, choose Auto or DInput/MiSTer.</li>
+          <li><strong>Connect</strong> Click Connect Device and pick the adapter.</li>
+        </ol>
+      </div>
+      <div class="svc-big connected-only">
+        <span class="svc-label">Input &#9656; Output</span>
+        <div class="svc-value" id="status-io-value">-</div>
+        <span class="svc-note" id="status-io-note">Change either on Mode Settings.</span>
+      </div>
+      <div class="svc-leaders device-info-grid connected-only">
+        <div class="svc-lead"><span class="svc-label">Controller</span><span class="svc-value" id="info-controller">-</span></div>
+        <div class="svc-lead"><span class="svc-label">Max players</span><span class="svc-value" id="info-max-players">-</span></div>
+        <div class="svc-lead"><span class="svc-label">Firmware</span><span class="svc-value" id="info-firmware">-</span></div>
+        <div class="svc-lead" id="status-identity-row"><span class="svc-label">Identity</span><span class="svc-value" id="info-management-identity">Identity not queried</span></div>
+        <div class="svc-lead" data-identity-part="1" hidden><span class="svc-label">Board</span><span class="svc-value"></span></div>
+        <div class="svc-lead" data-identity-part="2" hidden><span class="svc-label">Unit ID</span><span class="svc-value"></span></div>
+        <div class="svc-lead" data-identity-part="3" hidden><span class="svc-label">Build</span><span class="svc-value"></span></div>
+      </div>
+      <p id="info-direct-board" class="connected-only" style="display: none;"></p>
+      <div id="limited-mode-banner" class="warning-box device-notice connected-only hidden" role="status">
+        <span><strong>Limited mode.</strong> This output shows live input only. To change settings, set Output to Auto or DInput/MiSTer in the adapter's Quick Menu.</span>
+      </div>
+      <div id="firmware-update-panel" class="firmware-update-panel">
+        <h3 class="svc-sub">Firmware update</h3>
+        <ol id="firmware-steps" class="svc-steps firmware-steps hidden" aria-label="Firmware update steps">
           <li>Check</li>
           <li>Get the file</li>
           <li>Enter bootloader</li>
           <li>Write</li>
           <li>Confirm</li>
         </ol>
+        <p id="firmware-update-status" class="firmware-update-status" role="status" aria-live="polite">Connect device to check firmware.</p>
+        <div class="svc-row firmware-update-actions">
+          <input id="firmware-file-input" class="hidden" type="file" accept=".signed,.bin,application/octet-stream" aria-label="Updater file">
+          <input id="firmware-uf2-input" class="hidden" type="file" accept=".uf2" aria-label="Firmware UF2 file">
+          <button id="firmware-check-update-btn" class="btn btn-secondary" disabled>Check Update</button>
+          <a id="firmware-download-link" class="btn btn-secondary firmware-download-link hidden" rel="noopener">Download UF2</a>
+          <button id="firmware-choose-uf2-btn" class="btn btn-secondary hidden" type="button">Choose UF2 File</button>
+          <button id="firmware-notice-clear-btn" class="btn btn-secondary hidden" type="button">Clear Notice</button>
+          <button id="firmware-update-btn" class="btn hidden" disabled>Update Firmware</button>
+          <button id="firmware-write-uf2-btn" class="btn hidden" disabled>Write to RPI-RP2</button>
+        </div>
         <div id="firmware-update-help" class="firmware-update-help hidden"></div>
-        <label id="firmware-write-confirm-row" class="firmware-write-confirm hidden" for="firmware-write-confirm">
+        <label id="firmware-write-confirm-row" class="svc-check firmware-write-confirm hidden" for="firmware-write-confirm">
           <input id="firmware-write-confirm" type="checkbox">
           <span id="firmware-write-confirm-text"></span>
         </label>
         <div id="firmware-release-notes" class="firmware-release-notes hidden"></div>
-        <div id="firmware-update-links" class="firmware-update-links hidden">
-          <a id="firmware-release-link" target="_blank" rel="noopener">All releases</a>
-          <a id="firmware-manual-link" target="_blank" rel="noopener">Manual</a>
-          <button id="firmware-copy-build-btn" class="btn btn-secondary btn-sm" type="button">Copy build info</button>
+        <div id="firmware-update-links" class="svc-row firmware-update-links hidden">
+          <a id="firmware-release-link" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">All Releases</a>
+          <a id="firmware-manual-link" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">Manual</a>
+          <button id="firmware-copy-build-btn" class="btn btn-secondary btn-sm" type="button">Copy Build Info</button>
         </div>
       </div>
-      <div class="device-info-actions">
-        <div class="device-info-mode-controls">
-          <span id="info-mode-status" role="status" style="color: var(--text-secondary); font-size: 0.85rem;"></span>
-        </div>
-      </div>
-    </div>
+    </section>
 
-    <!-- Controller Card -->
-    <div id="controller-card" class="card hidden">
-      <h2 class="card-title collapsible expanded" onclick="toggleCollapsible(this)">Controller</h2>
-      <div class="card-content">
-
-      <!-- Live controller input/output display -->
-      <div id="controller-test-card" class="controller-test-section">
-      <div id="debug-test" class="controller-test-panel">
-        <div class="live-view-bar">
-          <label class="form-label" for="live-player-select">Live view</label>
-          <select id="live-player-select" class="select">
+    <!-- Controller: live view and the per-mode tools. The groups only carry visibility. -->
+    <div id="controller-card" class="adapt-page-group hidden">
+    <section id="controller-test-card" class="svc-page debug-panel controller-test-section" role="tabpanel" aria-label="Live View" hidden>
+      <div class="svc-title">
+        <h2>Live View</h2>
+        <div id="debug-test" class="svc-row live-view-bar">
+          <label class="svc-meta" for="live-player-select">Player</label>
+          <select id="live-player-select" class="select svc-sm">
             <option value="auto">First connected</option>
           </select>
-          <span id="live-view-status" role="status"></span>
+          <span id="live-view-status" class="svc-meta" role="status"></span>
         </div>
-        <!-- Split-screen Input/Output Display -->
-        <div class="split-controller-container">
-          <!-- INPUT Controller (Raw physical buttons) -->
-          <div class="controller-panel">
-            <div class="controller-panel-title">Input: <span id="input-mode-name">-</span></div>
-            <div id="input-controller-container" class="hidden" aria-hidden="true"></div>
-            <div class="oled-preview-stage controller-input-oled-stage">
-              <canvas id="oled-preview-canvas" class="oled-preview-canvas" width="640" height="320" role="img" tabindex="0" aria-label="Live adapter screen. Arrow keys, Enter and Esc work the adapter's menus."></canvas>
-              <div id="oled-preview-status" class="oled-preview-status hidden" role="status">
-                <div id="oled-preview-status-text" class="oled-preview-status-text">Authorize OLED serial to start the live preview.</div>
-                <button id="oled-authorize-btn" class="btn btn-sm" type="button">Authorize OLED Serial</button>
-              </div>
-            </div>
-            <div id="oled-serial-bar" class="oled-serial-bar hidden">
-              <div class="oled-serial-state">
-                <span id="memory-serial-status" class="oled-serial-pill" role="status">Disconnected</span>
-                <span id="oled-serial-running" class="oled-serial-running"></span>
-              </div>
-              <div class="oled-preview-actions">
-                <button id="memory-control-serial-toggle-btn" class="btn btn-secondary btn-sm" type="button">Connect</button>
-                <button id="oled-preview-toggle-btn" class="btn btn-secondary btn-sm" type="button" aria-pressed="true">Preview on</button>
-                <button id="oled-screenshot-btn" class="btn btn-secondary btn-sm" type="button" disabled title="Available once the live preview shows a screen">Save screenshot</button>
-              </div>
-            </div>
-            <div id="oled-preview-card" class="oled-remote-section hidden">
-              <div class="oled-preview-header">
-                <h3 class="oled-preview-title">Remote Control</h3>
-              </div>
-              <div class="oled-control-pad" role="group" aria-label="Adapter menu buttons">
-                <button class="oled-control-btn" type="button" data-oled-control="UP">Up</button>
-                <button class="oled-control-btn" type="button" data-oled-control="LEFT">Left</button>
-                <button class="oled-control-btn" type="button" data-oled-control="OK">OK</button>
-                <button class="oled-control-btn" type="button" data-oled-control="RIGHT">Right</button>
-                <button class="oled-control-btn" type="button" data-oled-control="DOWN">Down</button>
-                <button class="oled-control-btn menu-btn" type="button" data-oled-control="MENU">Menu</button>
-                <button class="oled-control-btn back-btn" type="button" data-oled-control="BACK">Back</button>
-                <button id="oled-popout-btn" class="btn btn-secondary" type="button">Pop Out OLED</button>
-              </div>
-              <div class="oled-menu-row" role="group" aria-label="Open or close adapter menus">
-                <button class="btn btn-secondary btn-sm" type="button" data-oled-menu="QUICK">Quick Menu</button>
-                <button class="btn btn-secondary btn-sm" type="button" data-oled-menu="SYSTEM">System Menu</button>
-                <button class="btn btn-secondary btn-sm" type="button" data-oled-menu="CLOSE">Close Menu</button>
-              </div>
-            </div>
-            <div id="input-controller-submode" class="controller-submode"></div>
-            <!-- Raw Input Analog Values -->
-            <div class="analog-values-row hidden" id="in-analog-values-row" aria-hidden="true">
-              <div class="analog-value" id="in-lx-container"><span class="analog-label">LX</span><span id="val-in-lx" class="analog-data">0</span></div>
-              <div class="analog-value" id="in-ly-container"><span class="analog-label">LY</span><span id="val-in-ly" class="analog-data">0</span></div>
-              <div class="analog-value" id="in-rx-container"><span class="analog-label">RX</span><span id="val-in-rx" class="analog-data">0</span></div>
-              <div class="analog-value" id="in-ry-container"><span class="analog-label">RY</span><span id="val-in-ry" class="analog-data">0</span></div>
-              <div class="analog-value" id="in-lt-container"><span class="analog-label">LT</span><span id="val-in-lt" class="analog-data">0</span></div>
-              <div class="analog-value" id="in-rt-container"><span class="analog-label">RT</span><span id="val-in-rt" class="analog-data">0</span></div>
+      </div>
+      <div class="svc-split split-controller-container">
+        <!-- INPUT Controller (Raw physical buttons) -->
+        <div class="svc-panel controller-panel">
+          <h3 class="controller-panel-title">Input &middot; <span id="input-mode-name">-</span></h3>
+          <div id="input-controller-container" class="hidden" aria-hidden="true"></div>
+          <div class="oled-preview-stage controller-input-oled-stage">
+            <canvas id="oled-preview-canvas" class="oled-preview-canvas" width="640" height="320" role="img" tabindex="0" aria-label="Live adapter screen. Arrow keys, Enter and Esc work the adapter's menus."></canvas>
+            <div id="oled-preview-status" class="oled-preview-status hidden" role="status">
+              <div id="oled-preview-status-text" class="oled-preview-status-text">Authorize OLED serial to start the live preview.</div>
+              <button id="oled-authorize-btn" class="btn btn-sm" type="button">Authorize OLED Serial</button>
             </div>
           </div>
-
-          <!-- OUTPUT Controller (Remapped buttons) -->
-          <div class="controller-panel">
-            <div class="controller-panel-title">Output: <span id="output-mode-name">-</span></div>
-            <div id="output-controller-container" class="hidden" aria-hidden="true"></div>
-            <!-- Bonus buttons (HID/MiSTer only) -->
-            <div id="bonus-buttons-row" class="bonus-buttons-row hidden">
-              <div id="out-btn-14" class="bonus-btn">14</div>
-              <div id="out-btn-15" class="bonus-btn">15</div>
-              <div id="out-btn-16" class="bonus-btn">16</div>
-              <div id="out-btn-17" class="bonus-btn">17</div>
-              <div id="out-btn-18" class="bonus-btn">18</div>
-              <div id="out-btn-19" class="bonus-btn">19</div>
-              <div id="out-btn-20" class="bonus-btn">20</div>
-              <div id="out-btn-21" class="bonus-btn">21</div>
-              <div id="out-btn-28" class="bonus-btn dpad-btn hidden">U</div>
-              <div id="out-btn-29" class="bonus-btn dpad-btn hidden">D</div>
-              <div id="out-btn-30" class="bonus-btn dpad-btn hidden">L</div>
-              <div id="out-btn-31" class="bonus-btn dpad-btn hidden">R</div>
+          <div id="oled-serial-bar" class="oled-serial-bar hidden">
+            <div class="oled-serial-state">
+              <span id="memory-serial-status" class="oled-serial-pill" role="status">Disconnected</span>
+              <span id="oled-serial-running" class="oled-serial-running"></span>
             </div>
-            <!-- Scaled Output Analog Values -->
-            <div class="analog-values-row" id="out-analog-values-row">
-              <div class="analog-value" id="out-lx-container"><span class="analog-label">LX</span><span id="val-out-lx" class="analog-data">0</span></div>
-              <div class="analog-value" id="out-ly-container"><span class="analog-label">LY</span><span id="val-out-ly" class="analog-data">0</span></div>
-              <div class="analog-value" id="out-rx-container"><span class="analog-label">RX</span><span id="val-out-rx" class="analog-data">0</span></div>
-              <div class="analog-value" id="out-ry-container"><span class="analog-label">RY</span><span id="val-out-ry" class="analog-data">0</span></div>
-              <div class="analog-value" id="out-lt-container"><span class="analog-label">LT</span><span id="val-out-lt" class="analog-data">0</span></div>
-              <div class="analog-value" id="out-rt-container"><span class="analog-label">RT</span><span id="val-out-rt" class="analog-data">0</span></div>
+            <div class="svc-row oled-preview-actions">
+              <button id="memory-control-serial-toggle-btn" class="btn btn-secondary btn-sm" type="button">Connect</button>
+              <button id="oled-preview-toggle-btn" class="btn btn-secondary btn-sm" type="button" aria-pressed="true">Preview On</button>
+              <button id="oled-screenshot-btn" class="btn btn-secondary btn-sm" type="button" disabled title="Available once the live preview shows a screen">Save Screenshot</button>
             </div>
+          </div>
+          <div id="oled-preview-card" class="oled-remote-section hidden">
+            <h3 class="svc-sub oled-preview-title">Remote control</h3>
+            <div class="oled-control-pad" role="group" aria-label="Adapter menu buttons">
+              <button class="oled-control-btn" type="button" data-oled-control="UP">Up</button>
+              <button class="oled-control-btn" type="button" data-oled-control="LEFT">Left</button>
+              <button class="oled-control-btn" type="button" data-oled-control="OK">OK</button>
+              <button class="oled-control-btn" type="button" data-oled-control="RIGHT">Right</button>
+              <button class="oled-control-btn" type="button" data-oled-control="DOWN">Down</button>
+              <button class="oled-control-btn menu-btn" type="button" data-oled-control="MENU">Menu</button>
+              <button class="oled-control-btn back-btn" type="button" data-oled-control="BACK">Back</button>
+              <button id="oled-popout-btn" class="btn btn-secondary" type="button">Pop Out OLED</button>
+            </div>
+            <div class="svc-row oled-menu-row" role="group" aria-label="Open or close adapter menus">
+              <button class="btn btn-secondary btn-sm" type="button" data-oled-menu="QUICK">Quick Menu</button>
+              <button class="btn btn-secondary btn-sm" type="button" data-oled-menu="SYSTEM">System Menu</button>
+              <button class="btn btn-secondary btn-sm" type="button" data-oled-menu="CLOSE">Close Menu</button>
+            </div>
+          </div>
+          <div id="input-controller-submode" class="controller-submode"></div>
+          <!-- Raw Input Analog Values -->
+          <div class="analog-values-row hidden" id="in-analog-values-row" aria-hidden="true">
+            <div class="analog-value" id="in-lx-container"><span class="analog-label">LX</span><span id="val-in-lx" class="analog-data">0</span></div>
+            <div class="analog-value" id="in-ly-container"><span class="analog-label">LY</span><span id="val-in-ly" class="analog-data">0</span></div>
+            <div class="analog-value" id="in-rx-container"><span class="analog-label">RX</span><span id="val-in-rx" class="analog-data">0</span></div>
+            <div class="analog-value" id="in-ry-container"><span class="analog-label">RY</span><span id="val-in-ry" class="analog-data">0</span></div>
+            <div class="analog-value" id="in-lt-container"><span class="analog-label">LT</span><span id="val-in-lt" class="analog-data">0</span></div>
+            <div class="analog-value" id="in-rt-container"><span class="analog-label">RT</span><span id="val-in-rt" class="analog-data">0</span></div>
           </div>
         </div>
 
+        <!-- OUTPUT Controller (Remapped buttons) -->
+        <div class="svc-panel controller-panel">
+          <h3 class="controller-panel-title">Output &middot; <span id="output-mode-name">-</span></h3>
+          <div id="output-controller-container" class="hidden" aria-hidden="true"></div>
+          <!-- Bonus buttons (HID/MiSTer only) -->
+          <div id="bonus-buttons-row" class="bonus-buttons-row hidden">
+            <div id="out-btn-14" class="bonus-btn">14</div>
+            <div id="out-btn-15" class="bonus-btn">15</div>
+            <div id="out-btn-16" class="bonus-btn">16</div>
+            <div id="out-btn-17" class="bonus-btn">17</div>
+            <div id="out-btn-18" class="bonus-btn">18</div>
+            <div id="out-btn-19" class="bonus-btn">19</div>
+            <div id="out-btn-20" class="bonus-btn">20</div>
+            <div id="out-btn-21" class="bonus-btn">21</div>
+            <div id="out-btn-28" class="bonus-btn dpad-btn hidden">U</div>
+            <div id="out-btn-29" class="bonus-btn dpad-btn hidden">D</div>
+            <div id="out-btn-30" class="bonus-btn dpad-btn hidden">L</div>
+            <div id="out-btn-31" class="bonus-btn dpad-btn hidden">R</div>
+          </div>
+          <!-- Scaled Output Analog Values -->
+          <div class="analog-values-row" id="out-analog-values-row">
+            <div class="analog-value" id="out-lx-container"><span class="analog-label">LX</span><span id="val-out-lx" class="analog-data">0</span></div>
+            <div class="analog-value" id="out-ly-container"><span class="analog-label">LY</span><span id="val-out-ly" class="analog-data">0</span></div>
+            <div class="analog-value" id="out-rx-container"><span class="analog-label">RX</span><span id="val-out-rx" class="analog-data">0</span></div>
+            <div class="analog-value" id="out-ry-container"><span class="analog-label">RY</span><span id="val-out-ry" class="analog-data">0</span></div>
+            <div class="analog-value" id="out-lt-container"><span class="analog-label">LT</span><span id="val-out-lt" class="analog-data">0</span></div>
+            <div class="analog-value" id="out-rt-container"><span class="analog-label">RT</span><span id="val-out-rt" class="analog-data">0</span></div>
+          </div>
+        </div>
       </div>
+    </section>
+
+    <!-- Controller settings and tools -->
+    <div id="controller-tools-card" class="adapt-page-group controller-tools-section">
+
+    <!-- Mode Settings -->
+    <section id="debug-mode-settings" class="svc-page debug-panel" role="tabpanel" aria-label="Mode Settings" hidden>
+      <div class="svc-title"><h2>Mode Settings</h2><span class="svc-meta">Saved per input mode</span></div>
+      <div class="svc-form adapt-mode-form">
+        <label class="svc-field"><span>Input mode</span><select id="info-input-select" class="select info-select input-mode-select"><!-- Populated by JavaScript --></select></label>
+        <label class="svc-field"><span>Output</span><select id="info-output-select" class="select info-select output-mode-select"><!-- Populated by JavaScript --></select></label>
       </div>
-
-      <!-- Controller settings and tools -->
-      <div id="controller-tools-card" class="controller-tools-section">
-
-      <div class="debug-tabs">
-        <button id="mode-settings-tab" class="btn btn-secondary debug-tab active" data-tab="mode-settings" title="Settings for the active input mode">Mode Settings</button>
-        <button class="btn btn-secondary debug-tab" data-tab="turbo" title="Auto-fire button settings">Turbo</button>
-        <button class="btn btn-secondary debug-tab" data-tab="remap" title="Button remapping">Remap</button>
-        <button class="btn btn-secondary debug-tab" data-tab="rumble" title="Motor vibration test">Rumble</button>
-        <button class="btn btn-secondary debug-tab" data-tab="dual-merge" title="Choose whether each merged output button comes from player 1 or player 2">2P Merge</button>
-        <button class="btn btn-secondary debug-tab hidden" data-tab="pad-test" title="Poll rate, press counts and recent input">Pad Test</button>
-        <button class="btn btn-secondary debug-tab hidden" data-tab="overlay" title="Configure the PC input overlay profile">Overlay</button>
-        <button class="btn btn-secondary debug-tab hidden" data-tab="gpio" title="GPIO pin states">GPIO</button>
-      </div>
-
-      <!-- Mode Settings Tab -->
-      <div id="debug-mode-settings" class="debug-panel">
         <div id="direction-hotkeys" style="display:none; margin:16px 0">
           <h3>Start shortcuts — current input mode</h3>
           <p>One action per direction. Defaults follow the controller type. Down + Start is global Home/OSD.
@@ -3417,9 +1921,7 @@
           </div>
           <p id="direction-hotkey-status" role="status"></p>
         </div>
-        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 10px;">
-          Settings that follow the currently selected input mode.
-        </p>
+        <p>Settings that follow the currently selected input mode.</p>
         <p id="mode-settings-locked-note" class="warning-box hidden">Connect a controller to edit these settings. Under Auto they belong to the controller the adapter detects.</p>
 
         <!-- Controller Settings Grid -->
@@ -3427,7 +1929,7 @@
           <!-- Analog-only settings -->
           <div id="setting-deadzone" class="form-group feature-analog">
             <label class="form-label" for="settings-deadzone">Deadzone: <span id="deadzone-value">0</span>%</label>
-            <input type="range" id="settings-deadzone" min="0" max="30" step="5" value="0"
+            <input type="range" class="svc-range" id="settings-deadzone" min="0" max="30" step="5" value="0"
                   >
           </div>
           <div id="setting-stick-invert" class="form-group feature-analog">
@@ -3457,12 +1959,12 @@
           </div>
           <div id="setting-guncon-x" class="form-group feature-guncon" style="margin-bottom: 0; display: none;">
             <label class="form-label" for="settings-guncon-x">GunCon Align X: <span id="guncon-x-value">0</span></label>
-            <input type="range" id="settings-guncon-x" min="-50" max="50" step="1" value="0"
+            <input type="range" class="svc-range" id="settings-guncon-x" min="-50" max="50" step="1" value="0"
                   >
           </div>
           <div id="setting-guncon-y" class="form-group feature-guncon" style="margin-bottom: 0; display: none;">
             <label class="form-label" for="settings-guncon-y">GunCon Align Y: <span id="guncon-y-value">0</span></label>
-            <input type="range" id="settings-guncon-y" min="-50" max="50" step="1" value="0"
+            <input type="range" class="svc-range" id="settings-guncon-y" min="-50" max="50" step="1" value="0"
                   >
           </div>
           <!-- Universal settings (all modes) -->
@@ -3656,12 +2158,109 @@
             <span data-menu-item="menu_item_about" data-webhid-status="diagnostic">About: Device Info</span>
           </div>
         </div>
+    </section>
+
+    <!-- Remap -->
+    <section id="debug-remap" class="svc-page debug-panel" role="tabpanel" aria-label="Remap" hidden>
+      <div class="svc-title"><h2>Remap</h2><span class="svc-meta"><span id="remap-active-count">0</span> active &middot; for <span id="remap-output">-</span></span></div>
+      <p>Choose what each controller button sends on this output, or press Assign and then a button on the controller. Remaps are saved separately for each input and output mode. <strong>&#9679;</strong> marks a change from the default.</p>
+      <p id="remap-assign-status" class="panel-intro tool-result" role="status"></p>
+      <div class="svc-tablewrap"><table class="svc-table adapt-remap-table">
+        <thead><tr><th>Button</th><th>Sends</th><th class="svc-hide-sm">Default</th><th class="svc-num">Actions</th></tr></thead>
+        <tbody id="remap-buttons-grid"><!-- Generated by JavaScript --></tbody>
+      </table></div>
+      <div class="svc-row">
+        <button id="remap-clear-btn" class="btn btn-danger">Reset All</button>
       </div>
+    </section>
 
+    <!-- Turbo -->
+    <section id="debug-turbo" class="svc-page debug-panel" role="tabpanel" aria-label="Turbo" hidden>
+      <div class="svc-title"><h2>Turbo</h2><span class="svc-meta"><span id="turbo-active-count">0</span> active</span></div>
+      <p>Configure per-button auto-fire rates.</p>
+      <div class="svc-row tool-actions">
+        <label class="svc-meta" for="turbo-set-all">Set all rows to</label>
+        <select id="turbo-set-all" class="select svc-sm"></select>
+        <button id="turbo-set-all-btn" class="btn btn-secondary btn-sm">Apply to All</button>
+        <button id="turbo-clear-btn" class="btn btn-secondary btn-sm">Clear</button>
+      </div>
+      <div class="svc-tablewrap"><table class="svc-table">
+        <thead><tr><th>Button</th><th>Turbo</th></tr></thead>
+        <tbody id="turbo-buttons-grid"><!-- Generated by JavaScript --></tbody>
+      </table></div>
+    </section>
 
+    <!-- Rumble -->
+    <section id="debug-rumble" class="svc-page debug-panel" role="tabpanel" aria-label="Rumble" hidden>
+      <div class="svc-title"><h2>Rumble</h2></div>
+      <p id="rumble-description">Test controller rumble motors. Requires a rumble-capable controller connected.</p>
+      <div class="svc-form">
+        <div id="setting-rumble" class="form-group feature-rumble">
+          <label class="form-label" for="settings-rumble">Rumble</label>
+          <select id="settings-rumble" class="select">
+            <option value="0">Off</option>
+            <option value="1">Variable</option>
+            <option value="2">Max</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="rumble-left">Left motor (heavy)</label>
+          <div class="svc-rangeline"><input type="range" class="svc-range" id="rumble-left" min="0" max="100" value="78" aria-valuetext="78%"><output id="rumble-left-val" for="rumble-left">78%</output></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="rumble-right">Right motor (light)</label>
+          <div class="svc-rangeline"><input type="range" class="svc-range" id="rumble-right" min="0" max="100" value="78" aria-valuetext="78%"><output id="rumble-right-val" for="rumble-right">78%</output></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="rumble-duration">Duration</label>
+          <div class="svc-rangeline"><input type="range" class="svc-range" id="rumble-duration" min="100" max="3000" value="500" step="100" aria-valuetext="500 milliseconds"><output id="rumble-duration-val" for="rumble-duration">500ms</output></div>
+        </div>
+      </div>
+      <div class="svc-row">
+        <button id="rumble-test-heavy-btn" class="btn btn-secondary">Test Heavy</button>
+        <button id="rumble-test-light-btn" class="btn btn-secondary">Test Light</button>
+        <button id="rumble-test-both-btn" class="btn btn-secondary">Test Both</button>
+        <button id="rumble-stop-btn" class="btn btn-danger">Stop</button>
+      </div>
+      <p id="rumble-result" class="panel-intro tool-result" role="status"></p>
+    </section>
 
-      <!-- GPIO Tab -->
-      <div id="debug-gpio" class="debug-panel hidden">
+    <!-- 2P Merge -->
+    <section id="debug-dual-merge" class="svc-page debug-panel" role="tabpanel" aria-label="2P Merge" hidden>
+      <div class="svc-title"><h2>2P Merge</h2><span class="svc-meta"><span id="dual-merge-status">Disabled</span> <span id="dual-merge-unsaved" class="settings-save-state is-failed hidden" role="status">&middot; Not saved yet</span></span></div>
+      <p>Merge two physical classic controllers into one USB player. Choose which player owns each output button.</p>
+      <div class="svc-row">
+        <button id="dual-merge-toggle-btn" class="btn" data-enabled="0">Enable 2P Merge</button>
+      </div>
+      <div class="svc-tablewrap"><table class="svc-table">
+        <thead><tr><th>Output button</th><th>Owner</th></tr></thead>
+        <tbody id="dual-merge-grid"><!-- Generated by JavaScript --></tbody>
+      </table></div>
+      <div class="svc-row">
+        <button id="dual-merge-defaults-btn" class="btn btn-secondary">Defaults</button>
+        <button id="dual-merge-save-btn" class="btn svc-end">Save 2P Merge</button>
+      </div>
+      <div class="warning-box">
+        Turning 2P Merge on or off restarts the adapter, because the USB player count changes. The page reconnects by itself.
+      </div>
+    </section>
+
+    <!-- Pad Test -->
+    <section id="debug-pad-test" class="svc-page debug-panel" role="tabpanel" aria-label="Pad Test" hidden>
+      <div class="svc-title"><h2>Pad Test</h2><button id="pad-test-clear-btn" class="btn btn-secondary btn-sm" type="button">Clear Counts</button></div>
+      <div class="svc-big">
+        <span class="svc-label">Poll rate</span>
+        <div class="svc-value" id="pad-test-rate">-</div>
+        <span class="svc-note">How often the adapter reads the controller. Total polls: <span id="pad-test-polls">-</span></span>
+      </div>
+      <div class="svc-split">
+        <div class="svc-panel"><h3>Press counts</h3><div id="pad-test-counts" class="pad-test-counts"></div></div>
+        <div class="svc-panel"><h3>Recent input</h3><ol id="pad-test-history" class="pad-test-history"></ol></div>
+      </div>
+    </section>
+    <!-- GPIO -->
+    <section id="debug-gpio" class="svc-page debug-panel" role="tabpanel" aria-label="GPIO" hidden>
+      <div class="svc-title"><h2>GPIO</h2></div>
         <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 10px;">
           Shows real-time GPIO pin states. Useful for debugging new controller protocols.
         </p>
@@ -3677,136 +2276,11 @@
             <div id="gpio-port2" class="gpio-grid"></div>
           </div>
         </div>
-      </div>
+    </section>
 
-      <!-- Rumble Tab -->
-      <div id="debug-rumble" class="debug-panel hidden">
-        <p id="rumble-description" style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">
-          Test controller rumble motors. Requires a rumble-capable controller connected.
-        </p>
-        <div id="setting-rumble" class="form-group feature-rumble">
-          <label class="form-label" for="settings-rumble">Rumble</label>
-          <select id="settings-rumble" class="select">
-            <option value="0">Off</option>
-            <option value="1">Variable</option>
-            <option value="2">Max</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="rumble-left">Left Motor (Heavy)</label>
-          <input type="range" id="rumble-left" min="0" max="100" value="78" aria-valuetext="78%" style="width: 100%;">
-          <span id="rumble-left-val">78%</span>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="rumble-right">Right Motor (Light)</label>
-          <input type="range" id="rumble-right" min="0" max="100" value="78" aria-valuetext="78%" style="width: 100%;">
-          <span id="rumble-right-val">78%</span>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="rumble-duration">Duration (ms)</label>
-          <input type="range" id="rumble-duration" min="100" max="3000" value="500" step="100" aria-valuetext="500 milliseconds" style="width: 100%;">
-          <span id="rumble-duration-val">500ms</span>
-        </div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <button id="rumble-test-heavy-btn" class="btn btn-secondary">Test Heavy</button>
-          <button id="rumble-test-light-btn" class="btn btn-secondary">Test Light</button>
-          <button id="rumble-test-both-btn" class="btn">Test Both</button>
-          <button id="rumble-stop-btn" class="btn btn-secondary">Stop</button>
-        </div>
-        <p id="rumble-result" class="panel-intro tool-result" role="status"></p>
-      </div>
-
-      <!-- 2P Merge Tab -->
-      <div id="debug-dual-merge" class="debug-panel hidden">
-        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">
-          Merge two physical classic controllers into one USB player. Assign each output button to Player 1 or Player 2.
-        </p>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 15px;">
-          <button id="dual-merge-toggle-btn" class="btn" data-enabled="0">Enable 2P Merge</button>
-          <span id="dual-merge-status" style="color: var(--text-secondary); font-size: 0.9rem;">Disabled</span>
-          <span id="dual-merge-unsaved" class="settings-save-state is-failed hidden" role="status">Not saved yet</span>
-        </div>
-        <div id="dual-merge-grid" class="wide-config-grid">
-          <!-- Generated by JavaScript -->
-        </div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <button id="dual-merge-defaults-btn" class="btn btn-secondary">Defaults</button>
-          <button id="dual-merge-save-btn" class="btn">Save 2P Merge</button>
-        </div>
-        <div class="warning-box" style="margin-top: 12px;">
-          Turning 2P Merge on or off restarts the adapter, because the USB player count changes. The page reconnects by itself.
-        </div>
-      </div>
-
-      <!-- Pad Test Tab -->
-      <div id="debug-pad-test" class="debug-panel hidden">
-        <p class="panel-intro">Check a controller: how fast the adapter reads it, how often each button was pressed, and the latest input changes.</p>
-        <div class="info-grid" style="margin-bottom: 15px;">
-          <div class="info-item">
-            <div class="info-label">Poll Rate</div>
-            <div class="info-value" id="pad-test-rate">-</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Total Polls</div>
-            <div class="info-value" id="pad-test-polls">-</div>
-          </div>
-        </div>
-        <h4 class="tool-heading">Press counts</h4>
-        <div id="pad-test-counts" class="pad-test-counts"></div>
-        <h4 class="tool-heading">Recent input</h4>
-        <ol id="pad-test-history" class="pad-test-history"></ol>
-        <button id="pad-test-clear-btn" class="btn btn-secondary btn-sm" type="button">Clear Counts</button>
-      </div>
-
-      <!-- Turbo Tab -->
-      <div id="debug-turbo" class="debug-panel hidden">
-        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">
-          Configure per-button auto-fire rates.
-        </p>
-        <div class="info-grid" style="margin-bottom: 15px;">
-          <div class="info-item">
-            <div class="info-label">Active Turbo Buttons</div>
-            <div class="info-value" id="turbo-active-count">0</div>
-          </div>
-        </div>
-        <div id="turbo-buttons-grid" class="wide-config-grid">
-          <!-- Generated by JavaScript -->
-        </div>
-        <div class="tool-actions">
-          <label class="form-label" for="turbo-set-all">Set all rows to</label>
-          <select id="turbo-set-all" class="select"></select>
-          <button id="turbo-set-all-btn" class="btn btn-secondary">Apply to All</button>
-          <button id="turbo-clear-btn" class="btn btn-secondary">Clear</button>
-        </div>
-      </div>
-
-      <!-- Remap Tab -->
-      <div id="debug-remap" class="debug-panel hidden">
-        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">
-          Choose what each controller button sends on this output, or use Press to assign and press a button on the controller.
-          Remaps are saved separately for each input and output mode.
-        </p>
-        <div class="info-grid" style="margin-bottom: 15px;">
-          <div class="info-item">
-            <div class="info-label">Active Remaps</div>
-            <div class="info-value" id="remap-active-count">0</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">For Output</div>
-            <div class="info-value" id="remap-output">-</div>
-          </div>
-        </div>
-        <p id="remap-assign-status" class="panel-intro tool-result" role="status"></p>
-        <div id="remap-buttons-grid" class="wide-config-grid">
-          <!-- Generated by JavaScript -->
-        </div>
-        <div style="display: flex; gap: 10px;">
-          <button id="remap-clear-btn" class="btn btn-secondary">Clear</button>
-        </div>
-      </div>
-
-      <!-- Overlay Tab -->
-      <div id="debug-overlay" class="debug-panel hidden">
+    <!-- Overlay -->
+    <section id="debug-overlay" class="svc-page debug-panel" role="tabpanel" aria-label="Overlay" hidden>
+      <div class="svc-title"><h2>Overlay</h2></div>
         <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">
           Configure the PC-side Input Overlay profile. The browser cannot directly launch local scripts, so export the JSON profile and run the generated PowerShell command.
         </p>
@@ -3885,16 +2359,14 @@
 
         <label class="form-label">Launch Command</label>
         <textarea id="overlay-command" class="log" readonly style="width: 100%; min-height: 72px; resize: vertical; font-family: monospace;"></textarea>
-      </div>
+    </section>
+    </div>
+    </div>
 
-      </div>
-      </div>
-      </div>
-
-    <!-- Memory Card Card -->
-    <div id="memory-card-card" class="card hidden">
-      <h2 id="memory-card-title" class="card-title collapsible" onclick="toggleMemoryCardCollapsible(this)">Memory Cards</h2>
-      <div class="card-content collapsed">
+    <!-- Storage: memory cards -->
+    <section id="memory-card-card" class="svc-page debug-panel hidden" role="tabpanel" aria-label="Memory Cards" hidden>
+      <div class="svc-title"><h2 id="memory-card-title">Memory Cards</h2><span class="svc-meta">Free blocks: <span id="memory-free-blocks">-</span></span></div>
+      <div class="memory-card-content">
         <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">
           <span id="memory-card-summary-text">Memory-card bridge for Dreamcast VMU, N64 Controller Pak, and PSX Memory Card.</span>
         </p>
@@ -3909,12 +2381,6 @@
           <option value="2">C</option>
           <option value="3">D</option>
         </select>
-        <div class="info-grid" style="margin-bottom: 15px;">
-          <div class="info-item">
-            <div class="info-label">Free Blocks</div>
-            <div class="info-value" id="memory-free-blocks">-</div>
-          </div>
-        </div>
         <div id="memory-card-tabs" class="memory-card-tabs" role="tablist" aria-label="Detected memory cards"></div>
         <div class="memory-progress-panel">
           <div class="memory-progress-header">
@@ -3996,29 +2462,14 @@
           <textarea id="memory-card-log" class="log memory-console-log" readonly></textarea>
         </details>
       </div>
-    </div>
+    </section>
 
-    <!-- System Settings Card -->
-    <div id="controller-settings-card" class="card hidden">
-      <h2 class="card-title collapsible expanded" onclick="toggleCollapsible(this)">System Settings</h2>
-      <div class="card-content">
-
-      <div class="debug-tabs">
-        <button class="btn btn-secondary debug-tab active" data-tab="system-settings" title="Global device settings">System Settings</button>
-        <button class="btn btn-secondary debug-tab" data-tab="auth-keys" title="Authentication key storage">Authentication Keys</button>
-        <button class="btn btn-secondary debug-tab" data-tab="backup" title="Save settings to a file or load them back">Backup</button>
-        <!-- other-products:begin -->
-        <button class="btn btn-secondary debug-tab modern2usb-management-tab hidden" data-tab="modern2usb-management" title="Bluetooth, feedback, RGB, and unknown-controller profiles">Modern2USB</button>
-        <!-- other-products:end -->
-      </div>
-
-      <!-- System Settings Tab -->
-      <div id="debug-system-settings" class="debug-panel">
-        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 10px;">
-          Settings that apply across input modes and device behavior.
-        </p>
-
-        <div id="system-settings-grid" class="settings-grid">
+    <!-- System: settings, backup and keys. The group only carries visibility. -->
+    <div id="controller-settings-card" class="adapt-page-group hidden">
+    <section id="debug-system-settings" class="svc-page debug-panel" role="tabpanel" aria-label="System Settings" hidden>
+      <div class="svc-title"><h2>System Settings</h2><span class="svc-meta">Apply across all modes</span></div>
+      <div id="system-settings-grid" class="settings-grid svc-form-two">
+        <fieldset class="adapt-fieldset"><legend>Host modes</legend>
           <div id="setting-win-output" class="form-group">
             <label id="settings-win-output-label" class="form-label" for="settings-win-output">PC Mode</label>
             <select id="settings-win-output" class="select">
@@ -4056,6 +2507,8 @@
           </div>
           <!-- Global rows past the WebHID list (IDs 72 and up), edited over control serial -->
           <div id="serial-settings-system" style="display: contents;"></div>
+        </fieldset>
+        <fieldset class="adapt-fieldset"><legend>Sound</legend>
           <div id="setting-buzzer" class="form-group">
             <label class="form-label" for="settings-buzzer">Sound</label>
             <select id="settings-buzzer" class="select">
@@ -4068,6 +2521,9 @@
             <span id="settings-sound-events-label" class="form-label">Sound Events</span>
             <div id="settings-sound-events" role="group" aria-labelledby="settings-sound-events-label" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px;"></div>
           </div>
+        </fieldset>
+        <fieldset class="adapt-fieldset">
+            <legend id="setting-oled-heading">Screen</legend>
           <div id="setting-contrast" class="form-group">
             <label class="form-label" for="settings-contrast">Contrast</label>
             <select id="settings-contrast" class="select">
@@ -4077,8 +2533,6 @@
               <option value="254">100%</option>
             </select>
           </div>
-          <!-- OLED page: Inactive, Inactive timer, Screensaver -->
-          <h4 id="setting-oled-heading" style="grid-column: 1 / -1; margin: 6px 0 0;">OLED</h4>
           <div id="setting-oled-inactive" class="form-group device-setting-hidden">
             <label class="form-label" for="settings-oled-inactive">Inactive</label>
             <select id="settings-oled-inactive" class="select">
@@ -4109,6 +2563,8 @@
               <option value="anim" selected>Animation</option>
             </select>
           </div>
+        </fieldset>
+        <fieldset class="adapt-fieldset"><legend>Menus and buttons</legend>
           <div id="setting-hotkey-hold" class="form-group">
             <label class="form-label" for="settings-hotkey-hold">Hotkey Hold</label>
             <select id="settings-hotkey-hold" class="select">
@@ -4157,16 +2613,17 @@
             </select>
           </div>
           <div id="device-settings-system" style="display: contents;"></div>
-        </div>
-
+        </fieldset>
+      </div>
         <div class="settings-footer">
           <button id="system-settings-clear-btn" class="btn btn-secondary" title="Reset the settings on this tab">Reset to Defaults</button>
           <span id="system-settings-save-state" class="settings-save-state" role="status"></span>
         </div>
-      </div>
+    </section>
 
-      <!-- Backup Tab -->
-      <div id="debug-backup" class="debug-panel hidden">
+    <!-- Backup -->
+    <section id="debug-backup" class="svc-page debug-panel" role="tabpanel" aria-label="Backup" hidden>
+      <div class="svc-title"><h2>Backup</h2></div>
         <p class="panel-intro">Save this adapter's settings to a file, or load them back onto the same kind of adapter.</p>
         <p class="panel-intro">The file holds every setting, plus turbo for the active input and remaps for the active input and output. Remaps for other input modes aren't included, because the adapter only shares the active ones.</p>
         <div class="btn-group">
@@ -4183,53 +2640,35 @@
             <button id="backup-cancel-btn" class="btn btn-secondary" type="button">Cancel</button>
           </div>
         </div>
-      </div>
+    </section>
 
-      <!-- Authentication Keys Tab -->
-      <div id="debug-auth-keys" class="debug-panel hidden">
-        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">
-          Upload GP2040-CE split authentication keys for PS4 compatibility.
-          Keys are stored in device flash memory.
-        </p>
-        <div class="info-grid" style="margin-bottom: 15px;">
-          <div class="info-item">
-            <div class="info-label">PS4 Key</div>
-            <div class="info-value" id="key-ps4-status">Not Loaded</div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Upload GP2040-CE split bundle (3 files)</label>
-          <div style="display: grid; gap: 8px;">
-            <div style="display: flex; gap: 10px; align-items: center;">
-              <span style="width: 80px; color: var(--text-secondary);">Private Key:</span>
-              <input type="file" id="gp2040-pem-file" accept=".pem,.key" style="flex: 1;">
-            </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-              <span style="width: 80px; color: var(--text-secondary);">Serial:</span>
-              <input type="file" id="gp2040-serial-file" accept=".txt" style="flex: 1;">
-            </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-              <span style="width: 80px; color: var(--text-secondary);">Signature:</span>
-              <input type="file" id="gp2040-sig-file" accept=".bin" style="flex: 1;">
-            </div>
-            <button id="gp2040-upload" class="btn btn-secondary" disabled>Upload PS4 Keys</button>
-          </div>
-        </div>
-        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
-          <button id="ps4-key-clear-all" class="btn btn-danger">Clear All PS4 Keys</button>
-          <span style="margin-left: 10px; color: var(--text-secondary); font-size: 0.85rem;">Removes stored authentication data</span>
-        </div>
-        <div id="key-progress" class="hidden" style="margin-top: 15px;">
-          <div style="background: var(--bg-secondary); border-radius: 4px; height: 8px; overflow: hidden;">
-            <div id="key-progress-bar" style="background: var(--accent); height: 100%; width: 0%; transition: width 0.2s;"></div>
-          </div>
-          <div id="key-progress-text" style="text-align: center; font-size: 0.85rem; color: var(--text-secondary); margin-top: 5px;">0%</div>
-        </div>
+    <!-- Authentication Keys -->
+    <section id="debug-auth-keys" class="svc-page debug-panel" role="tabpanel" aria-label="Authentication Keys" hidden>
+      <div class="svc-title"><h2>Authentication Keys</h2><span class="svc-meta">PS4 output</span></div>
+      <p>Upload GP2040-CE split authentication keys for PS4 compatibility. Keys are stored in device flash memory.</p>
+      <div class="svc-leaders">
+        <div class="svc-lead"><span class="svc-label">PS4 key</span><span class="svc-value" id="key-ps4-status">Not Loaded</span></div>
       </div>
-
+      <h3 class="svc-sub">Upload the GP2040-CE split bundle (3 files)</h3>
+      <div class="svc-form">
+        <label class="svc-field"><span>Private key</span><input type="file" id="gp2040-pem-file" accept=".pem,.key"></label>
+        <label class="svc-field"><span>Serial</span><input type="file" id="gp2040-serial-file" accept=".txt"></label>
+        <label class="svc-field"><span>Signature</span><input type="file" id="gp2040-sig-file" accept=".bin"></label>
+      </div>
+      <div class="svc-row">
+        <button id="gp2040-upload" class="btn" disabled>Upload PS4 Keys</button>
+        <button id="ps4-key-clear-all" class="btn btn-danger svc-end">Clear All PS4 Keys</button>
+      </div>
+      <p>Clearing removes the stored authentication data from the adapter.</p>
+      <div id="key-progress" class="hidden">
+        <div class="adapt-progress-track"><div id="key-progress-bar" class="adapt-progress-bar" style="width: 0%;"></div></div>
+        <div id="key-progress-text" class="svc-meta">0%</div>
+      </div>
+    </section>
       <!-- other-products:begin -->
       <!-- MODERN2USB Management Tab -->
-      <div id="debug-modern2usb-management" class="debug-panel hidden">
+    <section id="debug-modern2usb-management" class="svc-page debug-panel" role="tabpanel" aria-label="Modern2USB" hidden>
+      <div class="svc-title"><h2>Modern2USB</h2></div>
         <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px;">
           Manage Bluetooth input, controller feedback, device RGB LEDs, and persistent unknown DInput mappings.
         </p>
@@ -4342,50 +2781,43 @@
           <button id="modern2usb-profile-clear-btn" class="btn btn-danger">Clear All</button>
           <button id="modern2usb-management-refresh-btn" class="btn btn-secondary">Refresh</button>
         </div>
-      </div>
+    </section>
       <!-- MODERN2USB Management Tab End -->
       <!-- other-products:end -->
-
-      </div>
     </div>
 
-    <!-- Commands Card -->
-    <div id="commands-card" class="card hidden">
-      <h2 class="card-title collapsible" onclick="toggleCollapsible(this)">Device Commands</h2>
-      <div class="card-content collapsed">
-        <div class="btn-group">
+    <!-- System: device commands and the activity log -->
+    <section id="log-card" class="svc-page debug-panel" role="tabpanel" aria-label="Commands and Log" hidden>
+      <div class="svc-title"><h2>Commands &amp; Log</h2><button id="log-copy-btn" class="btn btn-secondary btn-sm" type="button">Copy Log</button></div>
+      <div id="commands-card" class="hidden">
+        <h3 class="svc-sub">Device commands</h3>
+        <div class="svc-row">
           <button id="refresh-btn" class="btn btn-secondary">Refresh Info</button>
           <button id="reboot-btn" class="btn btn-secondary">Reboot</button>
           <button id="bootloader-btn" class="btn btn-secondary">Bootloader</button>
-          <button id="factory-reset-btn" class="btn btn-danger">Factory Reset</button>
+          <button id="factory-reset-btn" class="btn btn-danger svc-end">Factory Reset</button>
         </div>
       </div>
-    </div>
-
-    <!-- Log Card -->
-    <div id="log-card" class="card">
-      <h2 class="card-title collapsible" onclick="toggleCollapsible(this)">Activity Log</h2>
-      <div class="card-content collapsed">
-        <div class="log-tools">
-          <select id="log-filter" class="select" aria-label="Which log entries to show">
-            <option value="all">All entries</option>
-            <option value="problems">Problems only</option>
-          </select>
-          <button id="log-copy-btn" class="btn btn-secondary btn-sm" type="button">Copy Log</button>
-          <button id="log-save-btn" class="btn btn-secondary btn-sm" type="button">Save Log</button>
-          <button id="log-clear-btn" class="btn btn-secondary btn-sm" type="button">Clear</button>
-        </div>
-        <div id="log" class="log">
-          <div class="log-entry">
-            <span class="log-time">--:--:--</span>
-            <span>Ready. Click "Connect Device" to begin.</span>
-          </div>
+      <h3 class="svc-sub">Activity log</h3>
+      <div class="svc-row log-tools">
+        <select id="log-filter" class="select svc-sm" aria-label="Which log entries to show">
+          <option value="all">All entries</option>
+          <option value="problems">Problems only</option>
+        </select>
+        <button id="log-save-btn" class="btn btn-secondary btn-sm" type="button">Save Log</button>
+        <button id="log-clear-btn" class="btn btn-secondary btn-sm" type="button">Clear</button>
+      </div>
+      <div id="log" class="log svc-console">
+        <div class="log-entry">
+          <span class="log-time">--:--:--</span>
+          <span>Ready. Click "Connect Device" to begin.</span>
         </div>
       </div>
-    </div>
-
+    </section>
     </main>
   </div>
+  <footer class="svc-hint"><span><b>&uarr; &darr;</b> Page, with the menu focused</span><span><b>Tab</b> Next control</span><span><b>Enter</b> Choose</span></footer>
+  </div></div>
   <div id="toast-region" class="toast-region" role="status" aria-live="polite"></div>
 
   <script>
@@ -5015,15 +3447,6 @@
     const HID_MAPPING_PROFILE_BYTES = 63;
     const HID_MAPPING_PROFILE_CHUNK_BYTES = 57;
     const HID_MAPPING_PROFILE_IMPORT_MAX_BYTES = 64 * 1024;
-
-    // Toggle collapsible card sections
-    function toggleCollapsible(titleEl) {
-      titleEl.classList.toggle('expanded');
-      const content = titleEl.nextElementSibling;
-      if (content && content.classList.contains('card-content')) {
-        content.classList.toggle('collapsed');
-      }
-    }
 
     const WEBHID_CMD_RUMBLE_TEST = 0x05;
 
@@ -5852,7 +4275,7 @@
         case '3do': return [0, 1, 2, 4, 5, 10, 11];
         case 'jaguar': return [0, 1, 2, 8, 14, 9, 6, 15, 7, 4, 3, 5, 17, 16, 18, 11, 10];
         case 'dreamcast': return [0, 1, 2, 3, 6, 7, 10];
-        case 'jvs': return [2, 0, 1, 4, 3, 5, 7, 6, 8, 9, 10, 11, 12];
+        case 'jvs': return [2, 3, 5, 4, 0, 1, 7, 6, 8, 9, 10, 11, 12];
         default: {
           const names = getInputModeButtons(modeIndex);
           return names === GENERIC_REMAP_BUTTONS ? GENERIC_REMAP_SLOTS.slice() : names.map((_, index) => index);
@@ -6007,6 +4430,10 @@
         case 'vboy':
           if (name === 'NTT Data') {
             return (base | M.X | M.Y | M.L1 | M.R1 | M.L2 | M.R2 | M.L3 | M.R3 | M.SELECT | M.HOME | M.EXTRA_0 | M.JAG_2 | M.EXTRA_2 | M.EXTRA_3 | M.JAG_5 | M.EXTRA_5 | M.EXTRA_6 | M.EXTRA_7 | M.EXTRA_8 | M.EXTRA_9) >>> 0;
+          }
+          // The HVC-051 keypad uses the NTT bits; it has no X, Y, L1 or R1.
+          if (name === 'FC Network') {
+            return (base | M.L2 | M.R2 | M.L3 | M.R3 | M.SELECT | M.HOME | M.EXTRA_0 | M.JAG_2 | M.EXTRA_2 | M.EXTRA_3 | M.JAG_5 | M.EXTRA_5 | M.EXTRA_6 | M.EXTRA_7 | M.EXTRA_8 | M.EXTRA_9) >>> 0;
           }
           if (name === 'VB Pad') {
             return (base | M.X | M.Y | M.L1 | M.R1 | M.L2 | M.R2 | M.SELECT) >>> 0;
@@ -6617,7 +5044,7 @@
         productName: 'Reflex Adapt Modern2USB',
         // other-products:end
         vendorId: 0x16D0,
-        productId: 0x14F6,
+        productId: 0x1460,
         transport: 'esp32-portal',
         collections: [{
           usage: 0x01,
@@ -6642,6 +5069,7 @@
           this.espUpdateSupported = !!status.espUpdate;
           this.espRunningVersion = status.espRunningVersion || '';
           this.espRollbackSupported = !!status.espRollbackSupported;
+          applyPortalEsp32HealthStatus(this, status);
           this.opened = true;
         },
         async close() {
@@ -6701,6 +5129,7 @@
     const firmwareFileInput = document.getElementById('firmware-file-input');
     const firmwareCheckUpdateBtn = document.getElementById('firmware-check-update-btn');
     const firmwareUpdateBtn = document.getElementById('firmware-update-btn');
+    const firmwareNoticeClearBtn = document.getElementById('firmware-notice-clear-btn');
     const firmwareReleaseNotesEl = document.getElementById('firmware-release-notes');
     const firmwareWriteBtn = document.getElementById('firmware-write-uf2-btn');
     const firmwareUf2Input = document.getElementById('firmware-uf2-input');
@@ -6815,6 +5244,8 @@
 
     const REFLEX_USB_VENDOR_ID = 0x16D0;
     const REFLEX_USB_PRODUCT_ID = 0x1460;
+    // Every Adapt gamepad uses 1460 since 2026-11-12; the others are what
+    // earlier images used, kept so those adapters still connect for an update.
     const REFLEX_USB_PRODUCT_IDS = [REFLEX_USB_PRODUCT_ID, 0x14F6, 0x14F7, 0x14F8, 0x14F9, 0x14FA, 0x14FB];
     // The RetroZord build is the one Adapt on another vendor ID.
     const RETROZORD_USB_VENDOR_ID = 0x1209;
@@ -13884,6 +12315,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
         expirePendingFirmwareWrite();
       }
       const busy = firmwareUpdateInProgress || firmwareCheckInProgress;
+      syncPortalEsp32NoticeClear();
       // Disconnecting during an update would leave it running with no status.
       if ('hid' in navigator || ESP32_PORTAL_TRANSPORT) connectBtn.disabled = firmwareUpdateInProgress;
       if (firmwareCheckUpdateBtn) {
@@ -14423,28 +12855,24 @@ document.getElementById('authorize-serial').addEventListener('click', function (
       const name = String(firmware?.name || '').toLowerCase();
       if (!name.endsWith('.signed') && !name.endsWith('.bin')) {
         throw new Error(
-          'Select a signed updater package, not a raw BIN or UF2 image.');
+          'Select an updater file (.bin or .signed), not a UF2 image.');
       }
       if (!firmware ||
-          firmware.size <= RP2040_UPDATE_SIGNATURE_TRAILER_BYTES ||
+          firmware.size <= RP2040_UPDATE_STAGE3_BYTES ||
           firmware.size > ESP32_UPDATE_MAX_PACKAGE_BYTES) {
-        throw new Error('Signed updater package size is invalid.');
+        throw new Error('Updater file size is invalid.');
       }
 
-      const trailer = new DataView(await firmware.slice(-4).arrayBuffer());
-      if (trailer.byteLength !== 4 ||
-          trailer.getUint32(0, true) !== 256) {
-        throw new Error(
-          'Package has no RSA-2048 signature-length trailer.');
-      }
-      const payloadSize =
-        firmware.size - RP2040_UPDATE_SIGNATURE_TRAILER_BYTES;
+      // A signed package ends in a 260-byte signature trailer and a plain
+      // updater file does not; the adapter decides which it accepts, so the
+      // page finds the image the same way in both.
+      const payloadSize = firmware.size;
       const headerLength = Math.min(payloadSize, 0x50 + 32);
       const header = new Uint8Array(
         await firmware.slice(0, headerLength).arrayBuffer());
 
       if (payloadSize > ESP32_UPDATE_APP_DESCRIPTOR_BYTES + 32 &&
-          payloadSize <= 0x180000 &&
+          payloadSize <= ESP32_UPDATE_MAX_PACKAGE_BYTES &&
           header.length >= 0x50 + 32 &&
           header[0] === 0xE9) {
         const view = new DataView(
@@ -14480,7 +12908,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
         }
       }
       throw new Error(
-        'Package is not a signed ESP32 or RP2040 updater image.');
+        'File is not an ESP32 or RP2040 updater image for this adapter.');
     }
 
     function portalRp2040UpdateProgress(status) {
@@ -14531,8 +12959,9 @@ document.getElementById('authorize-serial').addEventListener('click', function (
           : '';
         const warning =
           `Install ${firmware.name} (${Math.ceil(firmware.size / 1024)} KiB) on the RP2040?\n\n` +
-          'This experimental updater verifies an RSA-2048/SHA-256 release signature, product, flash layout, stage-3 updater, transfer CRC, and image checksum. ' +
-          'Automatic rollback is not implemented. Keep USB BOOTSEL recovery available and do not remove power.' +
+          'This experimental updater verifies the product, flash layout, stage-3 updater, transfer CRC, and image checksum. ' +
+          'If the new firmware fails its startup health check, the adapter restores the previous firmware automatically and shows a rollback notice. ' +
+          'Keep USB BOOTSEL recovery available for a unit that cannot start, and do not remove power.' +
           replacementWarning;
         if (!confirm(warning)) {
           setFirmwareUpdateNotice('Firmware update cancelled.', 'var(--text-secondary)');
@@ -14689,7 +13118,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
           existing.runningVersion || device.espRunningVersion || 'unknown';
         const warning =
           `Install ${firmware.name} (${Math.ceil(firmware.size / 1024)} KiB) on the ESP32?\n\n` +
-          `Running ESP32: ${runningVersion}. The portal verifies the product identity and RSA-2048/SHA-256 release signature before selecting the inactive A/B slot. ` +
+          `Running ESP32: ${runningVersion}. The portal verifies the product identity and the image before selecting the inactive A/B slot. ` +
           'The ESP32 will restart, disconnect this page, and require the new four-character Web Config code. Bootloader rollback protects a failed startup health check. Do not remove power.' +
           replacementWarning;
         if (!confirm(warning)) {
@@ -14728,7 +13157,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
         }
 
         setFirmwareUpdateStatus(
-          `Signed ESP32 ${staged.targetVersion || ''} image verified; restarting...`,
+          `ESP32 ${staged.targetVersion || ''} image verified; restarting...`,
           'var(--warning)'
         );
         const applying = await fetchPortalEsp32Update(
@@ -14784,20 +13213,110 @@ document.getElementById('authorize-serial').addEventListener('click', function (
       } catch (_) {}
     }
 
+    // The ESP32 status also carries its health-trial state and a durable
+    // rollback notice (kept until the adapter's OK clears it).
+    function applyPortalEsp32HealthStatus(target, status) {
+      if (!target || !status) return;
+      if (status.espRunningVersion) target.espRunningVersion = status.espRunningVersion;
+      target.espRollbackPending = !!status.espRollbackPending;
+      target.espRollbackNotice = !!status.espRollbackNotice;
+      target.espRolledBackVersion = status.espRolledBackVersion || '';
+    }
+
+    function forgetPortalEsp32Target() {
+      try {
+        sessionStorage.removeItem(PORTAL_ESP32_TARGET_KEY);
+      } catch (_) {}
+    }
+
+    const PORTAL_ESP32_HEALTH_POLL_MS = 2000;
+    const PORTAL_ESP32_HEALTH_WAIT_MS = 60000;
+    let portalEsp32HealthTimer = null;
+    let portalEsp32RollbackLogged = false;
+
+    // A candidate image only counts once its startup health check passes;
+    // until then it can still roll back, so poll instead of reporting success.
+    function waitForPortalEsp32Health() {
+      if (portalEsp32HealthTimer) return;
+      const deadline = Date.now() + PORTAL_ESP32_HEALTH_WAIT_MS;
+      const poll = async () => {
+        portalEsp32HealthTimer = null;
+        if (device?.transport !== 'esp32-portal') return;
+        try {
+          const response = await fetch('/api/v1/status', {
+            cache: 'no-store',
+            credentials: 'same-origin',
+          });
+          if (response.ok) applyPortalEsp32HealthStatus(device, await response.json());
+        } catch (_) {}
+        if (device?.espRollbackPending) {
+          if (Date.now() < deadline) {
+            portalEsp32HealthTimer = setTimeout(poll, PORTAL_ESP32_HEALTH_POLL_MS);
+            return;
+          }
+          setFirmwareUpdateNotice('ESP32 health check result not seen yet. Reload this page after the ESP32 reconnects to see whether the update stayed.');
+          log(firmwareUpdateNotice.text, 'warning');
+          updateFirmwareUpdateUi();
+          return;
+        }
+        checkPortalEsp32Target();
+        updateFirmwareUpdateUi();
+      };
+      portalEsp32HealthTimer = setTimeout(poll, PORTAL_ESP32_HEALTH_POLL_MS);
+    }
+
     function checkPortalEsp32Target() {
       let target = '';
       try {
         target = sessionStorage.getItem(PORTAL_ESP32_TARGET_KEY) || '';
-        sessionStorage.removeItem(PORTAL_ESP32_TARGET_KEY);
       } catch (_) {}
       const running = device?.espRunningVersion;
-      if (!target || !running) return;
-      if (compareFirmwareVersions(running, target) === 0) {
-        setFirmwareUpdateNotice(`ESP32 update confirmed: it now runs ${running}.`, 'var(--success)');
-      } else {
-        setFirmwareUpdateNotice(`ESP32 update not confirmed: it runs ${running}, expected ${target}. It may have rolled back.`);
-        log(firmwareUpdateNotice.text, 'warning');
+      // An install this tab made is judged by the version that runs, so a
+      // notice left from an earlier rollback cannot override it.
+      if (target && running) {
+        if (device?.espRollbackPending) {
+          setFirmwareUpdateNotice(`ESP32 ${running} is starting; waiting for its health check before confirming the update...`);
+          waitForPortalEsp32Health();
+          return;
+        }
+        forgetPortalEsp32Target();
+        if (compareFirmwareVersions(running, target) === 0) {
+          setFirmwareUpdateNotice(`ESP32 update confirmed: it now runs ${running}.`, 'var(--success)');
+          return;
+        }
+        if (!device?.espRollbackNotice) {
+          setFirmwareUpdateNotice(`ESP32 update not confirmed: it runs ${running}, expected ${target}. It may have rolled back.`);
+          log(firmwareUpdateNotice.text, 'warning');
+          return;
+        }
       }
+      if (device?.espRollbackNotice) {
+        const failed = device.espRolledBackVersion || target || 'the new image';
+        setFirmwareUpdateNotice(`ESP32 update rolled back: ${failed} failed its startup health check, so the ESP32 restored ${running || 'its previous firmware'}. Clear the notice here or with OK on the adapter.`);
+        if (!portalEsp32RollbackLogged) log(firmwareUpdateNotice.text, 'warning');
+        portalEsp32RollbackLogged = true;
+      }
+    }
+
+    // An RP2040 that predates the bridge heartbeat cannot pass the adapter's
+    // OK to the ESP32, so the page can clear the rollback notice as well.
+    function syncPortalEsp32NoticeClear() {
+      firmwareNoticeClearBtn?.classList.toggle('hidden',
+        !(device?.transport === 'esp32-portal' && device?.espRollbackNotice));
+    }
+
+    async function dismissPortalEsp32Notice() {
+      if (device?.transport !== 'esp32-portal' || !device.espRollbackNotice) return;
+      try {
+        await fetchPortalEsp32Update('/api/v1/esp32/update/notice', { method: 'DELETE' });
+        device.espRollbackNotice = false;
+        device.espRolledBackVersion = '';
+        portalEsp32RollbackLogged = false;
+        setFirmwareUpdateNotice('ESP32 rollback notice cleared.', 'var(--text-secondary)');
+      } catch (error) {
+        setFirmwareUpdateNotice(`ESP32 rollback notice not cleared: ${error.message}`, 'var(--error-text)');
+      }
+      updateFirmwareUpdateUi();
     }
 
     async function runFirmwareUpdate() {
@@ -15721,14 +14240,6 @@ document.getElementById('authorize-serial').addEventListener('click', function (
       }
     }
 
-    function toggleMemoryCardCollapsible(title) {
-      toggleCollapsible(title);
-      memoryCardExpansionUserSet = true;
-      if (title.classList.contains('expanded')) {
-        scheduleMemoryCardAutoWorkflow();
-      }
-    }
-
     function updateMemoryCardExpansion() {
       if (memoryCardExpansionUserSet) return;
       setMemoryCardExpanded(false);
@@ -15820,7 +14331,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
       if (!tab || tab.classList.contains('hidden') === !available) return;
       tab.classList.toggle('hidden', !available);
       if (!available && tab.classList.contains('active')) {
-        document.querySelector('#controller-tools-card [data-tab="turbo"]')?.click();
+        document.querySelector('#adapt-menu [data-tab="turbo"]')?.click();
       }
     }
 
@@ -15834,7 +14345,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
     function updateRumbleToolVisibility(inputMode = featureInputMode, controllerName = currentControllerName || lastDeviceInfoControllerName) {
       const hasControllerRumble = activeAdaptProduct.rumbleTools && controllerSupportsRumble(inputMode, controllerName);
       setToolTabAvailable(document.querySelector('[data-tab="rumble"]'), hasControllerRumble);
-      setToolTabAvailable(document.querySelector('#controller-tools-card [data-tab="dual-merge"]'),
+      setToolTabAvailable(document.querySelector('#adapt-menu [data-tab="dual-merge"]'),
         dualMergeAvailableForInput(inputMode, controllerName));
 
       const rumbleDesc = document.getElementById('rumble-description');
@@ -15982,6 +14493,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
         controllerToolsCard.classList.remove('hidden');
       } else {
         // Keep Device Information visible for reconnects, hide live device cards.
+        setRemapMenuCount('');
         commandsCard.classList.add('hidden');
         updateOledAvailability();
         memoryCardCard.classList.add('hidden');
@@ -16057,6 +14569,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
         // Rows and values belong to one input. A live change of input needs
         // them all reread, or the next edit lands on the wrong record.
         if (inputChanged) {
+          setRemapMenuCount('');
           await updateSettingsDisplay();
           return true;
         }
@@ -16219,7 +14732,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
       const toolsCard = document.getElementById('controller-tools-card');
       if (!toolsCard || toolsCard.classList.contains('hidden')) return;
 
-      const selectedTab = toolsCard.querySelector('.debug-tab.active')?.dataset.tab;
+      const selectedTab = document.querySelector('#adapt-menu .debug-tab.active')?.dataset.tab;
       if (selectedTab === 'turbo') {
         await refreshTurboSettings(options);
       } else if (selectedTab === 'remap') {
@@ -16291,7 +14804,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
       if (!device) return;
       controllerToolsCard.classList.toggle('hidden', limited);
       controllerSettingsCard.classList.toggle('hidden', limited);
-      document.querySelector('#controller-tools-card [data-tab="pad-test"]')
+      document.querySelector('#adapt-menu [data-tab="pad-test"]')
         ?.classList.toggle('hidden', !padTestAvailable());
       updateModeWarnings();
     }
@@ -17260,6 +15773,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
     connectBtn.addEventListener('click', toggleDeviceConnection);
     firmwareCheckUpdateBtn.addEventListener('click', checkFirmwareUpdate);
     firmwareUpdateBtn.addEventListener('click', runFirmwareUpdate);
+    firmwareNoticeClearBtn?.addEventListener('click', dismissPortalEsp32Notice);
     firmwareWriteBtn.addEventListener('click', writePendingFirmwareUf2);
     firmwareWriteConfirm?.addEventListener('change', updateFirmwareUpdateUi);
     firmwareChooseUf2Btn?.addEventListener('click', () => {
@@ -19576,34 +18090,31 @@ document.getElementById('authorize-serial').addEventListener('click', function (
     // Debug Panel Functions
     // =============================================================================
 
-    // Tab switching with auto-start/stop for monitoring features
-    document.querySelectorAll('.debug-tab').forEach(tab => {
+    // The menu shows one page at a time and starts or stops monitoring features.
+    document.querySelectorAll('#adapt-menu .debug-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         const selectedTab = tab.dataset.tab;
-        const tabScope = tab.closest('.card') || document;
 
-        // Stop any running monitors when switching tabs
+        // Stop any running monitors when switching pages
         stopGpioMonitor();
-        if (tabScope.querySelector('#cal-manual-panel')) stopCalCapture();
+        stopCalCapture();
+        stopPadTest();
+        cancelRemapAssign();
 
-        // Update tab buttons
-        tabScope.querySelectorAll('.debug-tab').forEach(t => t.classList.remove('active'));
+        // Update menu items
+        document.querySelectorAll('#adapt-menu .debug-tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
 
-        // Show selected panel
-        const panelId = 'debug-' + selectedTab;
-        tabScope.querySelectorAll('.debug-panel').forEach(panel => {
-          panel.classList.toggle('hidden', panel.id !== panelId);
+        // Show the selected page. The hidden attribute selects the page; the
+        // hidden class stays the script's own "not available" flag.
+        const panelId = tab.dataset.page || 'debug-' + selectedTab;
+        document.querySelectorAll('.debug-panel').forEach(panel => {
+          panel.hidden = panel.id !== panelId;
         });
 
         // Auto-start GPIO monitor when GPIO tab is active
         if (selectedTab === 'gpio' && device) {
           startGpioMonitor();
-        }
-
-        if (tab.closest('#controller-tools-card')) {
-          stopPadTest();
-          cancelRemapAssign();
         }
 
         // Auto-refresh settings/turbo/remap when entering those tabs
@@ -19618,6 +18129,11 @@ document.getElementById('authorize-serial').addEventListener('click', function (
             refreshTurboSettings();
           } else if (selectedTab === 'remap') {
             refreshRemapSettings();
+          } else if (selectedTab === 'memory-cards') {
+            memoryCardExpansionUserSet = true;
+            setTimeout(() => {
+              if (device && !document.getElementById('memory-card-card')?.hidden) scheduleMemoryCardAutoWorkflow();
+            }, 600);
             // other-products:begin
           } else if (selectedTab === 'modern2usb-management') {
             refreshModern2UsbManagement();
@@ -20428,20 +18944,20 @@ document.getElementById('authorize-serial').addEventListener('click', function (
       grid.innerHTML = '';
 
       if (!buttons.length) {
-        grid.innerHTML = '<div style="color: var(--text-secondary);">2P Merge is not available for this controller.</div>';
+        grid.innerHTML = '<tr><td colspan="2" class="svc-muted">2P Merge is not available for this controller.</td></tr>';
         return;
       }
 
       buttons.forEach((button) => {
-        const item = document.createElement('div');
+        const item = document.createElement('tr');
         item.className = 'tool-row';
         const owner = (mask & button.mask) !== 0 ? '2' : '1';
         item.innerHTML = `
-          <div style="font-weight: 600; margin-bottom: 8px;">${button.name}</div>
-          <select class="select dual-merge-owner" data-mask="${button.mask >>> 0}" aria-label="${button.name} comes from">
+          <td class="svc-name">${button.name}</td>
+          <td><select class="select svc-sm dual-merge-owner" data-mask="${button.mask >>> 0}" aria-label="${button.name} comes from">
             <option value="1"${owner === '1' ? ' selected' : ''}>Player 1</option>
             <option value="2"${owner === '2' ? ' selected' : ''}>Player 2</option>
-          </select>
+          </select></td>
         `;
         grid.appendChild(item);
       });
@@ -21480,13 +19996,13 @@ document.getElementById('authorize-serial').addEventListener('click', function (
       turboButtonDefsSignature = turboButtonDefsKey(buttonDefs);
 
       turboButtonNames.forEach((button) => {
-        const item = document.createElement('div');
+        const item = document.createElement('tr');
         item.className = 'tool-row';
         item.innerHTML = `
-          <label class="form-label" for="turbo-btn-${button.idx}">${button.name}</label>
-          <select id="turbo-btn-${button.idx}" class="select">
+          <td class="svc-name"><label for="turbo-btn-${button.idx}">${button.name}</label></td>
+          <td><select id="turbo-btn-${button.idx}" class="select svc-sm">
             ${TURBO_RATE_ORDER.map((i) => `<option value="${i}">${TURBO_RATES[i]}</option>`).join('')}
-          </select>
+          </select></td>
         `;
         grid.appendChild(item);
 
@@ -21782,17 +20298,18 @@ document.getElementById('authorize-serial').addEventListener('click', function (
       remapButtonSignature = `${remapButtonNames.join('|')}|${remapSlotMap.join(',')}|${actualOutputModeValue()}|${lastSettingsSnapshot?.nsoSpecial || 0}|${remapDpadSupported}`;
 
       const addRow = (name, id, choices) => {
-        const item = document.createElement('div');
+        const item = document.createElement('tr');
         item.className = 'tool-row';
         item.innerHTML = `
-          <label class="form-label" for="${id}">${escapeHtml(name)} &rarr;</label>
-          <select id="${id}" class="select">
+          <td class="svc-name"><label for="${id}">${escapeHtml(name)}</label></td>
+          <td><select id="${id}" class="select svc-sm">
             ${choices.map(({name, value, disabled}) => `<option value="${value}"${disabled ? ' disabled' : ''}>${escapeHtml(name)}</option>`).join('')}
-          </select>
-          <div class="tool-row-actions">
-            <button class="btn btn-secondary btn-sm remap-assign-btn" type="button" aria-label="Press to assign ${escapeHtml(name)}">Press to assign</button>
+          </select></td>
+          <td class="svc-hide-sm svc-muted remap-default"></td>
+          <td class="svc-num">
+            <button class="btn btn-secondary btn-sm remap-assign-btn" type="button" aria-label="Press to assign ${escapeHtml(name)}">Assign</button>
             <button class="btn btn-secondary btn-sm remap-reset-btn" type="button" aria-label="Reset ${escapeHtml(name)}">Reset</button>
-          </div>
+          </td>
         `;
         grid.appendChild(item);
 
@@ -21905,6 +20422,27 @@ document.getElementById('authorize-serial').addEventListener('click', function (
       }
       document.getElementById('remap-active-count').textContent = activeCount;
       updateN64RemapChoices();
+      markRemapDefaults();
+      setRemapMenuCount(activeCount);
+    }
+
+    // The count after Remap in the menu; cleared when it no longer describes
+    // the adapter (a disconnect or a live change of input) until Remap reads again.
+    function setRemapMenuCount(count) {
+      document.querySelector('#adapt-menu [data-tab="remap"]')?.setAttribute('data-count', String(count ?? ''));
+    }
+
+    // Each row shows its default and marks a change from it.
+    function markRemapDefaults() {
+      document.querySelectorAll('#remap-buttons-grid tr').forEach(row => {
+        const select = row.querySelector('select');
+        if (!select) return;
+        const fallback = String(remapRowIdentity(select.id));
+        const option = Array.from(select.options).find(entry => entry.value === fallback);
+        const cell = row.querySelector('.remap-default');
+        if (cell) cell.textContent = option?.textContent || '-';
+        row.querySelector('.svc-name')?.classList.toggle('svc-changed', select.value !== fallback);
+      });
     }
 
     async function refreshRemapSettings(options = {}) {
@@ -23001,84 +21539,128 @@ document.getElementById('authorize-serial').addEventListener('click', function (
     updateOverlayProfilePreview();
   </script>
   <script>
-    // Page shell: section links, collapsible and tab keyboard use, and log tools.
-    // It reads the device state only through what the main script shows.
+    // Page shell: the menu shows one page at a time, the ident line repeats
+    // the device state, and the log tools. It reads the device state only
+    // through what the main script shows.
     (function initAppShell() {
       const main = document.getElementById('main');
-      const links = Array.from(document.querySelectorAll('[data-nav-target]'));
-      const sections = links.map(link => document.getElementById(link.dataset.navTarget));
+      const menu = document.getElementById('adapt-menu');
+      const tabs = Array.from(menu.querySelectorAll('[role="tab"]'));
+      const pageFor = tab => document.getElementById(tab.dataset.page || `debug-${tab.dataset.tab}`);
 
-      function syncSectionLinks() {
-        links.forEach((link, index) => {
-          link.hidden = !sections[index] || sections[index].classList.contains('hidden');
-        });
+      // A page is offered while its menu item and everything around it are shown.
+      function tabAvailable(tab) {
+        const page = pageFor(tab);
+        return !tab.classList.contains('hidden') && !!page && !page.closest('.hidden');
       }
-      const sectionObserver = new MutationObserver(syncSectionLinks);
-      sections.forEach(section => section && sectionObserver.observe(section, { attributes: true, attributeFilter: ['class'] }));
-      syncSectionLinks();
 
-      links.forEach((link, index) => link.addEventListener('click', () => {
-        const title = sections[index]?.querySelector('.card-title.collapsible:not(.expanded)');
-        if (title) title.click();
+      // The page last opened from the menu, by click, keys or a shortcut, but not
+      // by the fallback below. When it comes back
+      // after a restart or reconnect the menu returns to it without reopening it,
+      // since the connect sequence rereads its contents. Pages that start work
+      // when opened (Pad Test, Memory Cards, GPIO, product management) wait for the user.
+      const QUIET_RETURN = new Set(['status', 'live', 'mode-settings', 'remap', 'turbo', 'rumble',
+        'dual-merge', 'backup', 'system-settings', 'auth-keys', 'log', 'overlay']);
+      let chosen = 'status';
+      let fallingBack = false;
+      function selectQuietly(tab) {
+        const page = pageFor(tab);
+        tabs.forEach(item => item.classList.toggle('active', item === tab));
+        document.querySelectorAll('.debug-panel').forEach(panel => { panel.hidden = panel !== page; });
+      }
+
+      function syncMenu() {
+        tabs.forEach(tab => {
+          const selected = tab.classList.contains('active');
+          tab.hidden = !tabAvailable(tab);
+          tab.setAttribute('aria-selected', String(selected));
+          tab.setAttribute('aria-controls', pageFor(tab)?.id || '');
+          tab.tabIndex = selected ? 0 : -1;
+        });
+        menu.querySelectorAll('.svc-menu-group').forEach(group => {
+          let item = group.nextElementSibling;
+          let shown = false;
+          while (item && !item.classList.contains('svc-menu-group')) {
+            if (item.matches('[role="tab"]') && !item.hidden) shown = true;
+            item = item.nextElementSibling;
+          }
+          group.hidden = !shown;
+        });
+        const modeSettings = tabs.find(tab => tab.dataset.tab === 'mode-settings');
+        setText('status-io-note', modeSettings && !modeSettings.hidden
+          ? 'Change either on Mode Settings.' : "Change either in the adapter's Quick Menu.");
+        const active = tabs.find(tab => tab.classList.contains('active'));
+        const wanted = tabs.find(tab => tab.dataset.tab === chosen);
+        if (wanted && wanted !== active && !wanted.hidden && QUIET_RETURN.has(chosen)) selectQuietly(wanted);
+        else if (!active || active.hidden) {
+          fallingBack = true;
+          try {
+            tabs.find(tab => !tab.hidden)?.click();
+          } finally {
+            fallingBack = false;
+          }
+        }
+      }
+      // Recorded in the capture phase, before the item's own click handler
+      // opens its page: a mouse click lets the observer run between the
+      // item's listeners, and syncMenu would put the old page back if the
+      // new choice were not known yet.
+      menu.addEventListener('click', event => {
+        const tab = event.target.closest('[role="tab"]');
+        if (tab && tabs.includes(tab) && !fallingBack) chosen = tab.dataset.tab;
+      }, true);
+      const watched = new Set([...tabs, ...tabs.map(pageFor).filter(Boolean),
+        ...document.querySelectorAll('.adapt-page-group')]);
+      const menuObserver = new MutationObserver(syncMenu);
+      watched.forEach(element => menuObserver.observe(element, { attributes: true, attributeFilter: ['class'] }));
+      syncMenu();
+
+      const STEP = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 };
+      menu.addEventListener('keydown', event => {
+        const visible = tabs.filter(tab => !tab.hidden);
+        const index = visible.indexOf(document.activeElement);
+        if (index < 0 || !(event.key in STEP || event.key === 'Home' || event.key === 'End')) return;
+        event.preventDefault();
+        const next = event.key === 'Home' ? visible[0]
+          : event.key === 'End' ? visible[visible.length - 1]
+          : visible[(index + STEP[event.key] + visible.length) % visible.length];
+        next.focus();
+        next.click();
+      });
+      document.querySelectorAll('[data-open-tab]').forEach(button => button.addEventListener('click', () => {
+        menu.querySelector(`[data-tab="${button.dataset.openTab}"]`)?.click();
       }));
 
-      if ('IntersectionObserver' in window) {
-        const seen = new Set();
-        const spy = new IntersectionObserver(entries => {
-          entries.forEach(entry => (entry.isIntersecting ? seen.add(entry.target) : seen.delete(entry.target)));
-          const current = sections.find(section => seen.has(section));
-          links.forEach((link, index) => {
-            if (sections[index] === current) link.setAttribute('aria-current', 'true');
-            else link.removeAttribute('aria-current');
-          });
-        }, { rootMargin: '-90px 0px -55% 0px' });
-        sections.forEach(section => section && spy.observe(section));
+      // The ident line and the Status readout repeat what the pages show.
+      const shown = id => document.getElementById(id)?.textContent.trim() || '-';
+      function setText(id, value) {
+        const element = document.getElementById(id);
+        if (element && element.textContent !== value) element.textContent = value;
       }
-
-      // The titles are headings the mouse can click; give keyboards the same.
-      function syncCollapsible(title) {
-        title.setAttribute('aria-expanded', String(title.classList.contains('expanded')));
+      function syncIdent() {
+        const input = shown('input-mode-name');
+        const output = shown('output-mode-name');
+        setText('ident-firmware', shown('info-firmware'));
+        setText('ident-controller', shown('info-controller'));
+        setText('ident-input', input);
+        setText('ident-output', output);
+        setText('status-io-value', `${input} ▸ ${output}`);
+        // "product / board / unit ID / build" reads as three lines; anything
+        // else (legacy firmware, guidance) stays one Identity line.
+        const identity = shown('info-management-identity').split(' / ');
+        const split = identity.length === 4;
+        document.getElementById('status-identity-row').hidden = split;
+        document.querySelectorAll('[data-identity-part]').forEach(row => {
+          row.hidden = !split;
+          if (split) row.lastElementChild.textContent = identity[Number(row.dataset.identityPart)];
+        });
       }
-      const titleObserver = new MutationObserver(records => records.forEach(record => syncCollapsible(record.target)));
-      document.querySelectorAll('.card-title.collapsible').forEach(title => {
-        title.setAttribute('role', 'button');
-        title.tabIndex = 0;
-        syncCollapsible(title);
-        titleObserver.observe(title, { attributes: true, attributeFilter: ['class'] });
-        title.addEventListener('keydown', event => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            title.click();
-          }
-        });
+      const identObserver = new MutationObserver(syncIdent);
+      ['input-mode-name', 'output-mode-name', 'info-firmware', 'info-controller', 'info-management-identity'].forEach(id => {
+        const source = document.getElementById(id);
+        if (source) identObserver.observe(source, { childList: true, characterData: true, subtree: true });
       });
-
-      document.querySelectorAll('.debug-tabs').forEach(tabList => {
-        const tabs = Array.from(tabList.querySelectorAll('.debug-tab'));
-        tabList.setAttribute('role', 'tablist');
-        function syncTabs() {
-          tabs.forEach(tab => {
-            const selected = tab.classList.contains('active');
-            tab.setAttribute('role', 'tab');
-            tab.setAttribute('aria-selected', String(selected));
-            tab.setAttribute('aria-controls', `debug-${tab.dataset.tab}`);
-            tab.tabIndex = selected ? 0 : -1;
-          });
-        }
-        syncTabs();
-        const tabObserver = new MutationObserver(syncTabs);
-        tabs.forEach(tab => tabObserver.observe(tab, { attributes: true, attributeFilter: ['class'] }));
-        tabList.addEventListener('keydown', event => {
-          if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-          const visible = tabs.filter(tab => !tab.classList.contains('hidden'));
-          const index = visible.indexOf(document.activeElement);
-          if (index < 0) return;
-          event.preventDefault();
-          const next = visible[(index + (event.key === 'ArrowRight' ? 1 : visible.length - 1)) % visible.length];
-          next.focus();
-          next.click();
-        });
-      });
+      syncIdent();
 
       const logEl = document.getElementById('log');
       const logText = () => Array.from(logEl.querySelectorAll('.log-entry'))
@@ -23099,38 +21681,41 @@ document.getElementById('authorize-serial').addEventListener('click', function (
     })();
   </script>
   <script>
-    (function initReflexThemeToggle() {
-      const storageKey = "reflex-theme";
+    // Screen colour and Light, as Reflex-CSS docs/service-menu.md (Themes) sets
+    // out: Light keeps the shared reflex-theme value (dark or lab) that other
+    // Reflex pages read; the colour is Adapt's own, default Midnight.
+    (function initServiceMenuTheme() {
       const root = document.documentElement;
-      const scopes = [root].concat(Array.from(document.querySelectorAll("[data-reflex-theme-scope]")));
-      const buttons = Array.from(document.querySelectorAll("[data-reflex-theme-option]"));
-      const normalize = (theme) => (theme === "lab" || theme === "light" ? "lab" : "dark");
+      const scopes = [root].concat(Array.from(document.querySelectorAll('[data-reflex-theme-scope]')));
+      const THEMES = {
+        midnight: ['midnight', 'midnight-light'], reflex: ['reflex', 'reflex-light'], green: ['', 'lab'],
+        amber: ['amber', 'amber-light'], white: ['white', 'white-light'],
+      };
+      const picker = document.getElementById('theme-colour');
+      const lightButton = document.getElementById('theme-light-btn');
+      const read = key => { try { return localStorage.getItem(key); } catch (error) { return null; } };
+      const write = (key, value) => { try { localStorage.setItem(key, value); } catch (error) { } };
+      const colourOf = value => (Object.hasOwn(THEMES, value || '') ? value : 'midnight');
+      let colour = colourOf(read('adapt-svc-colour'));
+      let light = ['lab', 'light'].includes(read('reflex-theme'));
 
-      function applyTheme(theme) {
-        const activeTheme = normalize(theme);
-        scopes.forEach((scope) => {
-          if (activeTheme === "lab") {
-            scope.setAttribute("data-reflex-theme", "lab");
-          } else {
-            scope.removeAttribute("data-reflex-theme");
-          }
-        });
-        buttons.forEach((button) => {
-          button.setAttribute("aria-pressed", String(normalize(button.dataset.reflexThemeOption) === activeTheme));
-        });
-        try {
-          localStorage.setItem(storageKey, activeTheme);
-        } catch (error) {
-        }
+      function applyTheme() {
+        const theme = THEMES[colour][light ? 1 : 0];
+        scopes.forEach(scope => (theme ? scope.setAttribute('data-reflex-theme', theme) : scope.removeAttribute('data-reflex-theme')));
+        lightButton?.setAttribute('aria-pressed', String(light));
+        if (picker) picker.value = colour;
       }
-
-      let savedTheme = "dark";
-      try {
-        savedTheme = localStorage.getItem(storageKey) || "dark";
-      } catch (error) {
-      }
-      applyTheme(savedTheme);
-      buttons.forEach((button) => button.addEventListener("click", () => applyTheme(button.dataset.reflexThemeOption)));
+      picker?.addEventListener('change', () => {
+        colour = colourOf(picker.value);
+        write('adapt-svc-colour', colour);
+        applyTheme();
+      });
+      lightButton?.addEventListener('click', () => {
+        light = !light;
+        write('reflex-theme', light ? 'lab' : 'dark');
+        applyTheme();
+      });
+      applyTheme();
     })();
   </script>
 </body>

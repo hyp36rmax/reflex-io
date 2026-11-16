@@ -197,11 +197,25 @@ uint8_t QuickConfigMenu::negconInputForItem(QuickConfigItem item) {
   }
 }
 
+// The layout the staged Output and D-pad rows would give a neGcon.
+static NegconOutputLayout quickConfigNegconLayout(outputMode_t tempOutput, uint8_t tempDpadMode) {
+  const outputMode_t output = canonicalizeOutputMode(quickConfigResolvedOutputMode(tempOutput));
+  return negconOutputLayout(output, output_supports_analog_triggers(output),
+                            tempDpadMode != DPAD_MODE_RIGHT_STICK);
+}
+
 bool QuickConfigMenu::tempNegconInputHasPressure(uint8_t input) {
-  const outputMode_t output =
-    canonicalizeOutputMode(quickConfigResolvedOutputMode(temp_output_mode));
-  return negconInputHasPressure(
-    negconOutputLayout(output, output_supports_analog_triggers(output)), input);
+  return negconInputHasPressure(quickConfigNegconLayout(temp_output_mode, temp_dpad_mode), input);
+}
+
+bool QuickConfigMenu::tempNegconInputDigital(uint8_t input) {
+  return negconInputDigital(temp_negcon_digital, input,
+                            quickConfigNegconLayout(temp_output_mode, temp_dpad_mode));
+}
+
+void QuickConfigMenu::toggleTempNegconInput(uint8_t input) {
+  temp_negcon_digital = toggleNegconInput(
+    temp_negcon_digital, input, quickConfigNegconLayout(temp_output_mode, temp_dpad_mode));
 }
 
 static bool quickConfigSelectionHasTouchCursor() {
@@ -322,6 +336,7 @@ void QuickConfigMenu::buildHotkeyItems() {
   hotkey_items[hotkey_count++] = QCI_START_UP;
   hotkey_items[hotkey_count++] = QCI_JVS_MENU_HOLD;
   hotkey_items[hotkey_count++] = QCI_JVS_HOME_HOTKEY;
+  hotkey_items[hotkey_count++] = QCI_JVS_HOLD_START;
   return;
 #endif
   if (menuModeUsesBasicKeypadQuickConfig(temp_input_mode)) {
@@ -632,7 +647,7 @@ void QuickConfigMenu::buildVisibleItems() {
     bool analogPressure = false;
     for (uint8_t input : kNegconInputs) {
       analogPressure = analogPressure ||
-        (tempNegconInputHasPressure(input) && (temp_negcon_digital & input) == 0);
+        (tempNegconInputHasPressure(input) && !tempNegconInputDigital(input));
     }
     if (analogPressure) addVisibleItem(QCI_NEGCON_GAIN);
   }
@@ -832,6 +847,7 @@ const char* QuickConfigMenu::getItemName(QuickConfigItem item) {
 #endif
     case QCI_JVS_MENU_HOLD: return "Menu Hold";
     case QCI_JVS_HOME_HOTKEY: return "Down+Start";
+    case QCI_JVS_HOLD_START: return "Hold Start";
     case QCI_SWITCH_RTRIG_STICK:
 #if defined(ADAPT_CAP_JVS_INPUT_STATUS)
       return "Pedals to RStick";
@@ -1019,6 +1035,12 @@ const char* QuickConfigMenu::getItemValue(QuickConfigItem item) {
 #else
       return "Off";
 #endif
+    case QCI_JVS_HOLD_START:
+#if defined(ADAPT_CAP_JVS_INPUT_STATUS)
+      return temp_jvs_hold_start ? "OSD" : "Off";
+#else
+      return "Off";
+#endif
     case QCI_TRIGGERS:
       switch (temp_triggers) {
         case TRIGGER_MODE_DIGITAL: return "Digital";
@@ -1131,7 +1153,7 @@ const char* QuickConfigMenu::getItemValue(QuickConfigItem item) {
     case QCI_NEGCON_I:
     case QCI_NEGCON_II:
     case QCI_NEGCON_L:
-      return (temp_negcon_digital & negconInputForItem(item)) ? "Digital" : "Analog";
+      return tempNegconInputDigital(negconInputForItem(item)) ? "Digital" : "Analog";
     case QCI_NEGCON_GAIN:
       return negconGainName(temp_negcon_gain);
 #endif
@@ -1147,7 +1169,8 @@ bool QuickConfigMenu::isDirectlyEditable(QuickConfigItem item) {
     case QCI_START_LEFT: case QCI_START_RIGHT: case QCI_START_UP:
     case QCI_START_DOWN:
     case QCI_JVS_MENU_HOLD:
-    case QCI_JVS_HOME_HOTKEY: return true;
+    case QCI_JVS_HOME_HOTKEY:
+    case QCI_JVS_HOLD_START: return true;
 #if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
     case QCI_USB2DB15_ACTIVATION:
     case QCI_USB2DB15_AUTO_SHOOT:

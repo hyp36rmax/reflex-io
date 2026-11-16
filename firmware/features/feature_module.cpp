@@ -39,10 +39,16 @@
 #ifdef ADAPT_CAP_ARCADE_MAPPING_SESSION
 #include "usb2db15/usb2db15_arcade_mapping.h"
 #endif
+#if defined(ADAPT_FEATURE_OUTPUT_TRIAL)
+#include "output_trial/output_trial.h"
+#endif
 
 namespace {
 
 const FeatureModule* const kFeatureModules[] = {
+#if defined(ADAPT_FEATURE_OUTPUT_TRIAL)
+  &kOutputTrialFeatureModule,
+#endif
 #if defined(ADAPT_FEATURE_JAGUAR_TRACE)
   &kJaguarTraceFeatureModule,
 #endif

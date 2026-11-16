@@ -6,3 +6,10 @@ CHANGELOG.md text eol=lf
 tools/adapt_manager/reflex_adapt_manager.sh.in text eol=lf
 tools/adapt_manager/reflex-adapt-manager.ini text eol=lf
 tools/release_assets/adapt-manager/mister/Scripts/Reflex_Adapt/*.sh text eol=lf
+# Checked byte for byte by the release checks: the update public key against
+# the trust anchor in modern2usb_update_trust.h, and the SDL GameControllerDB
+# snapshot against its pinned SHA-256. A fresh Windows clone with
+# core.autocrlf=true wrote them with CRLF and both checks failed (2026-11-10).
+tools/release_keys/*.pem text eol=lf
+third_party/SDL_GameControllerDB.txt text eol=lf
+tools/hid_compat/gamecontrollerdb_reflex.txt text eol=lf

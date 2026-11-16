@@ -264,7 +264,9 @@ void updateDirectionalHotkeys() {
   }
 }
 bool directionalHomeHotkeyEnabled(uint8_t port) {
-  if (!menu_home_hotkey) return false;
+  return menu_home_hotkey && directionalHomeHotkeyAllowed(port);
+}
+bool directionalHomeHotkeyAllowed(uint8_t port) {
 #if defined(ADAPT_CAP_CONTROLLER_HOTKEY_PROFILES)
   const auto* slot = refreshControllerShortcuts(port);
   return slot && controllerCanChord(*slot) &&

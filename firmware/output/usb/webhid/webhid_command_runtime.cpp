@@ -57,6 +57,7 @@ void webhid_process_commands() {
     case WEBHID_CMD_REBOOT:
       delay(100);
       if (prepareForFirmwareReset()) {
+        markIntentionalReset();
         rp2040.reboot();
       }
       break;
@@ -73,6 +74,7 @@ void webhid_process_commands() {
       if (!factoryResetSettings()) break;
       delay(100);
       if (prepareForFirmwareReset()) {
+        markIntentionalReset();
         rp2040.reboot();
       }
       break;

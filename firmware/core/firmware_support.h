@@ -24,6 +24,9 @@ extern ps4_device_type_emum ps4_type;
 
 void reboot(void);
 void rebootToBootloader(void);
+// For resets that do not go through reboot(): marks the reset as deliberate
+// so CRASH STATUS does not report it as a watchdog timeout.
+void markIntentionalReset(void);
 bool prepareForFirmwareReset(void);
 void setLed(uint8_t state);
 void waitWithBuzzerUpdates(uint32_t durationMs);

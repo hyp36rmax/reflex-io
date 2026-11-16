@@ -363,7 +363,13 @@ void auto_detect_clear_scratch_state() {
 }
 
 void auto_detect_clear_input_scratch_state() {
-  watchdog_hw->scratch[AUTO_INPUT_MODE_SCRATCH_MAGIC] = 0;
+  // scratch[4] also holds the SDK's watchdog_enable() marker, which crash
+  // telemetry needs to tell a watchdog hang from other resets. Clearing it at
+  // runtime (a PC Mode change does) left a later hang recorded as WATCHDOG=0
+  // (bench, 2026-11-11), so only the hint's own magic is cleared.
+  if (watchdog_hw->scratch[AUTO_INPUT_MODE_SCRATCH_MAGIC] == AUTO_INPUT_MODE_MAGIC) {
+    watchdog_hw->scratch[AUTO_INPUT_MODE_SCRATCH_MAGIC] = 0;
+  }
   watchdog_hw->scratch[AUTO_INPUT_MODE_SCRATCH_MODE] = 0;
 }
 

@@ -179,7 +179,7 @@ HotkeyBindingSet buildLegacyHotkeyBindings() {
     if (!menuHotkeySystemEnabledFromRaw(globalSettings.menu_hotkey)) {
       bindings.system_menu = 0;
     }
-    if (globalSettings.home_hotkey == 0) {
+    if ((globalSettings.home_hotkey & HOME_HOTKEY_VALUE_MASK) == 0) {
       bindings.home = 0;
     }
     if (globalSettings.capture_hotkey == 0) {

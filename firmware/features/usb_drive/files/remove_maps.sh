@@ -18,7 +18,7 @@ DIR=/media/fat/config/inputs
 # input mode (ReflexN64, ReflexSat, ...), with spaces as underscores.
 NAMES="ReflexClassic2USB Adapt_Classic2USB
 ReflexN64 ReflexGC ReflexNES ReflexSNES ReflexVboy ReflexMD ReflexSat ReflexSat3D
-ReflexWii ReflexPCE ReflexPSDS1 ReflexPSDS2 ReflexNeoGeo Reflex3DO ReflexJag
+ReflexWii ReflexPCE ReflexPSDS1 ReflexPSDS2 ReflexPSNeGcon ReflexNeoGeo Reflex3DO ReflexJag
 ReflexDreamcast ReflexDriving ReflexSMS ReflexJPC ReflexIntv ReflexColeco ReflexCDi
 ReflexPSGun ReflexPSWheel ReflexPSJogCon MiSTer-A1_Paddle MiSTer-A1_Spinner
 ReflexMouse

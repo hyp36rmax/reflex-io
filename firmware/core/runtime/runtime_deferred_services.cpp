@@ -19,8 +19,12 @@
 #include "../../features/jogcon_capture/jogcon_capture.h"
 #include "../../features/n64_capture/n64_capture.h"
 #include "../../features/host_capture/host_capture.h"
+#include "../../features/output_trial/output_trial.h"
 
 void runDeferredRuntimeServices() {
+#if defined(ADAPT_FEATURE_OUTPUT_TRIAL)
+  outputTrialService();
+#endif
 #if defined(ADAPT_FEATURE_N64_CAPTURE)
   n64CaptureService();
 #endif

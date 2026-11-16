@@ -140,6 +140,8 @@ void usb_host_service_release_flash_quiesce();
 bool usb_host_service_flash_quiesced();
 UsbHostServiceStatus usb_host_service_status();
 UsbHostCallbackStatus usb_host_callback_status();
+// Devices TinyUSB has mounted so far (cheap; read every host-service pass).
+uint32_t usb_host_callback_mount_count();
 UsbHostHubPortRecoveryStatus usb_host_hub_port_recovery_status();
 void usb_host_service_write_compact_status(Print& out);
 void usb_host_service_reset_report_rate();

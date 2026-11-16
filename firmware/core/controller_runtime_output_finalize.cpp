@@ -162,7 +162,8 @@ void applyTriggerModeToCachedButtons(const controller_state_t& frame, uint32_t& 
 // has analog triggers, and reports that in HAS_ANALOG_TRIGGERS.
 NegconOutputLayout negconLayoutForFrame(const controller_state_t& frame) {
   const outputMode_t output = canonicalizeOutputMode(get_effective_output_mode());
-  return negconOutputLayout(output, frame.HAS_ANALOG_TRIGGERS);
+  return negconOutputLayout(output, frame.HAS_ANALOG_TRIGGERS,
+                            dpad_mode != DPAD_MODE_RIGHT_STICK);
 }
 
 // Runs from flash, like the rotary tuning, to keep the RAM rebuild small.
@@ -196,7 +197,7 @@ __attribute__((noinline)) void applyNegconInputPressesToProcessedFrames() {
 #endif
 
 void cacheProcessedControllerOutputStateInternal() {
-  for (uint8_t i = 0; i < max_devices; ++i) {
+  for (uint8_t i = 0; i < max_devices && i < MAX_USB_OUT; ++i) {
     const controller_state_t& frame = controllerFrameConst(i);
     uint32_t buttons = applyNintendoPositionButtonMap(
       applyZButtonOutputMode(frame.digital_buttons, frame),
@@ -443,7 +444,7 @@ void __not_in_flash_func(restorePhysicalButtonsAfterUsbSend)() {
     return;
   }
 
-  for (uint8_t i = 0; i < max_devices; ++i) {
+  for (uint8_t i = 0; i < max_devices && i < MAX_USB_OUT; ++i) {
     controller_state_t& frame = controllerFrame(i);
     if (frame.connected) {
       frame.digital_buttons = pre_remap_buttons[i];

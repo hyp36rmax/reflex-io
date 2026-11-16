@@ -11,6 +11,7 @@
 #include "../features/jogcon_capture/jogcon_capture.h"
 #include "../features/n64_capture/n64_capture.h"
 #include "../features/host_capture/host_capture.h"
+#include "../features/output_trial/output_trial.h"
 
 #ifdef ADAPT_FEATURE_RESET_BUTTON
 ButtonHandler resetButton(PIN_RESET_BTN, true, BTN_RESET_LONG_PRESS_MS);
@@ -72,14 +73,20 @@ void reboot(void) {
 #if defined(ADAPT_FEATURE_HOST_CAPTURE)
   hostCapturePreserveSram();
 #endif
+#if defined(ADAPT_FEATURE_OUTPUT_TRIAL)
+  outputTrialPreserveSram();
+#endif
   for (;;) {
   }
 }
+
+void markIntentionalReset(void) { productMarkIntentionalReset(); }
 
 void rebootToBootloader(void) {
   if (!prepareForFirmwareReset()) {
     return;
   }
+  productMarkIntentionalReset();
   productPrepareBootloaderReset();
   rp2040.rebootToBootloader();
 }

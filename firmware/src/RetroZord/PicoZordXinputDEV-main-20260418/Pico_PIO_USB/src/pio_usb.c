@@ -176,14 +176,24 @@ int __no_inline_not_in_flash_func(pio_usb_bus_receive_packet_and_handshake)(
           crc_prev2 = crc_prev;
           crc_prev = crc;
           crc = update_usb_crc16(crc, data);
-          pp->usb_rx_buffer[idx++] = data;
+          // A packet that does not end where it should (bus noise after the
+          // host paused for a flash write, a missed end of packet) used to
+          // run past usb_rx_buffer and overwrite RAM after it (Adapt bench,
+          // 2026-11-11). Keep draining it, store only what fits, and never
+          // ACK it below.
+          if (idx < sizeof(pp->usb_rx_buffer)) {
+            pp->usb_rx_buffer[idx] = data;
+          }
+          if (idx != UINT16_MAX) {
+            idx++;
+          }
           crc_receive = (crc_receive >> 8) | (data << 8);
           crc_receive_inverse = crc_receive ^ 0xffff;
           crc_match = (crc_receive_inverse == crc_prev2);
         }
       }
 
-      if (idx >= 4 && crc_match) {
+      if (idx >= 4 && idx <= sizeof(pp->usb_rx_buffer) && crc_match) {
         pio_usb_bus_send_handshake(pp, USB_PID_ACK);
         // timing critical end
         return idx - 4;

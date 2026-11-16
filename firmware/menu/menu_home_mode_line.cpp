@@ -30,13 +30,17 @@
 
 namespace {
 
-constexpr uint8_t kWirelessNetworkGlyph = 153;
 constexpr uint8_t kHomeModeLineRow = 2;
 constexpr uint8_t kTextCharPixels = 6;
 constexpr uint8_t kFullModeLinePixels = 128;
 constexpr uint8_t kStatusGlyphWidth = 12;
 constexpr uint8_t kWirelessStatusCol =
     kFullModeLinePixels - kStatusGlyphWidth;
+// Wi-Fi icon: three arcs over a dot, 12x8 in OLED page 0 (bit 0 is the top
+// row), level with the "BT" label. Replaces font glyph 153 drawn at 2X, whose
+// three flat bars read as a triangle (owner, 2026-11-11).
+constexpr uint8_t kWirelessNetworkIcon[kStatusGlyphWidth] = {
+    0x04, 0x02, 0x09, 0x25, 0x15, 0xD5, 0xD5, 0x15, 0x25, 0x09, 0x02, 0x04};
 
 struct HomeRadioStatus {
   bool bluetoothConnected;
@@ -129,10 +133,11 @@ void drawHomeRadioStatus(const HomeRadioStatus& status) {
     display.print("BT");
   }
   if (status.wifiConnected) {
-    display.set2X();
     display.setCursor(kWirelessStatusCol, 0);
-    display.print((char)kWirelessNetworkGlyph);
-    display.set1X();
+    for (uint8_t column = 0; column + 1 < kStatusGlyphWidth; ++column) {
+      display.ssd1306WriteRamBuf(kWirelessNetworkIcon[column]);
+    }
+    display.ssd1306WriteRam(kWirelessNetworkIcon[kStatusGlyphWidth - 1]);
   }
   display.setFont(System5x7);
 #endif

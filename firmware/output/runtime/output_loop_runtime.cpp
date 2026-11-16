@@ -19,6 +19,7 @@
 #include "../../core/neutral_frame_packet.h"
 #include "../../core/rumble_test_runtime.h"
 #include "../../core/usb_poll_alignment.h"
+#include "../../core/usb_device_lock.h"
 #include "../../input/runtime/input_frame_runtime.h"
 #include "output_runtime_bridge.h"
 #include "output_product_services.h"
@@ -254,12 +255,15 @@ void processPendingOutputRuntimeTasks() {
 
 void __not_in_flash_func(sendPreparedOutputFrame)() {
 #if defined(ADAPT_FEATURE_JOGCON_CAPTURE)
-  for (uint8_t slot = 0; slot < max_devices; ++slot)
+  for (uint8_t slot = 0; slot < max_devices && slot < MAX_USB_OUT; ++slot)
     jogconCaptureOutput(slot, controllerFrameConst(slot));
 #endif
   #ifdef ADAPT_OUTPUT_USB_DEVICE
   if (productOutputTransportSendPreparedFrame()) return;
-  send_usb_report();
+  {
+    UsbDeviceLock usbLock;  // every persona's send claims an IN endpoint
+    send_usb_report();
+  }
   #elif defined(ENABLE_OUTPUT_ESP32_BT)
   esp32_bt_send();
   #elif defined(ENABLE_OUTPUT_JVS)

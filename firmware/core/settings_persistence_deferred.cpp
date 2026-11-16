@@ -13,6 +13,10 @@
 #include "eeprom_helper.h"
 #include "settings_layout.h"
 #include "../output/output_runtime_state.h"
+#if !defined(REFLEX_HOST_TEST_DEFERRED_SETTINGS) && defined(ADAPT_OUTPUT_USB_DEVICE)
+#include "../output/auth/ps_auth_dongle_runtime.h"
+#include "../output/auth/webhid_auth_runtime.h"
+#endif
 
 namespace {
 
@@ -29,15 +33,41 @@ DeferredSettingsState deferredSettings{};
 
 #if defined(REFLEX_HOST_TEST_DEFERRED_SETTINGS)
 bool hostProtectedSessionActive = false;
+#elif defined(ADAPT_OUTPUT_USB_DEVICE)
+ConsoleAuthSaveGate consoleAuthSaveGate{};
+
+bool consoleSessionActive(outputMode_t mode) {
+  return (mode == OUTPUT_PS4 || mode == OUTPUT_PS5) &&
+         tud_mounted() && !tud_suspended();
+}
 #endif
 
+// A PS4/PS5 session stages every save in RAM (rawProtectedConsoleSessionActive);
+// the staged records are written once the session stops holding them
+// (protectedConsoleSessionHoldsSaves).
 bool rawProtectedConsoleSessionActive() {
 #if defined(REFLEX_HOST_TEST_DEFERRED_SETTINGS)
   return hostProtectedSessionActive;
 #elif defined(ADAPT_OUTPUT_USB_DEVICE)
+  return consoleSessionActive(
+      canonicalizeOutputMode(get_effective_output_mode()));
+#else
+  return false;
+#endif
+}
+
+bool protectedConsoleSessionHoldsSaves() {
+#if defined(REFLEX_HOST_TEST_DEFERRED_SETTINGS)
+  return hostProtectedSessionActive;
+#elif defined(ADAPT_OUTPUT_USB_DEVICE)
   const outputMode_t mode = canonicalizeOutputMode(get_effective_output_mode());
-  return (mode == OUTPUT_PS4 || mode == OUTPUT_PS5) &&
-         tud_mounted() && !tud_suspended();
+  const bool session = consoleSessionActive(mode);
+  // The signer check takes the dongle's mutex, so only a PS5 session asks.
+  return consoleAuthSaveGate.holdsSaves(
+      session,
+      session && mode == OUTPUT_PS5 && ps_auth_dongle_ps5_signer_connected(),
+      ps4Auth.consoleRequestCount() + ps_auth_dongle_console_request_count(),
+      millis());
 #else
   return false;
 #endif
@@ -80,7 +110,7 @@ bool settingsPersistenceHasPending() {
 
 bool settingsPersistenceProtectedSessionActive() {
   return deferredSettings.immediate_depth == 0 &&
-         rawProtectedConsoleSessionActive();
+         protectedConsoleSessionHoldsSaves();
 }
 
 bool settingsPersistenceShouldStageWrites() {

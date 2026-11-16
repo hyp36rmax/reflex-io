@@ -856,7 +856,14 @@ static int __no_inline_not_in_flash_func(usb_in_transaction)(pio_port_t *pp,
   bool const receive_sync = pp->usb_rx_buffer[0] == USB_SYNC;
 
   if (receive_len >= 0 && receive_sync) {
-    if (receive_pid == expect_pid) {
+    if (receive_pid == expect_pid &&
+        receive_len > pio_usb_ll_get_transaction_len(ep)) {
+      // Babble: more data than this transaction may carry would overflow
+      // the caller's buffer, so the transfer fails instead.
+      res = -1;
+      poll_outcome = PIO_USB_POLL_ERROR_OTHER;
+      pio_usb_ll_transfer_complete(ep, PIO_USB_INTS_ENDPOINT_ERROR_BITS);
+    } else if (receive_pid == expect_pid) {
       memcpy(ep->app_buf, &pp->usb_rx_buffer[2], receive_len);
       pio_usb_ll_transfer_continue(ep, receive_len);
       poll_outcome = PIO_USB_POLL_DATA_ACK;

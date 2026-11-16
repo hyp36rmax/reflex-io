@@ -22,6 +22,8 @@ extern uint8_t menu_n64_analog_range;
 extern uint8_t menu_menu_hotkey;
 extern uint8_t menu_system_menu_hotkey;
 extern uint8_t menu_home_hotkey;
+// Start held alone sends Home too (core/controller_runtime_hotkeys.cpp).
+extern uint8_t menu_hold_start_hotkey;
 extern uint8_t menu_capture_hotkey;
 extern uint8_t menu_kiosk_mode;
 extern uint8_t menu_usb2db15_multi_bind;

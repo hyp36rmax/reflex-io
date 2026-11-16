@@ -143,6 +143,18 @@ def build_catalog(legacy_repo: Path) -> dict[str, object]:
                 "releases": [],
             },
             {
+                # Firmware only: JVSIO2USB settings live on its OLED menus.
+                "id": "jvsio2usb",
+                "display_name": "Reflex Adapt JVSIO2USB",
+                "backend": "rp2040-uf2",
+                # MiSTer mode; 16d0:14f7 is shared with the Reflex Nova.
+                "runtime_vid_pid": ["16d0:1460"],
+                "release_feed": (
+                    "https://api.github.com/repos/misteraddons/reflex-io/releases"
+                ),
+                "releases": [],
+            },
+            {
                 "id": "adapt-v1-legacy",
                 "display_name": "Adapt V1 / Legacy",
                 "backend": "avr109",

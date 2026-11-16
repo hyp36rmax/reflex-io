@@ -80,6 +80,8 @@ const usbd_class_driver_t* xboxone_get_driver();
 bool xboxone_vendor_control_xfer_cb(uint8_t rhport, uint8_t stage, const tusb_control_request_t* request);
 bool xboxone_send_report_for_port(uint8_t port);
 XboxOneOutputStatus xboxone_output_status();
+// The GIP announce has gone out, so a console would now start authentication.
+bool xboxone_output_announced();
 void xboxone_register_descriptor_hooks();
 bool xboxone_windows_multi_persona_selected();
 void xboxone_windows_multi_set_enabled(bool enabled);

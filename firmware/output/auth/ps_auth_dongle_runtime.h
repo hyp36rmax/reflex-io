@@ -83,8 +83,13 @@ void ps_auth_dongle_device_connected(uint8_t dev_addr,
                                      uint16_t desc_len);
 void ps_auth_dongle_device_disconnected(uint8_t dev_addr, uint8_t instance);
 bool ps_auth_dongle_is_auth_device(uint16_t vid, uint16_t pid);
+// The PS5 signing dongle's identity, in every output mode: input code uses it
+// to keep the dongle out of player slots without naming it.
+bool ps_auth_dongle_is_ps5_provider_device(uint16_t vid, uint16_t pid);
 bool ps_auth_dongle_is_auth_instance(uint8_t dev_addr, uint8_t instance);
 bool ps_auth_dongle_ps5_provider_observed();
+// A PS5 signing dongle is mounted: only it signs PS5 input reports.
+bool ps_auth_dongle_ps5_signer_connected();
 bool ps_auth_dongle_has_provider_for_mode(outputMode_t mode);
 void ps_auth_dongle_task();
 
@@ -120,6 +125,8 @@ void ps_auth_dongle_complete_ps5_output_report();
 
 bool ps_auth_dongle_has_provider();
 PsAuthDongleStatus ps_auth_dongle_status();
+// Console feature requests relayed to the dongle; moves on each one.
+uint32_t ps_auth_dongle_console_request_count();
 
 #ifdef __cplusplus
 }

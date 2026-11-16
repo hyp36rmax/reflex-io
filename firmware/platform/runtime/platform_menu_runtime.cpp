@@ -683,6 +683,25 @@ void closeMenusFromSerial() {
   #endif
 }
 
+#if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
+// Player setup owns the OLED and both adapter buttons, so a menu or tool
+// screen left open when the controller dropped can no longer be driven or
+// closed. Left flagged open it holds the release gate shut for good, and its
+// draft, made for the last player, would come back over the new mapping.
+// Discard it, as a held Left does.
+static void closeMenusForArcadeSetup() {
+  if (!menuScreensOwnControllerInput()) return;
+  closeMenusFromSerial();
+  // closeMenu() leaves the tool screens flagged; none runs without a menu.
+  if (buttonRemapActive) remapMenu.close();
+  buttonRemapActive = false;
+  padTestActive = padTestInitialized = false;
+  analogTestActive = analogTestInitialized = false;
+  pinDebugActive = pinDebugInitialized = false;
+  jvsStatusActive = jvsStatusInitialized = false;
+}
+#endif
+
 void openControllerMenuFromSerial() {
   closeMenusFromSerial();
   if (productUsesControllerSelectorMenu()) {
@@ -751,6 +770,11 @@ void serviceJvsSafeWindowMenuUi() {
 }
 
 void handleMenuAndButtonUi(ButtonEvent modeEvent, ButtonEvent resetEvent) {
+#if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
+  // Once per loop, before any early return: the session's own queries only
+  // read, so this is the only place connections and setup advance.
+  usb2db15ArcadeSessionTick();
+#endif
 #if defined(ADAPT_CAP_JVS_INPUT_STATUS)
   if (deviceMode == RZORD_JVS && !jvsMenuInSafeWindow) {
     queueJvsMenuEvents(modeEvent, resetEvent);
@@ -907,6 +931,7 @@ void handleMenuAndButtonUi(ButtonEvent modeEvent, ButtonEvent resetEvent) {
   // the controller-profile splash while the hidden HID wizard waits behind it.
   #if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
   if (usb2db15ArcadeUiActive()) {
+    closeMenusForArcadeSetup();
     beginDisplayWire();
     const bool mappingOwnsUi =
         handleUsb2db15ArcadeMapping(modeEvent, resetEvent);

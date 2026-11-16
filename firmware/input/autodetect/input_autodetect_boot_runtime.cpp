@@ -83,7 +83,10 @@ void preserveInputModeForPlayerCountReboot(DeviceEnum mode, uint8_t port_count,
       kAutoInputResolveSourceOutputReenum,
       input_auto_resolve_port);
   } else {
-    watchdog_hw->scratch[AUTO_INPUT_MODE_SCRATCH_MAGIC] = 0;
+    // Leave the SDK's watchdog marker that shares scratch[4] alone.
+    if (watchdog_hw->scratch[AUTO_INPUT_MODE_SCRATCH_MAGIC] == AUTO_INPUT_MODE_MAGIC) {
+      watchdog_hw->scratch[AUTO_INPUT_MODE_SCRATCH_MAGIC] = 0;
+    }
     watchdog_hw->scratch[AUTO_INPUT_MODE_SCRATCH_MODE] = 0;
   }
 }

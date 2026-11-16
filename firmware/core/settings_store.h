@@ -50,6 +50,10 @@ constexpr uint8_t MENU_HOTKEY_OPTION_MASK = MENU_HOTKEY_KIOSK_MASK |
     USB2DB15_MULTI_BIND_OFF_MASK | USB2DB15_GAME_SELECTION_MASK |
     MISTER_DISPLAY_INPUTS_MASK;
 constexpr uint8_t MENU_HOTKEY_FORMAT_MASK = 0x80;
+// home_hotkey keeps Down+Start On/Off (0/1) in its low bits. The top bit turns
+// Hold Start off, so records written before Hold Start existed read it as On.
+constexpr uint8_t HOME_HOTKEY_VALUE_MASK = 0x7F;
+constexpr uint8_t HOLD_START_HOTKEY_OFF_MASK = 0x80;
 constexpr uint8_t WIN_OUTPUT_VALUE_MASK = 0x07;
 constexpr uint8_t WIN_OUTPUT_TRANSPORT_SHIFT = 3;
 constexpr uint8_t WIN_OUTPUT_TRANSPORT_MASK = 0x18;
@@ -177,6 +181,28 @@ inline constexpr uint8_t encodeMenuHotkeyFlags(bool quick, bool system, uint8_t 
          (preserve & MENU_HOTKEY_OPTION_MASK) |
          (quick ? MENU_HOTKEY_QUICK_MASK : 0) |
          (system ? MENU_HOTKEY_SYSTEM_MASK : 0);
+}
+
+// An invalid Down+Start value (an erased 0xFF included) does not vouch for the
+// Hold Start bit either, so such a byte reads both settings at their defaults.
+inline constexpr bool homeHotkeyRawValid(uint8_t raw) {
+  return (raw & HOME_HOTKEY_VALUE_MASK) <= 1;
+}
+
+inline constexpr bool holdStartHotkeyEnabledFromRaw(uint8_t raw) {
+  return !homeHotkeyRawValid(raw) || (raw & HOLD_START_HOTKEY_OFF_MASK) == 0;
+}
+
+inline constexpr uint8_t encodeHomeHotkey(uint8_t raw, bool enabled) {
+  return static_cast<uint8_t>(
+      (homeHotkeyRawValid(raw) ? (raw & HOLD_START_HOTKEY_OFF_MASK) : 0) |
+      (enabled ? 1 : 0));
+}
+
+inline constexpr uint8_t encodeHoldStartHotkey(uint8_t raw, bool enabled) {
+  return static_cast<uint8_t>(
+      (homeHotkeyRawValid(raw) ? (raw & HOME_HOTKEY_VALUE_MASK) : 1) |
+      (enabled ? 0 : HOLD_START_HOTKEY_OFF_MASK));
 }
 
 inline constexpr uint8_t encodeMisterDisplayMode(uint8_t raw, uint8_t mode) {
@@ -392,6 +418,7 @@ enum class SettingId : uint8_t {
   Switch2Output,
   Ps2RemoteOutput,
   MisterDisplay,
+  HoldStartHotkey,
   Count,
 };
 
@@ -399,6 +426,8 @@ static_assert(static_cast<uint8_t>(SettingId::ManagementMsc) == 64,
               "Existing persisted setting IDs must remain stable");
 static_assert(static_cast<uint8_t>(SettingId::MisterDisplay) == 74,
               "MiSTer display setting must remain appended after existing IDs");
+static_assert(static_cast<uint8_t>(SettingId::HoldStartHotkey) == 75,
+              "Hold Start setting must remain appended after existing IDs");
 
 extern uint16_t g_eeprom_remap_index;
 
@@ -499,8 +528,13 @@ void saveOledSettings(uint8_t oledInactiveValue, uint8_t oledWakeValue, uint8_t 
                       uint8_t screensaverAnimationValue);
 void saveGunconOffsets(int8_t offsetX, int8_t offsetY);
 bool saveButtonRemaps();
-// eraseRemaps=false keeps every input mode's button remaps across the reset.
-bool factoryResetSettings(bool eraseRemaps = true);
+// eraseRemaps=false keeps every input mode's button remaps across the reset;
+// eraseLearnedMaps=false keeps learned HID controller maps.
+bool factoryResetSettings(bool eraseRemaps = true, bool eraseLearnedMaps = true);
+// Boot found no valid global record: write the EEPROM records' defaults and
+// keep remaps. Learned maps, profiles, bonds and the ESP32's stores live in
+// other sectors that the blank one says nothing about, so they stay.
+bool repairBlankSettingsAtBoot();
 
 TurboInputMode getTurboInputModeForDeviceMode(DeviceEnum mode);
 

@@ -41,7 +41,7 @@ padding:.5rem 1rem;margin:1rem 0}
 <header>
 <h1>Reflex Adapt Classic2USB</h1>
 <p class="meta">Offline copy of the Classic2USB guide from https://docs.misteraddons.com/, without images.
-Generated 2026-11-08 from docs commit 2b6d2a9 2026-11-08. The online guide is newer when the two differ.</p>
+Generated 2026-11-13 from docs commit 6b990b5 2026-11-13. The online guide is newer when the two differ.</p>
 <nav class="toc"><ol>
 <li><a href="#overview">Reflex Adapt Classic2USB</a></li>
 <li><a href="#quick-start">Classic2USB Quick Start</a></li>
@@ -320,7 +320,7 @@ Generated 2026-11-08 from docs commit 2b6d2a9 2026-11-08. The online guide is ne
 </tr>
 <tr>
 <td>NES</td>
-<td>Controller, Power Pad, and Arkanoid Vaus (set <strong>NES Device</strong> to Vaus NES or Vaus FC)</td>
+<td>Controller, Power Pad, Famicom Network Controller (HVC-051, through a Famicom adapter), and Arkanoid Vaus (set <strong>NES Device</strong> to Vaus NES or Vaus FC)</td>
 <td>Auto</td>
 </tr>
 <tr>
@@ -2755,6 +2755,11 @@ work from the database alone and which need a file.</p>
 <td>Detected automatically when no standard pad answers and the mat's extra data lines show activity</td>
 </tr>
 <tr>
+<td>Famicom Network Controller (HVC-051)</td>
+<td>Supported</td>
+<td>Plugs into the Famicom expansion port, so it needs a Famicom adapter. Detected automatically and shown as <strong>FC Network</strong></td>
+</tr>
+<tr>
 <td>Arkanoid Vaus controller</td>
 <td>Supported</td>
 <td>Select it under <strong>NES Device</strong>: <strong>Vaus NES</strong> or <strong>Vaus FC</strong> (Famicom). Requires the correct cable and wiring; the two connections are not interchangeable</td>
@@ -2795,6 +2800,43 @@ plugged in. See <a href="#input-reference--quick-settings">Quick Settings</a>.</
 <h2 id="input-modes-nes--nes-pad">NES Pad</h2>
 <p></p>
 <h2 id="input-modes-nes--power-pad">Power Pad</h2>
+<p></p>
+<h2 id="input-modes-nes--famicom-network-controller">Famicom Network Controller</h2>
+<p>The Famicom Network System's 23-button controller (HVC-051) plugs into the
+Famicom expansion port, so it needs a Famicom adapter. NES mode reads it, and
+Auto picks NES mode for it. It shows as <strong>FC Network</strong>, with its own keypad
+picture on the Home screen when it is the only controller. A second player
+uses the NES picture.</p>
+<table>
+<thead>
+<tr>
+<th>HVC-051</th>
+<th>Classic2USB</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D-pad, A, B</td>
+<td>D-pad, A, B</td>
+</tr>
+<tr>
+<td>前ページ / 次ページ (previous / next page)</td>
+<td>Select / Start</td>
+</tr>
+<tr>
+<td>0-9</td>
+<td>Extra buttons 0-9, as on the NTT Data keypad</td>
+</tr>
+<tr>
+<td>* / C / # / .</td>
+<td>L2 / R2 / L3 / R3</td>
+</tr>
+<tr>
+<td>通信終了 (END)</td>
+<td>Home</td>
+</tr>
+</tbody>
+</table>
 <p></p>
 </section>
 <section id="input-modes-snes">
@@ -3340,7 +3382,7 @@ mode</strong>, then hold the listed controls:</p>
 <tbody>
 <tr>
 <td>Dance Pad</td>
-<td>Press <strong>Up + Down</strong> together without Left + Right</td>
+<td>Hold <strong>Up + Down</strong> together, without Left + Right, for a moment (about 0.15 s)</td>
 <td>Identifies as <code>Dance Pad</code> and exposes directions as independent buttons</td>
 </tr>
 <tr>
@@ -3367,7 +3409,10 @@ mode</strong>, then hold the listed controls:</p>
 </table>
 <p>Dance-pad detection occurs inside the normal PSX input mode rather than as a
 separate Classic2USB input choice. If it is not identified during Auto
-detection, select PSX manually, reconnect the pad, and press Up + Down together.</p>
+detection, select PSX manually, reconnect the pad, and hold Up + Down together
+for a moment. A quick tap is ignored, so an ordinary pad that rolls between Up
+and Down is not taken for a dance pad. If the pad is still not identified, set
+<strong>DPad</strong> to <strong>Buttons</strong> in the Quick Menu.</p>
 <p>When using a neGcon with the MiSTer PSX core, open the core OSD and set
 <strong>Pad 1</strong> to <strong>Wheel-NegCon</strong>. MiSTer reads the neGcon output as a wheel, and
 only that pad type reads both I and II as analog. This core-side setting is
@@ -4027,6 +4072,24 @@ The first row and first column stay in place while you scroll the table.</p>
 <td style="text-align: center;">-</td>
 </tr>
 <tr>
+<td>Saturn 3D</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr>
 <td>Dreamcast</td>
 <td style="text-align: center;">✓</td>
 <td style="text-align: center;">✓</td>
@@ -4057,6 +4120,24 @@ The first row and first column stay in place while you scroll the table.</p>
 <td style="text-align: center;">✓</td>
 <td style="text-align: center;">✓</td>
 <td style="text-align: center;">+</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr>
+<td>DualShock 2</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓</td>
+<td style="text-align: center;"></td>
 <td style="text-align: center;">✓</td>
 <td style="text-align: center;">✓</td>
 <td style="text-align: center;">✓</td>
@@ -4256,6 +4337,7 @@ The first row and first column stay in place while you scroll the table.</p>
 <p>A tick here means a mapping exists, not that the pairing has been checked on
 hardware. The <a href="#core-compatibility">core compatibility page</a> answers that
 question, and says whether a map file is published or still in review.</p>
+<p>The Saturn 3D and DualShock 2 rows are separate USB identities that Classic2USB uses for those controllers when <strong>Triggers</strong> is Analog or Analog+Digital. Their tables below say how they differ.</p>
 <p>3DO has controls that no database row can reach, whatever controller is plugged in, so its column never reads done. Reaching those controls needs the core's map file.</p>
 <h2 id="button-maps--tables-by-controller">Tables by controller</h2>
 <details class="note">
@@ -5730,6 +5812,198 @@ question, and says whether a map file is published or still in review.</p>
 <p>Core-specific rows: NES, SNES, Genesis, Mega CD, 32X, SMS, GB, SGB, GBA, TG16, Neo Geo, NGP, 7800. The other columns use the generic row through each core's default button names.</p>
 </details>
 <details class="note">
+<summary>Saturn 3D Pad</summary>
+<table>
+<thead>
+<tr>
+<th>Button</th>
+<th style="text-align: center;">NES</th>
+<th style="text-align: center;">SNES</th>
+<th style="text-align: center;">Genesis</th>
+<th style="text-align: center;">Mega CD</th>
+<th style="text-align: center;">32X</th>
+<th style="text-align: center;">SMS</th>
+<th style="text-align: center;">GB</th>
+<th style="text-align: center;">SGB</th>
+<th style="text-align: center;">GBA</th>
+<th style="text-align: center;">TG16</th>
+<th style="text-align: center;">PSX</th>
+<th style="text-align: center;">Neo Geo</th>
+<th style="text-align: center;">NGP</th>
+<th style="text-align: center;">7800</th>
+<th style="text-align: center;">3DO</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">III</td>
+<td style="text-align: center;">Circle</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">A</td>
+</tr>
+<tr>
+<td>B</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">Fire 2</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">II</td>
+<td style="text-align: center;">Cross</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">Fire 2</td>
+<td style="text-align: center;">B</td>
+</tr>
+<tr>
+<td>C</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">C</td>
+<td style="text-align: center;">C</td>
+<td style="text-align: center;">C</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">I</td>
+<td style="text-align: center;">R1</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">R + Coin</td>
+</tr>
+<tr>
+<td>X</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">X</td>
+<td style="text-align: center;">X</td>
+<td style="text-align: center;">X</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">IV</td>
+<td style="text-align: center;">Triangle</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">C + X/Stop</td>
+</tr>
+<tr>
+<td>Y</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: center;">Fire 1</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">V</td>
+<td style="text-align: center;">Square</td>
+<td style="text-align: center;">C</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">Fire 1</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td>Z</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">X</td>
+<td style="text-align: center;">Z</td>
+<td style="text-align: center;">Z</td>
+<td style="text-align: center;">Z</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">VI</td>
+<td style="text-align: center;">L1</td>
+<td style="text-align: center;">D</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">L</td>
+</tr>
+<tr>
+<td>L</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">L</td>
+<td style="text-align: center;">Mode</td>
+<td style="text-align: center;">Mode</td>
+<td style="text-align: center;">Mode</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">L</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td>R</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">R</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">R</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td>Start</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Pause</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Run</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Option</td>
+<td style="text-align: center;">Reset/Start</td>
+<td style="text-align: center;">—</td>
+</tr>
+</tbody>
+</table>
+<p>3D stick and 3D analog L/R are analog controls and are not listed.</p>
+<p>Classic2USB switches to this USB identity when <strong>Triggers</strong> is Analog or Analog+Digital, the default for this controller. Its rows are the Saturn rows with L and R read from the analog trigger axes. With Triggers set to Digital, the Saturn table applies. Official map files carry the Saturn identity's name, so they do not load for this one. See <a href="#mister-setup--analog-trigger-usb-profiles">analog-trigger USB profiles</a>.</p>
+<p>Core-specific rows: NES, SNES, Genesis, Mega CD, 32X, SMS, GB, SGB, GBA, TG16, Neo Geo, NGP, 7800. The other columns use the generic row through each core's default button names.</p>
+</details>
+<details class="note">
 <summary>Dreamcast</summary>
 <table>
 <thead>
@@ -6164,6 +6438,252 @@ question, and says whether a map file is published or still in review.</p>
 </table>
 <p>Left stick and Right stick are analog controls and are not listed.</p>
 <p>Cells marked "map file" need the official map file for that core; see the <a href="#core-compatibility">core compatibility tables</a> and <a href="#mister-setup">MiSTer setup</a>.</p>
+<p>Core-specific rows: NES, Genesis, Mega CD, 32X, SMS, GB, SGB, GBA, TG16, Neo Geo, NGP, 7800. The other columns use the generic row through each core's default button names.</p>
+</details>
+<details class="note">
+<summary>DualShock 2</summary>
+<table>
+<thead>
+<tr>
+<th>Button</th>
+<th style="text-align: center;">NES</th>
+<th style="text-align: center;">SNES</th>
+<th style="text-align: center;">Genesis</th>
+<th style="text-align: center;">Mega CD</th>
+<th style="text-align: center;">32X</th>
+<th style="text-align: center;">SMS</th>
+<th style="text-align: center;">GB</th>
+<th style="text-align: center;">SGB</th>
+<th style="text-align: center;">GBA</th>
+<th style="text-align: center;">TG16</th>
+<th style="text-align: center;">PSX</th>
+<th style="text-align: center;">Neo Geo</th>
+<th style="text-align: center;">NGP</th>
+<th style="text-align: center;">7800</th>
+<th style="text-align: center;">3DO</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cross</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">Fire 2</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">II</td>
+<td style="text-align: center;">Cross</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">Fire 2</td>
+<td style="text-align: center;">B</td>
+</tr>
+<tr>
+<td>Circle</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">C</td>
+<td style="text-align: center;">C</td>
+<td style="text-align: center;">C</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">I</td>
+<td style="text-align: center;">Circle</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">A</td>
+</tr>
+<tr>
+<td>Square</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: center;">Y</td>
+<td style="text-align: center;">Fire 1</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">B</td>
+<td style="text-align: center;">V</td>
+<td style="text-align: center;">Square</td>
+<td style="text-align: center;">C</td>
+<td style="text-align: center;">A</td>
+<td style="text-align: center;">Fire 1</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td>Triangle</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">X</td>
+<td style="text-align: center;">Z</td>
+<td style="text-align: center;">Z</td>
+<td style="text-align: center;">Z</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">VI</td>
+<td style="text-align: center;">Triangle</td>
+<td style="text-align: center;">D</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">C + X/Stop</td>
+</tr>
+<tr>
+<td>L1</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">L</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">L</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">L1</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">L</td>
+</tr>
+<tr>
+<td>R1</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">R</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">R</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">R1</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">R + Coin</td>
+</tr>
+<tr>
+<td>L2</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td>R2</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td>L3</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td>R3</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td>Select</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">Mode</td>
+<td style="text-align: center;">Mode</td>
+<td style="text-align: center;">Mode</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Select</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr>
+<td>Start</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Pause</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Run</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Start</td>
+<td style="text-align: center;">Option</td>
+<td style="text-align: center;">Reset/Start</td>
+<td style="text-align: center;">—</td>
+</tr>
+</tbody>
+</table>
+<p>Left stick and Right stick are analog controls and are not listed.</p>
+<p>Classic2USB switches to this USB identity when <strong>Triggers</strong> is Analog or Analog+Digital, the default for this controller. Its rows are the PlayStation / DualShock rows with L2 and R2 read from the analog trigger axes. With Triggers set to Digital, the PlayStation / DualShock table applies. Official map files carry the PlayStation / DualShock identity's name, so they do not load for this one. See <a href="#mister-setup--analog-trigger-usb-profiles">analog-trigger USB profiles</a>.</p>
 <p>Core-specific rows: NES, Genesis, Mega CD, 32X, SMS, GB, SGB, GBA, TG16, Neo Geo, NGP, 7800. The other columns use the generic row through each core's default button names.</p>
 </details>
 <details class="note">
@@ -8078,13 +8598,15 @@ older Manager up to date first.</p>
 <strong>Analog+Digital</strong>. Select the option that suits the core and its mapping.</p>
 <h3 id="mister-setup--analog-trigger-usb-profiles">Analog-trigger USB profiles</h3>
 <p>The DS2 analog profile gives GameControllerDB an identity for the controller's
-trigger axes. Both PlayStation profiles use the same USB vendor/product IDs
-and USB product name.</p>
+trigger axes, and the neGcon pad profile one for a neGcon's I and II. All
+three PlayStation profiles use the same USB vendor/product IDs and USB product
+name.</p>
 <table>
 <thead>
 <tr>
 <th>USB field</th>
 <th>DS2 analog profile</th>
+<th>neGcon pad profile</th>
 <th>Base PlayStation profile</th>
 </tr>
 </thead>
@@ -8093,20 +8615,24 @@ and USB product name.</p>
 <td>Product name</td>
 <td><code>Reflex Adapt Classic2USB</code></td>
 <td><code>Reflex Adapt Classic2USB</code></td>
+<td><code>Reflex Adapt Classic2USB</code></td>
 </tr>
 <tr>
 <td>VID / PID</td>
+<td><code>16D0:1460</code></td>
 <td><code>16D0:1460</code></td>
 <td><code>16D0:1460</code></td>
 </tr>
 <tr>
 <td>Serial/profile string</td>
 <td><code>ReflexPSDS2</code></td>
+<td><code>ReflexPSNeGcon</code></td>
 <td><code>ReflexPSDS1</code></td>
 </tr>
 <tr>
 <td>Device version (<code>bcdDevice</code>)</td>
 <td><code>0x0147</code></td>
+<td><code>0x0172</code></td>
 <td><code>0x0122</code></td>
 </tr>
 </tbody>
@@ -8120,11 +8646,18 @@ base PlayStation profile.</p>
 digital PlayStation pad on the other port supplies fully released or pressed
 trigger axes (<code>0</code> or <code>255</code>). Saturn 3D and digital Saturn pads can share the
 Saturn analog profile in the same way.</p>
+<p>A neGcon selects the neGcon pad profile the same way when <strong>Output</strong> is
+<strong>DInput</strong> or <strong>MiSTer</strong> rather than <strong>MiSTer neGcon</strong>, and <strong>I Button</strong> or
+<strong>II Button</strong> is <strong>Analog</strong>. Its I and II then read as Cross and Square in
+every core, as they do when set to <strong>Digital</strong>. A DualShock 2 on the other port keeps the
+DS2 profile, and setting both I and II to <strong>Digital</strong> restores the base
+PlayStation profile.</p>
 <div class="admonition note">
 <p class="admonition-title">Development firmware testing</p>
-<p>The DS2 analog profile requires matching GameControllerDB entries. Use the
-supplied test database when validating this firmware candidate. DS2 profile
-and mixed-controller hardware acceptance are pending.</p>
+<p>The DS2 analog and neGcon pad profiles require matching GameControllerDB
+entries. Use the supplied test database when validating this firmware
+candidate. Hardware acceptance of both profiles, and of mixed controllers,
+is pending.</p>
 </div>
 <h2 id="mister-setup--special-playstation-controllers">Special PlayStation controllers</h2>
 <p>neGcon, JogCon and GunCon each have a dedicated MiSTer output:</p>
@@ -8144,7 +8677,9 @@ and mixed-controller hardware acceptance are pending.</p>
   analog. USB identity and GameControllerDB mapping cannot change the core's
   emulated pad type. On this output I, II and L send pressure only by default;
   set <strong>I Button</strong>, <strong>II Button</strong> or <strong>L Button</strong> to <strong>Digital</strong> in Quick
-  Settings when a core needs a button press instead.</p>
+  Settings when a core needs a button press instead. On <strong>DInput</strong> or
+  <strong>MiSTer</strong> output a neGcon takes the
+  <a href="#mister-setup--analog-trigger-usb-profiles">neGcon pad profile</a> instead.</p>
 </li>
 <li><strong>JogCon:</strong> select the JogCon mode you want in Classic2USB Quick Settings;
   the modes are in the <a href="#input-modes-playstation">input reference</a>.</li>

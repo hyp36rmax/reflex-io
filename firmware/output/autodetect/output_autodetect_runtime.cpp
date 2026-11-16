@@ -5,6 +5,7 @@
 #include <Arduino.h>
 
 #include "../../core/firmware_support.h"
+#include "../../core/product_reset_services.h"
 #if defined(ENABLE_INPUT_AUTODETECT)
 #include "../../input/autodetect/input_autodetect_runtime.h"
 #endif
@@ -56,9 +57,20 @@ constexpr uint16_t kGenericNoMountResolveMs = 1000;
 constexpr uint16_t kGenericNoMountAfterAttachRetryResolveMs = 2000;
 constexpr uint16_t kPs3AssistResolveMs = 900;
 constexpr uint16_t kXboxOneAssistResolveMs = 10000;
+// A console authenticates right after the GIP announce. One that announced
+// late in the window still gets this long before the host counts as Windows,
+// and a donor that is still starting (it holds the announce) up to the limit.
+constexpr uint16_t kXboxOneAuthAfterAnnounceMs = 3000;
+constexpr uint16_t kXboxOneDonorStartLimitMs = 20000;
 constexpr uint32_t kAutoDetectNoDataHostFallbackMs = 1500;
+constexpr uint32_t kAutoDetectRebootRetryMs = 1000;
 
 static uint32_t autoDetectNoDataHostSinceMs = 0;
+// reboot() returns when a pending save cannot be flushed, or while an update
+// trial defers the reset (and replays it later). Nothing reset, so the pass
+// that asked keeps its old Auto state and retries the same reset.
+static bool autoDetectRebootReturned = false;
+static uint32_t autoDetectRebootRetryAtMs = 0;
 
 bool auto_detect_no_data_host_fallback_active() {
   if (!is_auto_output_mode_selected() ||
@@ -74,6 +86,12 @@ bool auto_detect_no_data_host_fallback_active() {
   }
   return (uint32_t)(now - autoDetectNoDataHostSinceMs) >=
          kAutoDetectNoDataHostFallbackMs;
+}
+
+bool auto_detect_fallback_saw_generic_host() {
+  return autoDetectState == AUTO_STATE_FALLBACK_HID &&
+         output_autodetect_aux_flags != 0 &&
+         (output_autodetect_last_flags & (DETECT_PS3 | DETECT_PS4)) == 0;
 }
 
 uint16_t auto_detect_generic_no_mount_resolve_ms() {
@@ -119,11 +137,12 @@ static uint32_t playstation_family_fallback_ms() {
   return 5000u;
 }
 
+// Any F0 page under the PS4 persona means a PS4 console, whether or not a PS4
+// provider can answer it. A PS5 dongle alone must not turn that PS4 into PS5.
 static bool playstation_ps4_auth_challenge_seen() {
   const PsAuthDongleStatus sidecar = ps_auth_dongle_status();
   return ps4Auth.challengeReportCount() != 0 ||
-         (ps_auth_dongle_has_provider_for_mode(OUTPUT_PS4) &&
-          sidecar.set_report_count != 0);
+         sidecar.set_report_count != 0;
 }
 
 static uint8_t saturateProbeNibble(uint16_t value) {
@@ -190,6 +209,11 @@ static void auto_detect_reboot_with_diagnostics(const char* phase) {
   (void)phase;
 #endif
   reboot();
+  // A product that holds resets back (Modern2USB's update trial) replays this
+  // one after the trial, and the next boot's state is already in scratch, so
+  // it counts as done. Retrying it would keep the trial's watchdog fed and
+  // stop a failed candidate from rolling back.
+  if (!productIntentionalResetDeferred()) autoDetectRebootReturned = true;
 }
 
 void auto_detect_trigger_reenum(uint32_t next_output_mode) {
@@ -391,10 +415,25 @@ static bool auto_detect_service_classic_mouse() {
 }
 #endif
 
-extern "C" void auto_detect_process() {
+// A no-connect fallback never saw a host: a console in rest mode or a PC in
+// POST powers the adapter without enumerating it. When a host first sends
+// SETUP, probe again from the generic stage. The reason recorded for that
+// probe makes a second no-connect final, so this happens once per chain.
+static void auto_detect_rearm_probe_after_no_connect() {
+  auto_detect_clear_scratch_state();
+  autoDetectState = AUTO_STATE_IDLE;
+  output_autodetect_transition_reason =
+      AUTO_TRANSITION_GENERIC_REARM_AFTER_NO_CONNECT;
+  auto_detect_preserve_auto_input_before_output_reenum();
+  auto_detect_trigger_probe_stage(AUTO_PROBE_GENERIC);
+}
+
+static void auto_detect_process_pass() {
   static uint32_t ps5_probe_started_at_ms = 0;
+  static bool ps5_probe_confirmed = false;
   static uint32_t playstation_family_started_at_ms = 0;
   static uint32_t xboxone_probe_started_at_ms = 0;
+  static uint32_t xboxone_announced_at_ms = 0;
 
 #if defined(ENABLE_OUTPUT_PS5)
   if (is_auto_output_mode_selected() &&
@@ -409,7 +448,10 @@ extern "C" void auto_detect_process() {
       ? 0xFFFFu
       : (uint16_t)elapsed_ms;
 
-    if (ps5_probe_has_native_host_traffic()) {
+    // Once confirmed, PS5 stays. A dongle replug resets the submit count and
+    // would otherwise send a running PS5 session to PS4 for good.
+    if (ps5_probe_confirmed || ps5_probe_has_native_host_traffic()) {
+      ps5_probe_confirmed = true;
       return;
     }
 
@@ -423,6 +465,7 @@ extern "C" void auto_detect_process() {
 #endif
 
   ps5_probe_started_at_ms = 0;
+  ps5_probe_confirmed = false;
 
   if (is_auto_output_mode_selected() &&
       autoDetectState == AUTO_STATE_PLAYSTATION &&
@@ -476,10 +519,11 @@ extern "C" void auto_detect_process() {
       ? 0xFFFFu
       : (uint16_t)elapsed_ms;
     const XboxOneOutputStatus probe = xboxone_output_status();
-    const bool nativeXboxHostMounted =
-        probe.mounted && probe.usb_mounted &&
-        probe.setup_request_count != 0;
-    if (probe.auth_console_count != 0 || nativeXboxHostMounted) {
+    // Only a console sends GIP authentication. Windows configures this
+    // persona too (xboxgip) and never does, and without a ready donor the
+    // persona never announces, so a console sends nothing either: a mount
+    // proves only a WCID host (2026-08-11 accepted it; 2026-11-08 review).
+    if (probe.auth_console_count != 0) {
       autoDetectState = AUTO_STATE_XBOX_ONE;
       autoDetectProbeStage = AUTO_PROBE_GENERIC;
       outputMode = OUTPUT_XBOXONE;
@@ -500,18 +544,47 @@ extern "C" void auto_detect_process() {
       return;
     }
 
-    if (elapsed_ms >= kXboxOneAssistResolveMs) {
-      output_autodetect_transition_reason =
-        AUTO_TRANSITION_XBOXONE_PROBE_TO_FALLBACK;
-      auto_detect_trigger_fallback_hid();
+    if (xboxone_announced_at_ms == 0 && xboxone_output_announced()) {
+      xboxone_announced_at_ms = ms_now == 0 ? 1 : ms_now;
+    }
+    const XboxOneAuthSidecarStatus donor = xbone_auth_passthrough_status();
+    const bool consoleAuthStillDue =
+        elapsed_ms < kXboxOneAssistResolveMs ||
+        (xboxone_announced_at_ms == 0 && donor.mounted &&
+         !donor.dongle_ready && elapsed_ms < kXboxOneDonorStartLimitMs) ||
+        (xboxone_announced_at_ms != 0 &&
+         (uint32_t)(ms_now - xboxone_announced_at_ms) <
+             kXboxOneAuthAfterAnnounceMs);
+    if (consoleAuthStillDue) {
       return;
     }
+    if (probe.mounted && probe.usb_mounted && probe.setup_request_count != 0) {
+      // A WCID host that configured the Xbox persona without console auth.
+      output_autodetect_last_flags = DETECT_WINDOWS;
+      output_autodetect_transition_reason =
+        AUTO_TRANSITION_XBOXONE_PROBE_TO_WINDOWS;
+      auto_detect_trigger_windows_output(
+          get_configured_windows_auto_output_mode());
+      return;
+    }
+    output_autodetect_transition_reason =
+      AUTO_TRANSITION_XBOXONE_PROBE_TO_FALLBACK;
+    auto_detect_trigger_fallback_hid();
     return;
   }
 #endif
 
   xboxone_probe_started_at_ms = 0;
+  xboxone_announced_at_ms = 0;
 
+  if (is_auto_output_mode_selected() &&
+      autoDetectState == AUTO_STATE_FALLBACK_HID &&
+      output_autodetect_transition_reason ==
+          AUTO_TRANSITION_GENERIC_NO_CONNECT_TO_FALLBACK &&
+      tud_connected()) {
+    auto_detect_rearm_probe_after_no_connect();
+    return;
+  }
 
   if (serviceRemoteOutputSelection()) return;
 
@@ -600,7 +673,12 @@ extern "C" void auto_detect_process() {
       auto_detect_trigger_probe_stage(AUTO_PROBE_PS3);
       return;
     } else {
-      output_autodetect_transition_reason = AUTO_TRANSITION_GENERIC_NO_CONNECT_TO_FALLBACK;
+      // No host again after a re-arm: final for this power-on.
+      output_autodetect_transition_reason =
+          output_autodetect_transition_reason ==
+                  AUTO_TRANSITION_GENERIC_REARM_AFTER_NO_CONNECT
+              ? AUTO_TRANSITION_GENERIC_NO_CONNECT_AFTER_REARM
+              : AUTO_TRANSITION_GENERIC_NO_CONNECT_TO_FALLBACK;
     }
     auto_detect_trigger_fallback_hid();
     return;
@@ -635,9 +713,7 @@ extern "C" void auto_detect_process() {
       break;
 
     case DETECT_SWITCH1:
-#if !defined(ENABLE_EXPERIMENTAL_XBOXONE_OUTPUT)
     case DETECT_SWITCH2:
-#endif
     {
       // A Switch 2 gets its System Settings choice; a Switch 1 keeps Switch Pro.
       const outputMode_t switchOutput = detected_host == DETECT_SWITCH1
@@ -677,11 +753,41 @@ extern "C" void auto_detect_process() {
   }
 }
 
+extern "C" void auto_detect_process() {
+  if (autoDetectRebootRetryAtMs != 0) {
+    // The next boot's state is already in scratch: retry only the reset.
+    if ((uint32_t)(millis() - autoDetectRebootRetryAtMs) <
+        kAutoDetectRebootRetryMs) {
+      return;
+    }
+    autoDetectRebootRetryAtMs = 0;
+    auto_detect_reboot_with_diagnostics("REBOOT_RETRY");
+  } else {
+    const AutoDetectState stateBefore = autoDetectState;
+    const AutoDetectProbeStage stageBefore = autoDetectProbeStage;
+    auto_detect_process_pass();
+    if (autoDetectRebootReturned) {
+      // The USB persona did not change, so neither does the state.
+      autoDetectState = stateBefore;
+      autoDetectProbeStage = stageBefore;
+    }
+  }
+  if (autoDetectRebootReturned) {
+    autoDetectRebootReturned = false;
+    const uint32_t now = millis();
+    autoDetectRebootRetryAtMs = now == 0 ? 1 : now;
+  }
+}
+
 #else
 
 #include "../output_runtime_state.h"
 
 bool auto_detect_no_data_host_fallback_active() {
+  return false;
+}
+
+bool auto_detect_fallback_saw_generic_host() {
   return false;
 }
 

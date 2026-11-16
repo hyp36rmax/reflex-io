@@ -29,6 +29,10 @@
 enum class SettingsJournalTarget : uint32_t {
   kEeprom = 1,
   kSharedProfiles = 2,
+  // The fixed-end layout (MODERN2USB) also journals its learned HID mapping
+  // sector and the sector that holds its analog profiles.
+  kHidMappings = 3,
+  kAuthSector = 4,
 };
 
 #if defined(REFLEX_HOST_TEST_SETTINGS_JOURNAL)

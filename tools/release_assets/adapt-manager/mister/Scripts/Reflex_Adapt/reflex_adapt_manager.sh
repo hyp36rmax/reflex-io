@@ -85,7 +85,7 @@ except ImportError:  # The manager runs on MiSTer/Linux; Windows imports support
     tty = None  # type: ignore[assignment]
 
 
-MANAGER_VERSION = "1.0.0"
+MANAGER_VERSION = "1.1.0"
 CLASSIC_SETTINGS_TARGET = contextvars.ContextVar("classic_settings_target", default=None)
 CATALOG_SCHEMA_VERSION = 1
 DEFAULT_CATALOG_URL = (
@@ -144,10 +144,39 @@ RP2040_FLASH_BASE = 0x10000000
 # bootloaders (RP2350, SAMD, nRF) would accept or misinterpret an RP2040 image.
 RP2040_BOOTSEL_BOARD_ID = "RPI-RP2"
 RP2040_BOOTSEL_VID_PID = (0x2E8A, 0x0003)
-# Classic2USB uses 12 KiB LittleFS at the physical flash end. Arduino-Pico's
-# EEPROM begins at 0x101fc000; the three preceding sectors hold auth, bonds,
-# and learned HID maps. Published application UF2 blocks must stop below them.
-CLASSIC_RESERVED_FLASH_BASE = 0x101F9000
+# Classic2USB and JVSIO2USB use 12 KiB LittleFS at the physical flash end.
+# Arduino-Pico's EEPROM begins at 0x101fc000; the three preceding sectors hold
+# auth, bonds and learned HID maps, and the two below those the settings
+# journal. Published application UF2 blocks must stop below all of them, as
+# the firmware's own post-build check requires.
+CLASSIC_RESERVED_FLASH_BASE = 0x101F7000
+
+
+class Rp2040Product:
+    """An RP2040 Adapt product this Manager can identify and install.
+
+    Built in, never read from a catalog: a release descriptor supplies
+    releases only, so it can never redefine which board a product is.
+    """
+
+    def __init__(self, product_id: str, name: str, hardware_target: str) -> None:
+        self.id = product_id
+        self.name = name  # INFO PRODUCT= and the menus' short name
+        self.hardware_target = hardware_target  # the image's TARGET= marker
+
+
+# Management serial is found on the shared MiSTer identity 16D0:1460, which a
+# JVSIO2USB presents too, or by product name. A product's own base PID is no
+# hint: JVSIO2USB's 16D0:14F7 is also the Reflex Nova's, which must not be
+# probed or offered BOOTSEL recovery.
+RP2040_PRODUCTS: dict[str, Rp2040Product] = {
+    "classic2usb": Rp2040Product("classic2usb", "Classic2USB", "CLASSIC2USB_RP2040"),
+    "jvsio2usb": Rp2040Product("jvsio2usb", "JVSIO2USB", "JVSIO2USB_RP2040"),
+}
+RP2040_PRODUCT_BY_INFO = {product.name: product for product in RP2040_PRODUCTS.values()}
+# Every image carries its management identity text,
+# " TARGET=" PRODUCT_HARDWARE_TARGET " MCU=RP2040" (core/management_identity.h).
+UF2_TARGET_MARKER = re.compile(rb"TARGET=([A-Z0-9_]{3,24}) MCU=RP2040")
 
 SETTING_NAMES = (
     "Input Mode", "Output Mode", "Display Contrast", "Latency Test",
@@ -746,8 +775,14 @@ def probe_classic_info(port_name: str) -> dict[str, str] | None:
         return None
 
 
+# A Classic2USB on .78 answered 3 of 30 INFOs only after about 1.43 s
+# (2026-11-11); a missed reply lists a healthy board as unidentified. Silent
+# candidates, such as AVR Legacy boards, wait this long per scan.
+INFO_TIMEOUT_S = 3.0
+
+
 def read_classic_info(port: LinuxSerial) -> dict[str, str] | None:
-    lines = port.command_lines("INFO", "INFO PRODUCT=", timeout=1.25)
+    lines = port.command_lines("INFO", "INFO PRODUCT=", timeout=INFO_TIMEOUT_S)
     pattern = re.compile(
         r'^INFO PRODUCT=(\S+) VERSION=(\S+) TAG=(\S+) HARDWARE="([^"]*)"$'
     )
@@ -764,21 +799,28 @@ def read_classic_info(port: LinuxSerial) -> dict[str, str] | None:
 
 
 @contextlib.contextmanager
-def classic_serial(port_name: str, expected_topology: str = ""):
+def rp2040_serial(port_name: str, product_id: str, expected_topology: str = ""):
     """Keep product validation and the operation on the same open connection."""
-    settings_target = CLASSIC_SETTINGS_TARGET.get()
-    if not expected_topology and settings_target and settings_target["port"] == port_name:
-        expected_topology = settings_target["topology"]
+    name = RP2040_PRODUCTS[product_id].name
     with LinuxSerial(port_name, 115200) as port:
         if expected_topology and not any(
             item["port"] == port_name and item["topology"] == expected_topology
             for item in serial_ports()
         ):
-            raise OSError("Selected Classic2USB serial port moved to a different USB path. Rescan devices before continuing.")
+            raise OSError(f"Selected {name} serial port moved to a different USB path. Rescan devices before continuing.")
         info = read_classic_info(port)
-        if not info or info.get("product") != "Classic2USB":
-            raise OSError("Selected runtime is not confirmed as Classic2USB. Use confirmed BOOTSEL recovery instead.")
+        if not info or info.get("product") != name:
+            raise OSError(f"Selected runtime is not confirmed as {name}. Use confirmed BOOTSEL recovery instead.")
         yield port, info
+
+
+@contextlib.contextmanager
+def classic_serial(port_name: str, expected_topology: str = ""):
+    settings_target = CLASSIC_SETTINGS_TARGET.get()
+    if not expected_topology and settings_target and settings_target["port"] == port_name:
+        expected_topology = settings_target["topology"]
+    with rp2040_serial(port_name, "classic2usb", expected_topology) as opened:
+        yield opened
 
 
 def _looks_like_classic(device: dict[str, Any]) -> bool:
@@ -787,7 +829,9 @@ def _looks_like_classic(device: dict[str, Any]) -> bool:
     product = device.get("product_name", "").lower()
     serial = device.get("serial", "").lower()
     manufacturer = device.get("manufacturer", "").lower()
-    if identity == CLASSIC_VID_PID:
+    if identity == CLASSIC_VID_PID or any(
+            item.name.lower() in product or item.name.lower() in serial
+            for item in RP2040_PRODUCTS.values()):
         return True
     if identity == LEGACY_RUNTIME_VID_PID:
         return (
@@ -807,7 +851,8 @@ def _serial_probe_candidate(device: dict[str, Any]) -> bool:
         str(device.get(key, "")).lower()
         for key in ("manufacturer", "product_name", "serial")
     )
-    return "reflex adapt" in identity_text or "classic2usb" in identity_text
+    return "reflex adapt" in identity_text or any(
+        item.name.lower() in identity_text for item in RP2040_PRODUCTS.values())
 
 
 def discover_supported_devices(probe_serial: bool = True) -> list[dict[str, Any]]:
@@ -820,9 +865,10 @@ def discover_supported_devices(probe_serial: bool = True) -> list[dict[str, Any]
                 if info:
                     break
         identity = (usb["vid"], usb["pid"])
-        if info and info.get("product") == "Classic2USB":
-            product_id = "classic2usb"
-            label = "Reflex Adapt Classic2USB"
+        known = RP2040_PRODUCT_BY_INFO.get(info.get("product", "")) if info else None
+        if known:
+            product_id = known.id
+            label = f"Reflex Adapt {known.name}"
         elif info:
             product_id = "unsupported-adapt"
             label = f"Unsupported Adapt product ({info.get('product', 'unknown')})"
@@ -1183,10 +1229,17 @@ def download_artifact(artifact: dict[str, Any]) -> tuple[bytes, Path]:
     return data, cached
 
 
-def validate_classic_uf2(data: bytes) -> tuple[int, int]:
+def validate_rp2040_uf2(data: bytes, product_id: str) -> tuple[int, int]:
+    """Check an image's structure, its reach and the product it was built for.
+
+    BOOTSEL cannot identify a board, so the image's own TARGET marker is the
+    only proof it belongs to the product the user is installing.
+    """
+    product = RP2040_PRODUCTS[product_id]
+    name = product.name
     if not data or len(data) % 512:
-        raise ValueError("Classic2USB firmware is not a whole-block UF2 file")
-    blocks: dict[int, tuple[int, int]] = {}
+        raise ValueError(f"{name} firmware is not a whole-block UF2 file")
+    blocks: dict[int, tuple[int, int, bytes]] = {}
     declared_count: int | None = None
     for offset in range(0, len(data), 512):
         magic0, magic1, flags, address, payload_size, block_number, block_count, family = (
@@ -1194,36 +1247,48 @@ def validate_classic_uf2(data: bytes) -> tuple[int, int]:
         )
         magic_end, = struct.unpack_from("<I", data, offset + 508)
         if (magic0, magic1, magic_end) != (UF2_MAGIC0, UF2_MAGIC1, UF2_MAGIC_END):
-            raise ValueError("Classic2USB firmware has an invalid UF2 block")
+            raise ValueError(f"{name} firmware has an invalid UF2 block")
         if flags & 0x1:
-            raise ValueError("Classic2USB firmware contains a non-flash UF2 block")
+            raise ValueError(f"{name} firmware contains a non-flash UF2 block")
         if not (flags & UF2_FLAG_FAMILY_ID) or family != RP2040_FAMILY_ID:
-            raise ValueError("Classic2USB firmware is not tagged for the RP2040 family")
+            raise ValueError(f"{name} firmware is not tagged for the RP2040 family")
         if not 0 < payload_size <= 476:
-            raise ValueError("Classic2USB firmware has an invalid UF2 payload size")
+            raise ValueError(f"{name} firmware has an invalid UF2 payload size")
         if declared_count is None:
             declared_count = block_count
         if block_count != declared_count or block_number in blocks:
-            raise ValueError("Classic2USB firmware has inconsistent UF2 block numbering")
-        blocks[block_number] = (address, payload_size)
+            raise ValueError(f"{name} firmware has inconsistent UF2 block numbering")
+        blocks[block_number] = (address, payload_size, data[offset + 32:offset + 32 + payload_size])
     if declared_count != len(blocks) or set(blocks) != set(range(len(blocks))):
-        raise ValueError("Classic2USB firmware is missing UF2 blocks")
+        raise ValueError(f"{name} firmware is missing UF2 blocks")
     start = previous_end = 0
     for block_number in range(len(blocks)):
-        address, payload_size = blocks[block_number]
+        address, payload_size, _payload = blocks[block_number]
         if block_number == 0:
             start = address
         elif address != previous_end:
-            raise ValueError("Classic2USB firmware UF2 addresses are not contiguous")
+            raise ValueError(f"{name} firmware UF2 addresses are not contiguous")
         previous_end = address + payload_size
     if start != RP2040_FLASH_BASE:
-        raise ValueError(f"Classic2USB firmware starts at unexpected address {start:#010x}")
+        raise ValueError(f"{name} firmware starts at unexpected address {start:#010x}")
     if previous_end > CLASSIC_RESERVED_FLASH_BASE:
         raise ValueError(
-            "Classic2USB firmware overlaps EEPROM or reserved auth/mapping storage "
-            f"at {previous_end:#010x}"
+            f"{name} firmware overlaps EEPROM, the settings journal or reserved "
+            f"auth/mapping storage at {previous_end:#010x}"
+        )
+    image = b"".join(blocks[number][2] for number in range(len(blocks)))
+    targets = sorted({match.group(1).decode("ascii") for match in UF2_TARGET_MARKER.finditer(image)})
+    if targets != [product.hardware_target]:
+        built_for = ", ".join(targets) if targets else "no identified product"
+        raise ValueError(
+            f"This image is built for {built_for}, not {name} ({product.hardware_target}); "
+            "refusing to install it"
         )
     return start, previous_end
+
+
+def validate_classic_uf2(data: bytes) -> tuple[int, int]:
+    return validate_rp2040_uf2(data, "classic2usb")
 
 
 def load_receipts() -> list[dict[str, Any]]:
@@ -1475,7 +1540,8 @@ def install_mister_maps(
 CLASSIC2USB_MAP_SERIALS = (
     "ReflexClassic2USB", "Adapt_Classic2USB",
     "ReflexN64", "ReflexGC", "ReflexNES", "ReflexSNES", "ReflexVboy", "ReflexMD",
-    "ReflexSat", "ReflexSat3D", "ReflexWii", "ReflexPCE", "ReflexPSDS1", "ReflexPSDS2", "ReflexNeoGeo",
+    "ReflexSat", "ReflexSat3D", "ReflexWii", "ReflexPCE", "ReflexPSDS1", "ReflexPSDS2", "ReflexPSNeGcon",
+    "ReflexNeoGeo",
     "Reflex3DO", "ReflexJag", "ReflexDreamcast", "ReflexDriving", "ReflexSMS",
     "ReflexJPC", "ReflexIntv", "ReflexColeco", "ReflexCDi",
     "ReflexPSGun", "ReflexPSWheel", "ReflexPSJogCon",
@@ -1859,11 +1925,14 @@ def progress_line(stage: str, completed: int, total: int) -> None:
         print()
 
 
-def classic_runtime_ports(devices: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+def rp2040_runtime_ports(
+    product_id: str, devices: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    name = RP2040_PRODUCTS[product_id].name
     runtime: list[dict[str, Any]] = []
     for device in discover_supported_devices() if devices is None else devices:
         info = device.get("firmware") or {}
-        if device["product_id"] != "classic2usb" or info.get("product") != "Classic2USB":
+        if device["product_id"] != product_id or info.get("product") != name:
             continue
         for port_name in device.get("ports", []):
             runtime.append({
@@ -1876,6 +1945,10 @@ def classic_runtime_ports(devices: list[dict[str, Any]] | None = None) -> list[d
     return runtime
 
 
+def classic_runtime_ports(devices: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+    return rp2040_runtime_ports("classic2usb", devices)
+
+
 def _choose_target(ui: BlueUi, title: str, items: list[dict[str, Any]], label: Callable[[dict[str, Any]], str]) -> dict[str, Any]:
     if len(items) == 1:
         return items[0]
@@ -1885,16 +1958,32 @@ def _choose_target(ui: BlueUi, title: str, items: list[dict[str, Any]], label: C
     return items[selected]
 
 
-def _confirm_unknown_uf2_target(ui: BlueUi, target: dict[str, Any]) -> None:
+def _confirm_unknown_uf2_target(ui: BlueUi, target: dict[str, Any], product_id: str = "classic2usb") -> None:
+    name = RP2040_PRODUCTS[product_id].name
     detail = (
         f"Mount: {target['mount']}\n"
         f"USB path: {target.get('topology') or 'unavailable'}\n"
         f"Board ID: {target.get('board_id') or 'RP2040 (unspecified)'}\n\n"
         "RP2040 BOOTSEL does not identify the attached product. Confirm that this "
-        "specific device is the target Classic2USB adapter."
+        f"specific device is the target {name} adapter."
     )
     if not ui.confirm(detail):
         raise OSError("firmware installation cancelled; BOOTSEL target was not confirmed")
+    # A verified install at this USB path is evidence of what the board is.
+    topology = target.get("topology") or ""
+    prior = next((receipt for receipt in reversed(load_receipts()) if
+                  topology and receipt.get("topology") == topology and
+                  receipt.get("status") == "verified" and
+                  receipt.get("product") in RP2040_PRODUCTS), None)
+    if prior and prior["product"] != product_id:
+        other = RP2040_PRODUCTS[prior["product"]].name
+        if not ui.confirm(
+            f"WARNING: the last verified install at USB path {topology} was {other} "
+            f"v{prior.get('version', '?')}, not {name}.\n"
+            f"{name} firmware on a {other} board will not work.\n\n"
+            f"Write {name} firmware to this board anyway?"
+        ):
+            raise OSError(f"firmware installation cancelled; this USB path last held {other}")
 
 
 def _require_rp2040_bootsel(target: dict[str, Any]) -> None:
@@ -1912,20 +2001,22 @@ def _require_rp2040_bootsel(target: dict[str, Any]) -> None:
         )
 
 
-def flash_classic(
+def flash_rp2040(
     ui: BlueUi,
+    product_id: str,
     artifact: dict[str, Any],
     *,
     recovery: bool = False,
     expected_version: str = "",
 ) -> dict[str, Any]:
+    name = RP2040_PRODUCTS[product_id].name
     data, _cache = download_artifact(artifact)
-    validate_classic_uf2(data)
+    validate_rp2040_uf2(data, product_id)
     existing_mounts = uf2_mount_details()
     before_mounts = {item["mount"] for item in existing_mounts}
     target: dict[str, Any] | None = None
     selected_runtime: dict[str, Any] | None = None
-    runtime_ports = [] if recovery else classic_runtime_ports()
+    runtime_ports = [] if recovery else rp2040_runtime_ports(product_id)
     if recovery:
         if not existing_mounts:
             raise OSError("the selected RP2040 BOOTSEL recovery device is no longer mounted")
@@ -1935,12 +2026,12 @@ def flash_classic(
             existing_mounts,
             lambda item: f"{item['mount']}  [{item.get('topology') or 'USB path unavailable'}]",
         )
-        _confirm_unknown_uf2_target(ui, target)
+        _confirm_unknown_uf2_target(ui, target, product_id)
     elif len(runtime_ports) == 1:
         selected_runtime = runtime_ports[0]
     elif len(runtime_ports) > 1:
         selected = ui.choose(
-            "Select the Classic2USB device to update",
+            f"Select the {name} device to update",
             [f"{port['port']}  [{port['topology']}]" for port in runtime_ports],
         )
         if selected is None:
@@ -1950,8 +2041,8 @@ def flash_classic(
         pass
     elif selected_runtime:
         # Recheck the selected port: a stale menu scan must not authorize BOOTLOADER.
-        with classic_serial(selected_runtime["port"], selected_runtime["topology"]) as (port, info):
-            _confirm_classic_downgrade(ui, expected_version, selected_runtime["topology"], info)
+        with rp2040_serial(selected_runtime["port"], product_id, selected_runtime["topology"]) as (port, info):
+            _confirm_classic_downgrade(ui, expected_version, selected_runtime["topology"], info, product_id)
             ui.status(f"Requesting BOOTSEL on {selected_runtime['port']}...")
             try:
                 port.command_lines("BOOTLOADER", "OK:BOOTLOADER", timeout=2.0)
@@ -1964,19 +2055,19 @@ def flash_classic(
             existing_mounts,
             lambda item: f"{item['mount']}  [{item.get('topology') or 'USB path unavailable'}]",
         )
-        _confirm_unknown_uf2_target(ui, target)
+        _confirm_unknown_uf2_target(ui, target, product_id)
     else:
-        ui.status("Put the target Adapt into BOOTSEL mode now.")
+        ui.status(f"Put the target {name} into BOOTSEL mode now.")
     if target is None:
         target = wait_for_uf2_target(
             before_mounts,
             expected_topology=selected_runtime["topology"] if selected_runtime else "",
         )
         if selected_runtime is None:
-            _confirm_unknown_uf2_target(ui, target)
+            _confirm_unknown_uf2_target(ui, target, product_id)
     _require_rp2040_bootsel(target)
     if selected_runtime is None:
-        _confirm_classic_downgrade(ui, expected_version, target.get("topology", ""))
+        _confirm_classic_downgrade(ui, expected_version, target.get("topology", ""), product_id=product_id)
     mount = target["mount"]
     destination = mount / safe_artifact_filename(artifact["filename"])
     with destination.open("wb") as handle:
@@ -1988,6 +2079,17 @@ def flash_classic(
         "mount": str(mount),
         "runtime_port": (selected_runtime or {}).get("port", ""),
     }
+
+
+def flash_classic(
+    ui: BlueUi,
+    artifact: dict[str, Any],
+    *,
+    recovery: bool = False,
+    expected_version: str = "",
+) -> dict[str, Any]:
+    return flash_rp2040(ui, "classic2usb", artifact, recovery=recovery,
+                        expected_version=expected_version)
 
 
 def legacy_runtime_ports(devices: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
@@ -2049,6 +2151,17 @@ def verify_classic_install(
     expected_tag: str = "",
     timeout: float = 15.0,
 ) -> tuple[str, str]:
+    return verify_rp2040_install("classic2usb", topology, expected_version, expected_tag, timeout)
+
+
+def verify_rp2040_install(
+    product_id: str,
+    topology: str,
+    expected_version: str,
+    expected_tag: str = "",
+    timeout: float = 15.0,
+) -> tuple[str, str]:
+    name = RP2040_PRODUCTS[product_id].name
     if not topology:
         return "unverified", "USB topology was unavailable, so the rebooted adapter could not be correlated."
     deadline = time.monotonic() + timeout
@@ -2061,9 +2174,9 @@ def verify_classic_install(
             info = device.get("firmware")
             if not info:
                 continue
-            if info.get("product") != "Classic2USB":
-                return "failed", f"USB path returned product {info.get('product') or 'unknown'}; expected Classic2USB."
-            if device.get("product_id") != "classic2usb":
+            if info.get("product") != name:
+                return "failed", f"USB path returned product {info.get('product') or 'unknown'}; expected {name}."
+            if device.get("product_id") != product_id:
                 return "failed", "Rebooted runtime has a conflicting product identity."
             if str(info.get("version")) != str(expected_version):
                 return "failed", f"Adapter returned firmware v{info.get('version')}; expected v{expected_version}."
@@ -2078,6 +2191,7 @@ def verify_classic_install(
 
 def _confirm_classic_downgrade(
     ui: BlueUi, expected_version: str, topology: str, info: dict[str, str] | None = None,
+    product_id: str = "classic2usb",
 ) -> None:
     def comparable(value: str) -> tuple | None:
         match = re.fullmatch(r"v?(\d+)\.(\d+)(?:\.(\d+))?(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?", value)
@@ -2098,8 +2212,8 @@ def _confirm_classic_downgrade(
         # A receipt from a different USB path is not evidence about this target.
         prior = next((receipt for receipt in reversed(load_receipts()) if
                       topology and receipt.get("topology") == topology and
-                      receipt.get("product") == "classic2usb" and
-                      receipt.get("family") == "classic2usb" and
+                      receipt.get("product") == product_id and
+                      receipt.get("family") == product_id and
                       receipt.get("status") == "verified" and
                       comparable(str(receipt.get("version", "")))), None)
         current = str((prior or {}).get("version", ""))
@@ -2120,7 +2234,17 @@ def firmware_flow(
     *,
     recovery: bool = False,
 ) -> None:
-    product = product_by_id(catalog, product_id)
+    product = next((item for item in catalog["products"] if item["id"] == product_id), None)
+    if product is None:
+        ui.error("No published firmware is available in the catalog.")
+        ui.pause()
+        return
+    if product["backend"] == "rp2040-uf2" and product_id not in RP2040_PRODUCTS:
+        # A newer catalog can list products this Manager cannot identify or check.
+        ui.error(f"This Manager cannot install {product.get('display_name', product_id)} firmware. "
+                 "Update Reflex Adapt Manager first.")
+        ui.pause()
+        return
     releases = list(product.get("releases", []))
     if product.get("families"):
         family_index = ui.choose(
@@ -2177,12 +2301,19 @@ def firmware_flow(
             confirmation.append(
                 f"WARNING: this rolls back from v{prior['version']} to v{release['version']}."
             )
+    elif recovery:
+        confirmation.extend([
+            "",
+            "BOOTSEL cannot identify the board. Install this only on a "
+            f"{RP2040_PRODUCTS[product_id].name}.",
+        ])
     confirmation.extend(["", "Install this firmware?"])
     if not ui.confirm("\n".join(confirmation)):
         return
     try:
         flashed = (
-            flash_classic(ui, artifact, recovery=recovery, expected_version=str(release["version"]))
+            flash_rp2040(ui, product_id, artifact, recovery=recovery,
+                         expected_version=str(release["version"]))
             if product["backend"] == "rp2040-uf2"
             else flash_legacy(ui, artifact)
         )
@@ -2218,10 +2349,13 @@ def firmware_flow(
                     ui.error(f"Firmware succeeded, but MiSTer setup failed: {exc}")
         else:
             ui.status("Firmware file validated and copied. Waiting for the adapter to reboot for verification...")
-            status, detail = verify_classic_install(
+            # The firmware reports vX.Y.Z; a release tag in the shared feed can
+            # carry a product prefix (jvsio2usb-vX.Y.Z), declared apart.
+            status, detail = verify_rp2040_install(
+                product_id,
                 topology,
                 str(release["version"]),
-                str(release.get("tag", "")),
+                str(release.get("firmware_tag") or release.get("tag", "")),
             )
             update_receipt(receipt_id, {
                 "status": status,
@@ -3012,7 +3146,9 @@ def settings_flow(ui: BlueUi) -> None:
 
 
 def latest_release(catalog: dict[str, Any], product_id: str, family: str | None = None) -> dict[str, Any] | None:
-    product = product_by_id(catalog, product_id)
+    product = next((item for item in catalog["products"] if item["id"] == product_id), None)
+    if product is None:
+        return None
     releases = [
         release for release in product.get("releases", [])
         if release.get("channel") == "stable" and
@@ -3024,17 +3160,21 @@ def latest_release(catalog: dict[str, Any], product_id: str, family: str | None 
 
 
 def classic_update_status(catalog: dict[str, Any], devices: list[dict[str, Any]]) -> str:
+    return rp2040_update_status(catalog, devices, "classic2usb")
+
+
+def rp2040_update_status(catalog: dict[str, Any], devices: list[dict[str, Any]], product_id: str) -> str:
     update = catalog.get("_update_check", {})
     error_suffix = ""
     if update.get("attempted") and not update.get("online"):
         error_suffix = " (online check failed; cached catalog)" if update.get("cached") else " (online check failed)"
-    latest = latest_release(catalog, "classic2usb")
+    latest = latest_release(catalog, product_id)
     if latest is None:
-        return "No cached Classic2USB release" + error_suffix
+        return f"No cached {RP2040_PRODUCTS[product_id].name} release" + error_suffix
     current_versions = [
         device["firmware"]["version"]
         for device in devices
-        if device["product_id"] == "classic2usb" and device.get("firmware")
+        if device["product_id"] == product_id and device.get("firmware")
     ]
     if not current_versions:
         return f"Latest v{latest['version']} (connect in a management mode to compare){error_suffix}"
@@ -3074,10 +3214,15 @@ def device_summary(
         if device.get("firmware"):
             info = device["firmware"]
             lines.append(f"  Firmware v{info['version']}  |  {info['hardware']}")
-        elif device["product_id"] == "classic2usb":
+        elif device["product_id"] in RP2040_PRODUCTS:
             lines.append("  Firmware version unavailable in this output mode.")
     if catalog is not None and any(device["product_id"] == "classic2usb" for device in detected):
         lines.append(f"Update check: {classic_update_status(catalog, detected)}")
+    for product in RP2040_PRODUCTS.values():
+        if product.id != "classic2usb" and catalog is not None and \
+                any(device["product_id"] == product.id for device in detected):
+            lines.append(f"{product.name} update check: "
+                         f"{rp2040_update_status(catalog, detected, product.id)}")
     return lines or ["No supported Reflex Adapt devices found."]
 
 
@@ -3090,6 +3235,16 @@ def history_flow(ui: BlueUi) -> None:
         for receipt in reversed(receipts[-20:])
     ]
     ui.message("Firmware installation history", "\n".join(lines))
+
+
+def choose_recovery_product(ui: BlueUi) -> str | None:
+    """BOOTSEL cannot identify the board, so the user names its product."""
+    products = list(RP2040_PRODUCTS.values())
+    selected = ui.choose(
+        "Which product is the board in BOOTSEL? Its firmware only works on that product.",
+        [f"Reflex Adapt {product.name}" for product in products],
+    )
+    return None if selected is None else products[selected].id
 
 
 def main_actions(catalog: dict[str, Any], devices: list[dict[str, Any]]) -> list[tuple[str, str]]:
@@ -3106,10 +3261,17 @@ def main_actions(catalog: dict[str, Any], devices: list[dict[str, Any]]) -> list
             f"Classic2USB firmware / rollback  [{classic_update_status(catalog, devices)}]",
             "classic-firmware",
         ))
+    for product in RP2040_PRODUCTS.values():
+        if product.id != "classic2usb" and rp2040_runtime_ports(product.id, devices):
+            actions.append((
+                f"{product.name} firmware / rollback  "
+                f"[{rp2040_update_status(catalog, devices, product.id)}]",
+                f"rp2040-firmware:{product.id}",
+            ))
     if unknown_uf2_present:
         actions.append((
-            "Classic2USB recovery firmware  [requires target confirmation]",
-            "classic-recovery",
+            "RP2040 recovery firmware  [choose the product, confirm the target]",
+            "rp2040-recovery",
         ))
     if classic_cdc:
         actions.append(("Classic2USB settings", "classic-settings"))
@@ -3169,8 +3331,12 @@ def run_interactive(catalog: dict[str, Any], catalog_path: Path, map_bundle_path
                 )
             elif action == "classic-firmware":
                 firmware_flow(ui, catalog, "classic2usb")
-            elif action == "classic-recovery":
-                firmware_flow(ui, catalog, "classic2usb", recovery=True)
+            elif action.startswith("rp2040-firmware:"):
+                firmware_flow(ui, catalog, action.split(":", 1)[1])
+            elif action == "rp2040-recovery":
+                recovery_product = choose_recovery_product(ui)
+                if recovery_product:
+                    firmware_flow(ui, catalog, recovery_product, recovery=True)
             elif action == "legacy-firmware":
                 firmware_flow(ui, catalog, "adapt-v1-legacy")
             elif action == "classic-settings":
@@ -3257,6 +3423,16 @@ __REFLEX_MANAGER_CATALOG__
       ],
       "release_feed": "https://api.github.com/repos/misteraddons/reflex-io/releases",
       "settings_schema": 1,
+      "releases": []
+    },
+    {
+      "id": "jvsio2usb",
+      "display_name": "Reflex Adapt JVSIO2USB",
+      "backend": "rp2040-uf2",
+      "runtime_vid_pid": [
+        "16d0:1460"
+      ],
+      "release_feed": "https://api.github.com/repos/misteraddons/reflex-io/releases",
       "releases": []
     },
     {

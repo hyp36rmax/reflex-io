@@ -139,6 +139,7 @@ enum QuickConfigItem : uint8_t {
   QCI_JVS_MENU_HOLD,
   QCI_JVS_HOME_HOTKEY,
   QCI_PS2_REMOTE_OUTPUT,
+  QCI_JVS_HOLD_START,
   QCI_COUNT
 };
 
@@ -188,7 +189,7 @@ private:
   uint8_t visible_count;
   QuickConfigItem analog_items[QCI_COUNT];
   uint8_t analog_count;
-  QuickConfigItem hotkey_items[5];
+  QuickConfigItem hotkey_items[6];
   uint8_t hotkey_count;
 
   QuickStoredValue stored_dpad_mode;
@@ -238,12 +239,13 @@ private:
   uint8_t temp_n64_cstick;   // 0=Auto, 1=Buttons, 2=Stick
   uint8_t temp_psx_poll_rate = 0; // psx_poll::kRatePeriodUs index, 0=Auto
   uint8_t temp_psx_cmd_gap = 0;   // psx_poll::kGapUs index, 0=Auto
-  uint8_t temp_negcon_digital = 0; // NEGCON_INPUT_* bits set to Digital
+  uint8_t temp_negcon_digital = 0; // NEGCON_INPUT_* bits set to Digital, plus L_STICK
   uint8_t temp_negcon_gain = 0;    // kNegconGainQuarters index
   uint8_t temp_direction_hotkeys[3] = {};
 #if defined(ADAPT_CAP_JVS_INPUT_STATUS)
   uint8_t temp_jvs_menu_hold = 0;
   uint8_t temp_jvs_home_hotkey = 0;
+  uint8_t temp_jvs_hold_start = 0;
 #endif
   uint8_t temp_direction_hotkey_home = 0;  // Modern: 0=Auto, 1=Off, 2=On
   uint32_t temp_direction_hotkey_identity = 0;
@@ -331,6 +333,8 @@ private:
   void toggleTempDrivingEnds();
   static uint8_t negconInputForItem(QuickConfigItem item);
   bool tempNegconInputHasPressure(uint8_t input);
+  bool tempNegconInputDigital(uint8_t input);
+  void toggleTempNegconInput(uint8_t input);
 
   // Check if mode is a Nintendo controller (for button map mode)
   bool isNintendoController(DeviceEnum mode);

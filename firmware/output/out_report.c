@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include <tusb.h>
+#include "hardware/timer.h"
 #include "pico/mutex.h"
 
 #include "out_report.h"
@@ -30,6 +31,33 @@ static uint8_t get_buffer[64];
 
 static bool ready_to_send = true;
 auto_init_mutex(out_report_mutex);
+
+// TinyUSB closes a device that leaves mid-transfer without a completion
+// callback, so the transfer in flight is released here once its device is
+// gone or after OUT_REPORT_TRANSFER_TIMEOUT_US. Otherwise the queue stops for
+// good (the Sony identity read, USB/Bluetooth de-duplication).
+#define OUT_REPORT_TRANSFER_TIMEOUT_US 1000000u
+static uint8_t in_flight_dev_addr = 0;
+static uint32_t in_flight_since_us = 0;
+
+static void mark_transfer_in_flight(uint8_t dev_addr) {
+    ready_to_send = false;
+    in_flight_dev_addr = dev_addr;
+    in_flight_since_us = time_us_32();
+}
+
+static void release_lost_transfer(void) {
+    if (!ready_to_send &&
+        (!tuh_mounted(in_flight_dev_addr) ||
+         (uint32_t)(time_us_32() - in_flight_since_us) >= OUT_REPORT_TRANSFER_TIMEOUT_US)) {
+        ready_to_send = true;
+    }
+    // Reports queued for a device that has gone would block the head.
+    while (oor_items > 0 && !tuh_mounted(outgoing_out_reports[oor_head].dev_addr)) {
+        oor_head = (oor_head + 1) % OOR_BUFSIZE;
+        oor_items--;
+    }
+}
 
 void do_reset_out_report_queue() {
     mutex_enter_blocking(&out_report_mutex);
@@ -89,25 +117,26 @@ void do_queue_get_report(uint8_t report_id, uint8_t dev_addr, uint8_t interface,
 
 void do_send_out_report() {
     mutex_enter_blocking(&out_report_mutex);
+    release_lost_transfer();
     if ((oor_items > 0) && ready_to_send) {
         outgoing_out_report_t* out = &(outgoing_out_reports[oor_head]);
         if (out->request == HID_REQ_CONTROL_SET_REPORT) {
           if (out->use_interrupt_edp) {
               if (tuh_hid_send_report(out->dev_addr, out->interface, out->report_id, out->report, out->len)) {
-                  ready_to_send = false;
+                  mark_transfer_in_flight(out->dev_addr);
                   oor_head = (oor_head + 1) % OOR_BUFSIZE;
                   oor_items--;
               }
           } else {
               if (tuh_hid_set_report(out->dev_addr, out->interface, out->report_id, out->type, out->report, out->len)) {
-                  ready_to_send = false;
+                  mark_transfer_in_flight(out->dev_addr);
                   oor_head = (oor_head + 1) % OOR_BUFSIZE;
                   oor_items--;
               }
           }
         } else if (out->request == HID_REQ_CONTROL_GET_REPORT) {
             if (tuh_hid_get_report(out->dev_addr, out->interface, out->report_id, out->type, get_buffer, out->len)) {
-                ready_to_send = false;
+                mark_transfer_in_flight(out->dev_addr);
                 oor_head = (oor_head + 1) % OOR_BUFSIZE;
                 oor_items--;
             }

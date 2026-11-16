@@ -362,7 +362,12 @@ void __not_in_flash_func(applyTurboTransforms)() {
       continue;
     }
 
-    turbo.updateRawButtons(i, frame.digital_buttons);
+    // This runs in the process stage on the physical frame and again in the
+    // output stage, which drops buttons still held from a menu. Both calls
+    // must give the press tracker the same view, or every pass reads as a
+    // new press and a latched rate flips each pass until the release.
+    turbo.updateRawButtons(
+        i, frame.digital_buttons & ~(held_across_menu_close[i] & pre_remap_buttons[i]));
     const uint32_t beforeTurbo = frame.digital_buttons;
     frame.digital_buttons = turbo.applyTurbo(i, frame.digital_buttons);
     setControllerPressureForMask(frame, beforeTurbo & ~frame.digital_buttons, 0);

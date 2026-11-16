@@ -60,6 +60,8 @@
 
 #ifdef ENABLE_INPUT_SNES
 #include "../input/snes/input_snes_runtime_state.h"
+// Raw HVC-051 reads for serial FCNET (input/snes/input_snes_famicom_network.cpp).
+void printFamicomNetworkRawDump(Print& out);
 #endif
 
 #ifdef ENABLE_INPUT_PSX
@@ -176,6 +178,7 @@ const char* settingIdName(SettingId id) {
     case SettingId::Switch2Output: return "SWITCH2_OUTPUT";
     case SettingId::Ps2RemoteOutput: return "PS2_REMOTE_OUTPUT";
     case SettingId::MisterDisplay: return "MISTER_DISPLAY";
+    case SettingId::HoldStartHotkey: return "HOLD_START_HOTKEY";
     case SettingId::Count: break;
   }
   return "UNKNOWN";
@@ -641,6 +644,9 @@ bool applyStoredSettingToRuntime(SettingId id, DeviceEnum mode) {
     case SettingId::HomeHotkey:
       menu_home_hotkey = static_cast<uint8_t>(value);
       return true;
+    case SettingId::HoldStartHotkey:
+      menu_hold_start_hotkey = static_cast<uint8_t>(value);
+      return true;
     case SettingId::CaptureHotkey:
       menu_capture_hotkey = static_cast<uint8_t>(value);
       return true;
@@ -746,6 +752,7 @@ bool readRuntimeSettingValue(SettingId id, DeviceEnum mode, int32_t* value) {
     case SettingId::MenuHotkey: *value = menu_menu_hotkey; break;
     case SettingId::SystemMenuHotkey: *value = menu_system_menu_hotkey; break;
     case SettingId::HomeHotkey: *value = menu_home_hotkey; break;
+    case SettingId::HoldStartHotkey: *value = menu_hold_start_hotkey; break;
     case SettingId::CaptureHotkey: *value = menu_capture_hotkey; break;
     case SettingId::KioskMode: *value = menu_kiosk_mode; break;
     case SettingId::Usb2Db15MultiBind: *value = menu_usb2db15_multi_bind; break;
@@ -872,7 +879,7 @@ bool handleSerialHotkeyCommandImpl(char* text, Print& out) {
              serialTextEqualsExact(text, "LIST") || serialTextEqualsExact(text, "MODE")) {
     out.print(F("HOTKEYS FIXED=1 ENABLED="));
     out.println(menu_home_hotkey);
-    out.println(F("HOTKEY ON/OFF: enable/disable preset Start+direction shortcuts"));
+    out.println(F("HOTKEY ON/OFF: enable/disable preset Start+direction and Hold Start shortcuts"));
   } else {
     out.println(F("ERR:HOTKEYS_FIXED; USE_HOTKEY_ON_OFF"));
   }
@@ -1200,6 +1207,23 @@ void printClassicInputDebug(Print& out) {
       out.print((int)slot.source_port);
       out.print(F(" IDX="));
       out.println((int)slot.source_index);
+    }
+    for (uint8_t p = 0; p < kPceDebugMousePorts; ++p) {
+      const PceMouseDebugPort& mouse = pce.mouse[p];
+      if (mouse.raw_misses == 0) continue;
+      out.print(F("PCEM P="));
+      out.print((int)p);
+      out.print(F(" MISS="));
+      out.print(mouse.raw_misses);
+      out.print(F(" OPEN="));
+      out.print(mouse.open_sweeps);
+      out.print(F(" LAST="));
+      out.print(mouse.last_raw, HEX);
+      out.print(':');
+      for (uint8_t i = 0; i < 4; ++i) out.print(mouse.last_data[i], HEX);
+      out.print('/');
+      for (uint8_t i = 0; i < 4; ++i) out.print(mouse.last_buttons[i], HEX);
+      out.println();
     }
   }
   #endif
@@ -2269,6 +2293,10 @@ bool handleSerialStateCommand(const char* command, Print& out) {
   if (serialTokenEquals(command, "SNESMOUSE")) {
     resetSnesMouseDebugRange();
     out.println(F("OK:SNESMOUSE_RESET"));
+    return true;
+  }
+  if (serialTokenEquals(command, "FCNET")) {
+    printFamicomNetworkRawDump(out);
     return true;
   }
 #endif

@@ -21,6 +21,10 @@
 #include "button_chord_remap.h"
 #include "hotkey_combo.h"
 #endif
+#if defined(ENABLE_INPUT_JVS)
+#include "../input/jvs/jvs_analog_config.h"
+#include "../input/jvs/jvs_panel_map.h"
+#endif
 
 void configurationPersistenceService() {
   settingsPersistenceService();
@@ -41,6 +45,10 @@ void configurationPersistenceService() {
 #endif
 #if defined(ADAPT_CAP_DUAL_INPUT_MERGE)
   classicDualMergePersistenceService();
+#endif
+#if defined(ENABLE_INPUT_JVS)
+  jvsAnalogPersistenceService();
+  jvsPanelPersistenceService();
 #endif
 }
 
@@ -63,6 +71,10 @@ bool configurationPersistenceFlushNow() {
 #endif
 #if defined(ADAPT_CAP_DUAL_INPUT_MERGE)
   if (!classicDualMergePersistenceFlushNow()) success = false;
+#endif
+#if defined(ENABLE_INPUT_JVS)
+  if (!jvsAnalogPersistenceFlushNow()) success = false;
+  if (!jvsPanelPersistenceFlushNow()) success = false;
 #endif
   return success;
 }
@@ -110,6 +122,10 @@ void configurationPersistenceDiscardDeferred() {
 #if defined(ADAPT_CAP_DUAL_INPUT_MERGE)
   classicDualMergePersistenceDiscardDeferred();
 #endif
+#if defined(ENABLE_INPUT_JVS)
+  jvsAnalogPersistenceDiscardDeferred();
+  jvsPanelPersistenceDiscardDeferred();
+#endif
 }
 
 void configurationPersistenceBeginImmediate() {
@@ -139,6 +155,10 @@ bool configurationPersistenceHasPending() {
 #endif
 #if defined(ADAPT_CAP_DUAL_INPUT_MERGE)
   pending = pending || classicDualMergePersistenceHasPending();
+#endif
+#if defined(ENABLE_INPUT_JVS)
+  pending = pending || jvsAnalogPersistenceHasPending();
+  pending = pending || jvsPanelPersistenceHasPending();
 #endif
   return pending;
 }

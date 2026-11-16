@@ -345,6 +345,12 @@ bool inputusb_ds3_pairing_verified(const uint8_t host_address[6]);
 
 // Get device by index
 usb_input_device_t* get_usb_device(uint8_t device_index);
+// Copy a device's report and map revision as core1 last published them,
+// never a report core1 is part way through writing. False when every bounded
+// attempt overlapped a write; the caller keeps its state until the next poll.
+bool inputusb_copy_device_report(uint8_t device_index,
+                                 usb_input_report_t* report,
+                                 uint32_t* mapping_revision);
 const char* inputusb_device_display_name(uint8_t device_index);
 bool inputusb_device_identity(uint8_t device_index,
                               usb_input_device_identity_t* identity);

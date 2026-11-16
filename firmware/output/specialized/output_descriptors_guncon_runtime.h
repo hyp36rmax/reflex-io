@@ -24,7 +24,7 @@ static const uint8_t gunconmister_report_descriptor[] = {
   0x05, 0x01,        //   Usage Page (Generic Desktop Ctrls)
   0x09, 0x01,        //   Usage (Pointer)
   0x15, 0x00,        //   Logical Minimum (0)
-  0x26, 0xFF, 0x03,  //   Logical Maximum (1023)
+  0x26, 0xFF, 0x7F,  //   Logical Maximum (32767): guncon_screen_scale.h
   0x75, 0x10,        //   Report Size (16)
   0x95, 0x02,        //   Report Count (2)
   0xA1, 0x00,        //   Collection (Physical)

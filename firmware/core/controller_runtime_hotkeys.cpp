@@ -27,8 +27,70 @@ struct HeldVirtualHotkeyState {
   bool active = false;
 };
 
+// Start held alone this long sends Home, beside Down+Start (owner, 2026-11-14).
+// Start reaches the host until then, so a tap is still Start.
+constexpr uint32_t kHoldStartHomeMs = 1000;
+// Home is then a tap while Start is still held: MiSTer Main opens its OSD on
+// the menu key's release (menu.cpp, KEY_F12 | UPSTROKE), and a held one is a
+// long press there (user_io.cpp opens joystick setup), so holding Home until
+// Start's release made the OSD wait for the release.
+constexpr uint32_t kHoldStartHomeTapMs = 100;
+
+enum class HoldStartAction : uint8_t { None, Home, HideStart };
+
+struct HoldStartHotkeyState {
+  bool blocked = false;  // Start joined a chord, or was held as a menu closed.
+  bool timing = false;
+  bool fired = false;
+  uint32_t started_at = 0;
+  uint32_t fired_at = 0;
+};
+
 uint32_t virtualHotkeyOutputButtons[MAX_USB_OUT] = {};
 uint32_t virtualHotkeySuppressedButtons[MAX_USB_OUT] = {};
+
+bool holdStartHomeEnabled() {
+#if ADAPT_POLICY_FIXED_HOTKEY_ASSIGNMENTS
+  // Fixed-preset products have one Hotkeys toggle for every Start shortcut.
+  return menu_home_hotkey != 0;
+#else
+  return menu_hold_start_hotkey != 0;
+#endif
+}
+
+// Home for one tap once Start has been held alone long enough, then Start
+// stays hidden until it is released, so one hold sends one Home. Only a press
+// of Start on its own, held on its own, counts; anything else waits for
+// Start's release.
+HoldStartAction __not_in_flash_func(updateHoldStartHome)(HoldStartHotkeyState& state, bool enabled,
+                                                         uint32_t physicalButtons, uint32_t now) {
+  const uint32_t buttons = physicalButtons & HOTKEY_ALLOWED_BUTTONS;
+  if ((buttons & INPUT_START) == 0) {
+    state.blocked = false;
+  } else if (buttons != INPUT_START) {
+    state.blocked = true;
+  }
+  if (!enabled || state.blocked || buttons != INPUT_START) {
+    state.timing = false;
+    state.fired = false;
+    return HoldStartAction::None;
+  }
+  if (!state.timing) {
+    state.timing = true;
+    state.started_at = now;
+  }
+  if (!state.fired) {
+    if ((uint32_t)(now - state.started_at) < kHoldStartHomeMs) {
+      return HoldStartAction::None;
+    }
+    // Timed from the first pass that sees the hold complete, so a slow pass
+    // can't skip the tap.
+    state.fired = true;
+    state.fired_at = now;
+  }
+  return (uint32_t)(now - state.fired_at) < kHoldStartHomeTapMs ? HoldStartAction::Home
+                                                               : HoldStartAction::HideStart;
+}
 
 bool captureHotkeySupportedByCurrentOutput() {
   const outputMode_t mode = get_effective_output_mode();
@@ -165,6 +227,7 @@ void __not_in_flash_func(updateHeldControllerHotkeysBeforeTransforms)() {
 #if ADAPT_POLICY_START_UP_COIN
   static HeldVirtualHotkeyState coinHotkeyState[MAX_USB_OUT];
 #endif
+  static HoldStartHotkeyState holdStartState[MAX_USB_OUT];
   static uint32_t lastVirtualHotkeyOutputButtons[MAX_USB_OUT] = {};
   static uint32_t previousPhysicalButtons[MAX_USB_OUT] = {};
 #if defined(ADAPT_CAP_CONTROLLER_HOTKEY_PROFILES)
@@ -197,6 +260,8 @@ void __not_in_flash_func(updateHeldControllerHotkeysBeforeTransforms)() {
 #if ADAPT_POLICY_START_UP_COIN
       coinHotkeyState[i] = HeldVirtualHotkeyState{};
 #endif
+      holdStartState[i] = HoldStartHotkeyState{};
+      holdStartState[i].blocked = true;
       virtualHotkeyOutputButtons[i] = 0;
       virtualHotkeySuppressedButtons[i] = 0;
       lastVirtualHotkeyOutputButtons[i] = 0;
@@ -205,6 +270,8 @@ void __not_in_flash_func(updateHeldControllerHotkeysBeforeTransforms)() {
     return;
   }
 
+  const uint32_t now = millis();
+  const bool holdStartOn = holdStartHomeEnabled();
   for (uint8_t i = 0; i < max_devices && i < MAX_USB_OUT; ++i) {
     controller_state_t& frame = controllerFrame(i);
 #if defined(ADAPT_CAP_CONTROLLER_HOTKEY_PROFILES)
@@ -214,10 +281,15 @@ void __not_in_flash_func(updateHeldControllerHotkeysBeforeTransforms)() {
       previousPhysicalButtons[i] = 0;
       homeHotkeyState[i] = HeldVirtualHotkeyState{};
       captureHotkeyState[i] = HeldVirtualHotkeyState{};
+      holdStartState[i] = HoldStartHotkeyState{};
       virtualHotkeyOutputButtons[i] = 0;
       virtualHotkeySuppressedButtons[i] = 0;
     }
     const uint32_t homeCombo = directionalHomeHotkeyEnabled(i) ? (INPUT_START | INPUT_PAD_D) : 0;
+    // Hold Start follows the controller's own Home choice, as Down+Start does.
+    const bool holdStartEnabled = holdStartOn && directionalHomeHotkeyAllowed(i);
+#else
+    const bool holdStartEnabled = holdStartOn;
 #endif
     if (!frame.connected) {
       if (homeHotkeyState[i].active || captureHotkeyState[i].active ||
@@ -230,11 +302,14 @@ void __not_in_flash_func(updateHeldControllerHotkeysBeforeTransforms)() {
 #if ADAPT_POLICY_START_UP_COIN
       coinHotkeyState[i] = HeldVirtualHotkeyState{};
 #endif
+      holdStartState[i] = HoldStartHotkeyState{};
       previousPhysicalButtons[i] = 0;
       continue;
     }
 
     const uint32_t physicalButtons = physicalHotkeyButtonsForController(i);
+    const HoldStartAction holdStart =
+        updateHoldStartHome(holdStartState[i], holdStartEnabled, physicalButtons, now);
     // Some serial controller protocols can expose the two edges of a chord in
     // adjacent polls. Bridge only that one-poll transition so Down->Start and
     // Start->Down are equivalent without turning sequential taps into a latch.
@@ -255,7 +330,8 @@ void __not_in_flash_func(updateHeldControllerHotkeysBeforeTransforms)() {
 #endif
       virtualHotkeyOutputButtons[i] != 0 ||
       virtualHotkeySuppressedButtons[i] != 0;
-    if (!hasActiveVirtualHotkey && !canTriggerHome && !canTriggerCapture && !canTriggerCoin) {
+    if (!hasActiveVirtualHotkey && !canTriggerHome && !canTriggerCapture && !canTriggerCoin &&
+        holdStart == HoldStartAction::None) {
       continue;
     }
     virtualHotkeyOutputButtons[i] = 0;
@@ -282,6 +358,13 @@ void __not_in_flash_func(updateHeldControllerHotkeysBeforeTransforms)() {
       continue;
     }
 #endif
+    if (holdStart != HoldStartAction::None) {
+      clearHotkeyComboFromFrame(frame, INPUT_START);
+      virtualHotkeySuppressedButtons[i] = INPUT_START;
+      if (holdStart == HoldStartAction::Home) {
+        virtualHotkeyOutputButtons[i] |= INPUT_HOME;
+      }
+    }
   }
 
   // Vacated logical players must not retain a held chord when the next device
@@ -290,6 +373,7 @@ void __not_in_flash_func(updateHeldControllerHotkeysBeforeTransforms)() {
   for (uint8_t i = max_devices; i < MAX_USB_OUT; ++i) {
     homeHotkeyState[i] = HeldVirtualHotkeyState{};
     captureHotkeyState[i] = HeldVirtualHotkeyState{};
+    holdStartState[i] = HoldStartHotkeyState{};
     previousPhysicalButtons[i] = 0;
     virtualHotkeyOutputButtons[i] = 0;
     virtualHotkeySuppressedButtons[i] = 0;
@@ -317,6 +401,9 @@ bool __not_in_flash_func(virtualControllerHotkeysRequireService)() {
 #if ADAPT_POLICY_START_UP_COIN
   return true; // Start+Up Coin has no setting; detect presses and releases.
 #endif
+  if (holdStartHomeEnabled()) {
+    return true; // Hold Start times Start on its own, change or no change.
+  }
   if ((menu_home_hotkey != 0 && menu_home_hotkey_combo != 0) ||
       (menu_capture_hotkey != 0 && menu_capture_hotkey_combo != 0 &&
        captureHotkeySupportedByCurrentOutput())) {

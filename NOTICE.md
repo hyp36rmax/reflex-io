@@ -37,7 +37,7 @@ licenses and are listed below.
 |-----------|-----------|---------------------------|
 | [RetroZord and sonik-br controller libraries](https://github.com/sonik-br/RetroZordAdapter) | Firmware lineage and classic controller libraries, including JoybusLib, SnesLib, SaturnLib, PceLib, JaguarLib, and ThreedoLib | `third_party/licenses/*Lib-LICENSE`; source headers where present |
 | [GP2040-CE / OpenStickCommunity](https://github.com/OpenStickCommunity/GP2040-CE) | PS4 key-bundle conventions, XInput/auth guidance, and Xbox One/XGIP donor implementation details | `third_party/licenses/GP2040-CE-LICENSE`; SPDX headers in copied/ported files |
-| [SDL GameControllerDB](https://github.com/mdqinc/SDL_GameControllerDB) | Pinned Linux/USB SDL-backend mappings compiled as a best-effort Modern2USB raw-HID suggestion seed | zlib license; `third_party/licenses/SDL_GameControllerDB-LICENSE.txt` |
+| [SDL GameControllerDB](https://github.com/mdqinc/SDL_GameControllerDB) | Pinned Linux/USB SDL-backend mappings and controller names, compiled into the USB2DB15 USB-host controller table; the same rows are written by Modern2USB's BOOTSEL UF2 to RP2040 flash outside its application (`tools/modern2usb_sdl_table.py`) | zlib license; `third_party/licenses/SDL_GameControllerDB-LICENSE.txt` |
 | [TinyUSB](https://github.com/hathach/tinyusb) / [Adafruit TinyUSB Arduino](https://github.com/adafruit/Adafruit_TinyUSB_Arduino) | USB device/host stack and Arduino integration | `third_party/Adafruit_TinyUSB_Arduino/LICENSE` |
 | [BlueRetro by darthcloud](https://github.com/darthcloud/BlueRetro) | Modern2USB ESP32 Classic Bluetooth and BLE controller host, decoding, bonding, and feedback at pinned commit `e1a9831a875f5313a923160a1379a7ebbfaa2b11` | Apache-2.0; `firmware/targets/modern2usb/esp32/blueretro/LICENSE`. `firmware/targets/modern2usb/esp32/blueretro/UPSTREAM.md` lists the files we changed, and each carries a change notice on its first line. BlueRetro's own third-party files keep their notices: Zephyr (Apache-2.0), Espressif (Apache-2.0), Daniel Frejek (MIT), Hector Martin (GPL-2.0-only OR GPL-3.0-only OR MIT) and Thanos Siopoudis (Apache-2.0) |
 | [liblfds](https://liblfds.org/) 7.1.1, from [darthcloud/liblfds7.1.1](https://github.com/darthcloud/liblfds7.1.1) at commit `da3494fef10df4681e267d8b2b8cce2c90d5a9fa` | Modern2USB ESP32 image: the bounded single-producer, single-consumer queue behind BlueRetro's `queue_bss`, unmodified | Upstream ships no license file; `third_party/licenses/liblfds-license-statement.md` records its published terms |
@@ -53,6 +53,7 @@ licenses and are listed below.
 | [newlib](https://sourceware.org/newlib/), in the Espressif Xtensa toolchain 14.2.0 | Modern2USB ESP32 image: C library (`libc`, `libm`) | Collection of permissive licenses; `third_party/licenses/newlib-COPYING.NEWLIB` |
 | [GCC runtime libraries](https://gcc.gnu.org/), in the same toolchain | Modern2USB ESP32 image: `libgcc` and `libstdc++` | GPL-3.0 with the GCC Runtime Library Exception; `third_party/licenses/GCC-COPYING.RUNTIME` |
 | [Pico-PIO-USB by sekigon-gonnoc](https://github.com/sekigon-gonnoc/Pico-PIO-USB) | RP2040 PIO USB support | `third_party/Pico_PIO_USB/LICENSE` |
+| [hid-remapper by Jacek Fedorynski](https://github.com/jfedor2/hid-remapper) | USB host output and feature report queue, adapted from its `out_report.cc` (`firmware/output/out_report.c` and `out_report.h`) | MIT; `third_party/licenses/jfedor2-hid-remapper-LICENSE` |
 | [Arduino-Pico by Earle F. Philhower III and contributors](https://github.com/earlephilhower/arduino-pico) | RP2040 Arduino core and bundled build libraries | `third_party/licenses/arduino-pico-LICENSE` |
 | [jvsio by Takashi Toyoshima](https://github.com/toyoshim/jvsio) | JVS packet framing, device discovery, host polling, and response parsing in the integrated and standalone JVSIO2USB implementations | BSD-3-Clause; `third_party/licenses/toyoshim-jvsio-BSD-3-Clause-LICENSE`; copyright headers retained in `JVSIO_c.c` and `JVSIO_c.h` |
 | [BearSSL by Thomas Pornin](https://bearssl.org/) | RSA-PSS-SHA256 primitives used for PS4 authentication | `third_party/licenses/BearSSL-LICENSE.txt` |
@@ -91,7 +92,7 @@ to its upstream. Source-adjacent license copies are retained for:
 The copied license bundle covers Santroller, bootsector PS3PadMicro,
 GP2040-CE, GIMX-firmwares, PsxNewLib, NintendoExtensionCtrl, sonik-br
 controller libraries, Doridian Joybus-PIO, DreamcastControllerUsbPico,
-SSD1306Ascii, BearSSL, Arduino-Pico, Toyoshima jvsio, SDL GameControllerDB,
+SSD1306Ascii, BearSSL, Arduino-Pico, Toyoshima jvsio, hid-remapper, SDL GameControllerDB,
 the amccomb Windows Switch 2 Pro Controller (MIT), and the Modern2USB ESP32
 image's ESP-IDF, Mbed TLS, lwIP, wpa_supplicant, FreeRTOS Kernel, http_parser,
 SPIFFS, newlib and GCC runtime components. GameDB-GB, GameDB-GBC, and

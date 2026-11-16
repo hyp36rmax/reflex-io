@@ -72,7 +72,6 @@ uint32_t TurboController::getTurboButtonMask(TurboButton btn) const {
 
 void TurboController::resetTracking() {
   for (uint8_t i = 0; i < TURBO_BTN_COUNT; i++) {
-    last_toggle_time[i] = 0;
     turbo_state[i] = true;
 #if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
     button_phase_start_us[i] = 0;
@@ -82,6 +81,11 @@ void TurboController::resetTracking() {
     raw_held_buttons[i] = 0;
     latched_buttons[i] = 0;
     last_physical_buttons[i] = 0;
+#if !defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
+    for (uint8_t button = 0; button < TURBO_BTN_COUNT; button++) {
+      press_start_ms[i][button] = 0;
+    }
+#endif
   }
 }
 
@@ -133,6 +137,32 @@ bool __not_in_flash_func(TurboController::hasAnyEnabled)() {
   return any_enabled;
 }
 
+#if !defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
+// A new press starts pressed. It joins the pulses of a same-rate turbo button
+// this player already holds, so a chord stays in step as it did on the old
+// shared clock; if those are in their off phase, they restart with it.
+uint32_t TurboController::startPressPhase(uint8_t device, TurboButton btn) {
+  const uint32_t now = millis();
+  const uint16_t interval = getTurboIntervalMs(button_rates[btn]);
+  if (interval == 0) return now;
+  for (uint8_t pass = 0; pass < 2; pass++) {
+    for (uint8_t j = 0; j < TURBO_BTN_COUNT; j++) {
+      const uint32_t mask = getTurboButtonMask((TurboButton)j);
+      if (j == btn || mask == 0 || (raw_held_buttons[device] & mask) == 0 ||
+          getTurboIntervalMs(button_rates[j]) != interval) {
+        continue;
+      }
+      if (pass == 1) {
+        press_start_ms[device][j] = now;
+      } else if ((((now - press_start_ms[device][j]) / interval) & 1u) == 0) {
+        return press_start_ms[device][j];
+      }
+    }
+  }
+  return now;
+}
+#endif
+
 void TurboController::updateRawButtons(uint8_t device, uint32_t current_buttons) {
   if (device >= MAX_USB_OUT) return;
 
@@ -158,6 +188,10 @@ void TurboController::updateRawButtons(uint8_t device, uint32_t current_buttons)
         // Each latch activation is a new source press, so start on-phase.
         button_phase_start_us[i] = (latched_buttons[device] & mask) ? micros() : 0;
         turbo_state[i] = true;
+#else
+        if (latched_buttons[device] & mask) {
+          press_start_ms[device][i] = startPressPhase(device, (TurboButton)i);
+        }
 #endif
       }
       if (latched_buttons[device] & mask) {
@@ -169,20 +203,18 @@ void TurboController::updateRawButtons(uint8_t device, uint32_t current_buttons)
       if (!button_tracked) {
 #if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
         button_phase_start_us[i] = micros();
+#else
+        press_start_ms[device][i] = startPressPhase(device, (TurboButton)i);
 #endif
       }
       raw_held_buttons[device] |= mask;
     } else if (button_tracked) {
-#if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
       // Do not let an off-phase release retain a stale hold. The next source
       // press must begin a fresh full-pulse schedule.
       raw_held_buttons[device] &= ~mask;
+#if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
       button_phase_start_us[i] = 0;
       turbo_state[i] = true;
-#else
-      if (turbo_state[i]) {
-        raw_held_buttons[device] &= ~mask;
-      }
 #endif
     }
   }
@@ -238,25 +270,10 @@ void TurboController::getAllRates(uint8_t* rates) {
 }
 
 void TurboController::update() {
-#if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
-  // USB2DB15 calculates phase in applyTurbo() from each source press.
-  return;
-#else
-  uint32_t now = millis();
-
-  for (uint8_t i = 0; i < TURBO_BTN_COUNT; i++) {
-    if (button_rates[i] == TURBO_OFF) {
-      turbo_state[i] = true;
-      continue;
-    }
-
-    uint16_t interval = getTurboIntervalMs(button_rates[i]);
-    if (now - last_toggle_time[i] >= interval) {
-      turbo_state[i] = !turbo_state[i];
-      last_toggle_time[i] = now;
-    }
-  }
-#endif
+  // Nothing free-runs: applyTurbo() calculates the phase from each source
+  // press. Until 2026-11-12 every product but USB2DB15 toggled one shared
+  // clock here, so a press waited for its next on phase and a tap inside an
+  // off phase sent nothing.
 }
 
 uint32_t TurboController::applyTurbo(uint8_t device, uint32_t current_buttons) {
@@ -284,6 +301,11 @@ uint32_t TurboController::applyTurbo(uint8_t device, uint32_t current_buttons) {
         turbo_state[i] = (turboToggleCountForElapsedUs(
             elapsedUs, togglesPerSecond) & 1u) == 0;
       }
+#else
+      // On for one interval from this player's press, then off for one.
+      const uint16_t interval = getTurboIntervalMs(button_rates[i]);
+      const uint32_t elapsedMs = millis() - press_start_ms[device][i];
+      turbo_state[i] = interval == 0 || ((elapsedMs / interval) & 1u) == 0;
 #endif
       if (turbo_state[i]) {
         output_buttons |= mask;

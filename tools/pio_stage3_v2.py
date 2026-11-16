@@ -179,6 +179,15 @@ if env_has_define("ENABLE_ESP32_RP2040_UPDATE"):
         ),
     )
 
+    # The platform rewrites firmware.uf2 after every ELF link, while the
+    # recovery tail and the update-layout check are a post-action on
+    # firmware.bin (pio_hooks.py). The first incremental build after a fresh
+    # one relinks a byte-identical ELF, SCons then skips firmware.bin, and the
+    # build left a UF2 without the tail (2026-11-11). Building the BIN every
+    # time keeps the tail on, and checks, the UF2 each build leaves behind.
+    # This file is not a build-identity input, so the image is unchanged.
+    env.AlwaysBuild("$BUILD_DIR/${PROGNAME}.bin")
+
     print(
         f"MODERN2USB stage3-v2: {stage3_size}/{maximum_blob_size} bytes; "
         f"sha256={actual_blob_hash}; app linker capped at 0x0A0000"

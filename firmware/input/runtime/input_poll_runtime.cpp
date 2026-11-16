@@ -27,6 +27,8 @@
 #include "../../output/autodetect/usb_detect.h"
 #include "../saturn/saturn_3d_usb_identity.h"
 #include "../psx/dualshock2_usb_identity.h"
+#include "../psx/negcon_usb_identity.h"
+#include "../../core/negcon_input_modes.h"
 #include "../mixed/input_mixed_runtime_state.h"
 #include "../../output/runtime/input_runtime_output_bridge.h"
 #include "../../output/runtime/output_boot_bridge.h"
@@ -93,6 +95,7 @@ void updateAnalogTriggerUsbIdentity(bool polled) {
   static uint32_t eligibleSince = 0;
   static bool waitingForStable = false;
   static uint8_t pendingPlatform = 0xFF;
+  static uint8_t pendingSub = 0;
   if (!polled) {
     return;
   }
@@ -101,36 +104,45 @@ void updateAnalogTriggerUsbIdentity(bool polled) {
     waitingForStable = false;
     return;
   }
-  bool eligible = false;
+  bool handled = false;
   uint8_t profileSub = 0;
   const auto frameAt = [](uint8_t i) -> const controller_state_t& { return inputFrameConst(i); };
 #ifdef ENABLE_INPUT_SATURN
   if (deviceMode == RZORD_SATURN && bcd_device_version.platform == BCD_PLAT_SATURN) {
-    eligible = saturn3dIdentityEligible(frameAt, inputPortCount(), trigger_mode, inputMixedModeActive());
-    profileSub = BCD_SATURN_3D_PLATFORM_SUB;
+    handled = true;
+    if (saturn3dIdentityEligible(frameAt, inputPortCount(), trigger_mode, inputMixedModeActive())) {
+      profileSub = BCD_SATURN_3D_PLATFORM_SUB;
+    }
   }
 #endif
 #ifdef ENABLE_INPUT_PSX
+  // A DualShock 2 keeps its profile when a neGcon shares the adapter.
   if (deviceMode == RZORD_PSX && bcd_device_version.platform == BCD_PLAT_PSX) {
-    eligible = dualShock2IdentityEligible(frameAt, inputPortCount(), trigger_mode, inputMixedModeActive());
-    profileSub = BCD_DUALSHOCK2_PLATFORM_SUB;
+    handled = true;
+    if (dualShock2IdentityEligible(frameAt, inputPortCount(), trigger_mode, inputMixedModeActive())) {
+      profileSub = BCD_DUALSHOCK2_PLATFORM_SUB;
+    } else if (negconPadIdentityEligible(frameAt, inputPortCount(),
+                                         negconPadPressureSelected(negcon_digital_inputs),
+                                         inputMixedModeActive())) {
+      profileSub = BCD_NEGCON_PAD_PLATFORM_SUB;
+    }
   }
 #endif
-  if (!profileSub) {
+  if (!handled) {
     waitingForStable = false;
     return;
   }
-  if (pendingPlatform != bcd_device_version.platform) {
+  if (pendingPlatform != bcd_device_version.platform || pendingSub != profileSub) {
     pendingPlatform = bcd_device_version.platform;
+    pendingSub = profileSub;
     waitingForStable = false;
   }
-  const bool active = bcd_device_version.platform_sub == profileSub;
-  if (eligible == active) {
+  if (bcd_device_version.platform_sub == profileSub) {
     waitingForStable = false;
     return;
   }
   // Promote after a stable observation and demote when no analog pad remains.
-  if (eligible) {
+  if (profileSub) {
     const uint32_t now = millis();
     if (!waitingForStable) {
       eligibleSince = now;
@@ -143,7 +155,7 @@ void updateAnalogTriggerUsbIdentity(bool polled) {
   }
   waitingForStable = false;
   tud_disconnect();
-  bcd_device_version.platform_sub = eligible ? profileSub : 0;
+  bcd_device_version.platform_sub = profileSub;
   TinyUSBDevice.setDeviceVersion(current_bcd_device_version());
   TinyUSBDevice.setSerialDescriptor(get_reflex_input_usb_serial_descriptor());
   delay(20);

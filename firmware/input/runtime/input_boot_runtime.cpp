@@ -146,7 +146,10 @@ void restorePassiveInputModeFromScratchRegisters() {
 
 #ifdef ENABLE_INPUT_AUTODETECT
 void clearAutoInputScratchRegisters() {
-  watchdog_hw->scratch[AUTO_INPUT_MODE_SCRATCH_MAGIC] = 0;
+  // Leave the SDK's watchdog marker that shares scratch[4] alone.
+  if (watchdog_hw->scratch[AUTO_INPUT_MODE_SCRATCH_MAGIC] == AUTO_INPUT_MODE_MAGIC) {
+    watchdog_hw->scratch[AUTO_INPUT_MODE_SCRATCH_MAGIC] = 0;
+  }
   watchdog_hw->scratch[AUTO_INPUT_MODE_SCRATCH_MODE] = 0;
 }
 

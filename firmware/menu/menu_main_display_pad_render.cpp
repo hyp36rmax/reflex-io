@@ -136,6 +136,42 @@ bool renderNttDataHome(bool forceRedraw, bool* exited) {
   lastPlayer = player;
   return true;
 }
+
+// The HVC-051 (input/snes/famicom_network_reader.h) in NES or SNES mode,
+// drawn like the NTT panel with its own layout.
+bool renderFamicomNetworkHome(bool forceRedraw, bool* exited) {
+  static bool active = false;
+  static uint8_t lastPlayer = 0xFF;
+  static uint32_t previous = 0;
+  uint8_t count = 0;
+  uint8_t player = 0xFF;
+  *exited = false;
+  if (deviceMode == RZORD_NES || deviceMode == RZORD_SNES) {
+    for (uint8_t i = 0; i < max_devices && i < MAX_USB_OUT; ++i) {
+      if (controllerFrameConst(i).connected) {
+        ++count;
+        player = i;
+      }
+    }
+  }
+  const bool show = count == 1 &&
+      std::strcmp(controllerFrameConst(player).controller_type_name, "FC Network") == 0;
+  if (!show) {
+    *exited = active;
+    active = false;
+    lastPlayer = 0xFF;
+    return false;
+  }
+  const uint32_t state = controllerFrameConst(player).digital_buttons;
+  display.setFont(ReflexPad5x7);
+  ntt_data_home::drawFamicomNetwork(display, state, previous,
+                                    forceRedraw || !active || lastPlayer != player);
+  display.setFont(System5x7);
+  previous = state;
+  active = true;
+  lastPlayer = player;
+  return true;
+}
 #endif
 
 #if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
@@ -2350,6 +2386,13 @@ void updateRealtimeButtons() {
   if (nttDataPanelExited) {
     // A second controller, disconnect, or mode change restores the compact
     // layout and clears the entire old wide panel, including held keypad keys.
+    forceRedraw = true;
+  }
+  bool famicomNetworkPanelExited = false;
+  if (renderFamicomNetworkHome(forceRedraw, &famicomNetworkPanelExited)) {
+    return;
+  }
+  if (famicomNetworkPanelExited) {
     forceRedraw = true;
   }
 #endif

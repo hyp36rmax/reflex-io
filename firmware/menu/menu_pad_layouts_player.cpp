@@ -50,7 +50,8 @@ void getLayoutForPlayer(uint8_t player, const PadButton** layout, uint8_t* layou
   }
   #ifdef ENABLE_INPUT_NES
   if (std::strcmp(typeName, "NES Pad") == 0 ||
-      std::strcmp(typeName, "Four Score") == 0) {
+      std::strcmp(typeName, "Four Score") == 0 ||
+      std::strcmp(typeName, "FC Network") == 0) {
     *layout = padLayoutNES;
     *layoutCount = PAD_LAYOUT_NES_COUNT;
     return;

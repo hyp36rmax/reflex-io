@@ -14,9 +14,11 @@
 #if defined(ADAPT_PRIMARY_INGRESS_JVS) && defined(ADAPT_PRIMARY_EGRESS_USB_HOST)
   #define ADAPT_BRIDGE_JVS_TO_USB 1
 #endif
-#if defined(ADAPT_BRIDGE_CLASSIC_TO_USB)
+#if defined(ADAPT_BRIDGE_CLASSIC_TO_USB) || defined(ADAPT_BRIDGE_JVS_TO_USB) || \
+    defined(ADAPT_BRIDGE_USB_TO_USB)
   // Settings and remap saves survive power loss through a two-sector journal
-  // (core/settings_journal.h).
+  // (core/settings_journal.h). Every A/B record pair shares the one EEPROM
+  // sector, and a save erases that whole sector, so the pairs alone cannot.
   #define ADAPT_CAP_SETTINGS_JOURNAL 1
 #endif
 #if defined(ADAPT_PRIMARY_INGRESS_DIRECT_GPIO) && defined(ADAPT_PRIMARY_EGRESS_USB_HOST)
@@ -55,11 +57,22 @@
   #define ADAPT_CAP_USB_INPUT_ANALOG_PROFILES 1
   #define ADAPT_CAP_DEFERRED_SETTINGS_PERSISTENCE 1
 #endif
+// A USB-to-USB bridge whose rollback-sized application cannot carry the
+// Linux SDL controller table reads it from the unused flash after its settings
+// journal instead. Only the fixed-end reserved layout keeps those sectors
+// free; the BOOTSEL UF2 writes the table there.
+#if defined(ADAPT_BRIDGE_USB_TO_USB) && \
+    defined(ADAPT_POLICY_FIXED_END_RESERVED_FLASH_LAYOUT) && \
+    ADAPT_POLICY_FIXED_END_RESERVED_FLASH_LAYOUT
+  #define ADAPT_CAP_SDL_CONTROLLER_FLASH_TABLE 1
+#endif
 #if defined(ADAPT_BRIDGE_USB_TO_DB15)
   // USB2DB15 drives normalized arcade pins directly, so use the pinned Linux
   // SDL identity, name, and button-order mapping layers as its canonical USB
-  // controller database. MODERN2USB's rollback app region cannot currently
-  // carry the full catalog; learned HID mappings remain a separate capability.
+  // controller database. MODERN2USB's rollback app region cannot carry the
+  // catalog, so it reads the same rows from flash instead
+  // (ADAPT_CAP_SDL_CONTROLLER_FLASH_TABLE); learned HID mappings remain a
+  // separate capability.
   #define ADAPT_CAP_SDL_CONTROLLER_IDENTITIES 1
   #define ADAPT_CAP_SDL_CONTROLLER_MAPPINGS 1
   // One USB port means a taught controller is unplugged before the adapter
@@ -80,6 +93,10 @@
 #endif
 #if defined(ADAPT_BRIDGE_JVS_TO_USB)
   #define ADAPT_CAP_JVS_INPUT_STATUS 1
+  // A flash write stops both cores for about 150 ms, and core 1 runs the PS5
+  // dongle's USB host, so PS4/PS5 sessions hold saves as Modern2USB does
+  // (owner, 2026-11-10).
+  #define ADAPT_CAP_DEFERRED_SETTINGS_PERSISTENCE 1
 #endif
 #if defined(ADAPT_BRIDGE_DIRECT_GPIO_TO_USB)
   #define ADAPT_CAP_DIRECT_GPIO_INPUT 1

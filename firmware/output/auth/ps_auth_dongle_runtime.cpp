@@ -26,11 +26,16 @@ bool ps_auth_dongle_is_auth_device(uint16_t vid, uint16_t pid) {
   (void)vid; (void)pid;
   return false;
 }
+bool ps_auth_dongle_is_ps5_provider_device(uint16_t vid, uint16_t pid) {
+  (void)vid; (void)pid;
+  return false;
+}
 bool ps_auth_dongle_is_auth_instance(uint8_t dev_addr, uint8_t instance) {
   (void)dev_addr; (void)instance;
   return false;
 }
 bool ps_auth_dongle_ps5_provider_observed() { return false; }
+bool ps_auth_dongle_ps5_signer_connected() { return false; }
 bool ps_auth_dongle_has_provider_for_mode(outputMode_t mode) {
   (void)mode;
   return false;
@@ -87,5 +92,6 @@ PsAuthDongleStatus ps_auth_dongle_status() {
   PsAuthDongleStatus status = {};
   return status;
 }
+uint32_t ps_auth_dongle_console_request_count() { return 0; }
 
 #endif

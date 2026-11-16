@@ -97,6 +97,7 @@ enum menu_item_enum : uint8_t {
   menu_item_ps2_ir_p2,
   menu_item_ps2_remote_output,
   menu_item_mister_display,
+  menu_item_hold_start_hotkey,
 };
 
 static_assert(menu_item_management_msc == 69,

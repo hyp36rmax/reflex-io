@@ -347,6 +347,11 @@ uint32_t sourceSpecificAllowedMaskForMode(DeviceEnum mode, const char* controlle
              INPUT_R2 | INPUT_L3 | INPUT_R3 | INPUT_SELECT | INPUT_HOME |
              kClassicDualMergeNttExtraMask;
     }
+    // The HVC-051 keypad uses the NTT bits; it has no X, Y, L1 or R1.
+    if (strcmp(controllerTypeName, "FC Network") == 0) {
+      return base | INPUT_L2 | INPUT_R2 | INPUT_L3 | INPUT_R3 | INPUT_SELECT |
+             INPUT_HOME | kClassicDualMergeNttExtraMask;
+    }
     if (strcmp(controllerTypeName, "VB Pad") == 0) {
       return base | INPUT_X | INPUT_Y | INPUT_L1 | INPUT_R1 | INPUT_L2 |
              INPUT_R2 | INPUT_SELECT;

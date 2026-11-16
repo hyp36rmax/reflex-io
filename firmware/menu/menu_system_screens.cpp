@@ -65,6 +65,14 @@ void drawSafeResetChoices(uint8_t selection, uint8_t y) {
   static const char* const kOptions[2] = { "CANCEL", "RESET" };
   drawResetChoices(kOptions, selection, y);
 }
+
+// Factory reset button hint, in the setup guide's wording: the left button
+// moves the selection, the right button confirms it.
+void drawFactoryResetHint() {
+  static const char kHint[] = "Left=Next  Right=OK";
+  u8g2.setFont(u8g2_font_5x7_tr);
+  u8g2.drawStr(centeredTextX(kHint, 5), 60, kHint);
+}
 #endif
 
 }  // namespace
@@ -90,12 +98,11 @@ void drawFactoryResetPrompt(uint8_t selection) {
   u8g2.drawHLine(0, 18, 128);
 
   u8g2.setFont(u8g2_font_6x10_tr);
-  u8g2.drawStr(16, 32, "Reset all settings?");
+  u8g2.drawStr(7, 32, "Reset all settings?");
 
   drawSafeResetChoices(selection, 36);
 
-  u8g2.setFont(u8g2_font_5x7_tr);
-  u8g2.drawStr(8, 60, "Reset=Navigate Mode=Select");
+  drawFactoryResetHint();
 
   u8g2.sendBuffer();
 #endif
@@ -119,8 +126,31 @@ void drawFactoryResetRemapPrompt(uint8_t selection) {
 
   drawResetChoices(kOptions, selection, 36);
 
-  u8g2.setFont(u8g2_font_5x7_tr);
-  u8g2.drawStr(8, 60, "Reset=Navigate Mode=Select");
+  drawFactoryResetHint();
+
+  u8g2.sendBuffer();
+#endif
+}
+
+void drawFactoryResetLearnedMapPrompt(uint8_t selection) {
+#ifndef USE_I2C_DISPLAY
+  (void)selection;
+  return;
+#else
+  static const char* const kOptions[2] = { "KEEP", "ERASE" };
+  u8g2.clearBuffer();
+
+  u8g2.setFont(u8g2_font_7x14B_tr);
+  u8g2.drawStr(18, 14, "FACTORY RESET");
+
+  u8g2.drawHLine(0, 18, 128);
+
+  u8g2.setFont(u8g2_font_6x10_tr);
+  u8g2.drawStr(7, 32, "Erase learned maps?");
+
+  drawResetChoices(kOptions, selection, 36);
+
+  drawFactoryResetHint();
 
   u8g2.sendBuffer();
 #endif
@@ -146,8 +176,12 @@ void drawModeDefaultsPrompt(uint8_t selection) {
 #endif
 }
 
-void drawFactoryResetResult(bool complete) {
+void drawFactoryResetResult(bool complete, bool remapsErased,
+                            bool learnedMapsErased) {
 #ifndef USE_I2C_DISPLAY
+  (void)complete;
+  (void)remapsErased;
+  (void)learnedMapsErased;
   return;
 #else
   u8g2.clearBuffer();
@@ -156,14 +190,25 @@ void drawFactoryResetResult(bool complete) {
   u8g2.drawStr(complete ? 12 : 18, 20,
                complete ? "RESET COMPLETE!" : "PARTIAL RESET");
 
-  u8g2.setFont(u8g2_font_6x10_tr);
-  if (complete) {
-    u8g2.drawStr(15, 38, "All settings and");
-    u8g2.drawStr(15, 50, "remaps cleared.");
-  } else {
-    u8g2.drawStr(10, 38, "Settings cleared;");
-    u8g2.drawStr(10, 50, "BT/Wi-Fi erase failed");
+  // Two left-aligned lines, centred as a block. After a complete reset the
+  // second line names whatever the user chose to KEEP.
+  const char* first = "Settings cleared;";
+  const char* second = "BT/Wi-Fi erase failed";
+  if (complete && remapsErased && learnedMapsErased) {
+    first = "All settings and";
+    second = "remaps cleared.";
+  } else if (complete && learnedMapsErased) {
+    second = "remaps kept.";
+  } else if (complete && remapsErased) {
+    second = "learned maps kept.";
+  } else if (complete) {
+    second = "remaps & maps kept.";
   }
+  const char* longer = strlen(first) >= strlen(second) ? first : second;
+  const uint8_t x = centeredTextX(longer, 6);
+  u8g2.setFont(u8g2_font_6x10_tr);
+  u8g2.drawStr(x, 38, first);
+  u8g2.drawStr(x, 50, second);
 
   u8g2.setFont(u8g2_font_5x7_tr);
   u8g2.drawStr(30, 62, "Rebooting...");

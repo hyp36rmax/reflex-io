@@ -198,7 +198,7 @@ uint16_t webhid_get_input_mode_report(uint8_t* buffer) {
   buffer[2] = webhid_input_mode_from_device(savedDeviceMode);
 
   uint8_t connected = 0;
-  for (uint8_t i = 0; i < max_devices; i++) {
+  for (uint8_t i = 0; i < max_devices && i < MAX_USB_OUT; i++) {
     if (controllerFrameConst(i).connected) connected++;
   }
   buffer[3] = connected;

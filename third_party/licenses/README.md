@@ -22,6 +22,7 @@ third-party attribution and provenance.
 | `GIMX-firmwares-GPL-3.0-LICENSE` | `matlo/GIMX-firmwares` (EMUPS3) | Native DS3 HID descriptor and feature templates; the same GPL-3.0 text is embedded as `GPL-3.0.txt` on the Classic2USB USB drive and the host and N64 capture drives |
 | `GP2040-CE-LICENSE` | `OpenStickCommunity/GP2040-CE` | PS4 key-bundle conventions and Xbox One/XGIP donor code |
 | `http_parser-LICENSE.txt` | `nodejs/http-parser`, through ESP-IDF | MODERN2USB ESP32 image: portal HTTP request parsing |
+| `jfedor2-hid-remapper-LICENSE` | `jfedor2/hid-remapper` | USB host output and feature report queue in `firmware/output/out_report.*` |
 | `JaguarLib-LICENSE` | `sonik-br/JaguarLib` | Jaguar input library lineage |
 | `liblfds-license-statement.md` | liblfds 7.1.1 (not an upstream file: upstream has none) | MODERN2USB ESP32 image: BlueRetro `queue_bss` queue; records where its terms are published |
 | `lwIP-LICENSE` | lwIP 2.2.0, through ESP-IDF | MODERN2USB ESP32 image: portal TCP/IP |

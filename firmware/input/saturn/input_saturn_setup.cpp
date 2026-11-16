@@ -142,6 +142,7 @@ void RZInputSaturn::setup() {
     controller_state_t& frame = inputFrame(i);
     dtype[i] = SAT_DEVICE_NONE;
     stableMegadriveType[i] = SAT_DEVICE_NONE;
+    megadrivePceAlias[i].reset();
     m30Identity[i].reset();
     if (i < input_ports) {
       saturn_mouse[i].reset(true, true);

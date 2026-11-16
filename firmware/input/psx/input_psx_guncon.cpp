@@ -1,4 +1,5 @@
 #include "Input_Psx.h"
+#include "guncon_screen_scale.h"
 
 #include "../../core/settings_store.h"
 #include "../../menu/menu_runtime_state.h"
@@ -66,7 +67,7 @@ void RZInputPSX::readGuncon() {
 
 #if GUNCON_FORCE_MODE == 3
       if (enableJoystick) {
-        moveToCoords(x + offsetX, y + offsetY);
+        moveToCoords(guncon_screen::scaleX(x + offsetX), guncon_screen::scaleY(y + offsetY));
       }
 #else
       if (enableMouseMove || enableJoystick) {
@@ -80,16 +81,26 @@ void RZInputPSX::readGuncon() {
   else if (gcStatus == GUNCON_NO_LIGHT) {
     if (lastX != 0 && lastY != 0) {
 #if GUNCON_FORCE_MODE == 3
-      moveToCoords(lastX + offsetX, lastY + offsetY);
+      moveToCoords(guncon_screen::scaleX(lastX + offsetX), guncon_screen::scaleY(lastY + offsetY));
 #else
       convertedX = convertRange(minX + offsetX, maxX + offsetX, lastX);
       convertedY = convertRange(minY + offsetY, maxY + offsetY, lastY);
       moveToCoords(convertedX, convertedY);
 #endif
 
+#if GUNCON_FORCE_MODE == 3
+      if (noLightCount == 0) {
+        noLightCount = 1;
+        noLightStartMs = millis();
+      }
+      const bool offScreen =
+          (uint32_t)(millis() - noLightStartMs) >= guncon_screen::kNoLightHoldMs;
+#else
       noLightCount++;
+      const bool offScreen = noLightCount > maxNoLightCount;
+#endif
 
-      if (noLightCount > maxNoLightCount) {
+      if (offScreen) {
         noLightCount = 0;
         lastX = 0;
         lastY = 0;
@@ -119,12 +130,18 @@ void RZInputPSX::readGuncon() {
         }
       }
     }
+#if GUNCON_FORCE_MODE != 3
+    // RetroZord's off-screen Trigger+A+B: stop reporting, after which B opens
+    // the in-gun alignment (runCalibration) and saves its offsets. MiSTer
+    // GunCon output (mode 3) never stops reporting; its offsets are set on
+    // the Quick Menu's GunCon Align page or by WebHID settings 47/48.
     else if (psx[0]->buttonPressed(PSB_CIRCLE) && psx[0]->buttonPressed(PSB_START) && psx[0]->buttonPressed(PSB_CROSS)) {
       enableReport = false;
       releaseAllButtons();
       gunconHoldoffStartMs = millis();
       gunconHoldoffMs = 1000;
     }
+#endif
   }
 }
 
@@ -198,7 +215,7 @@ void RZInputPSX::runCalibration() {
   uint16_t x, y;
   if (psx[0]->getGunconCoordinates(x, y) == GUNCON_OK) {
 #if GUNCON_FORCE_MODE == 3
-    moveToCoords(x + offsetX, y + offsetY);
+    moveToCoords(guncon_screen::scaleX(x + offsetX), guncon_screen::scaleY(y + offsetY));
 #else
     moveToCoords(convertRange(minX + offsetX, maxX + offsetX, x), convertRange(minY + offsetY, maxY + offsetY, y));
 #endif

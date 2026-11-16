@@ -327,6 +327,7 @@ void webhid_write_settings_report(const uint8_t* buffer, uint16_t bufsize) {
       menu_win_output = value;
       if (windowsOutputDescriptorChanged) {
         if (prepareForFirmwareReset()) {
+          markIntentionalReset();
           watchdog_enable(100, false);
           while (1) {}
         }
@@ -369,6 +370,7 @@ void webhid_write_settings_report(const uint8_t* buffer, uint16_t bufsize) {
       if (descriptorChanged) {
         menu_usb_descriptor_reboot_required = 1;
         if (prepareForFirmwareReset()) {
+          markIntentionalReset();
           watchdog_enable(100, false);
           while (1) {}
         }
@@ -443,6 +445,7 @@ void webhid_write_settings_report(const uint8_t* buffer, uint16_t bufsize) {
         menu_mister_output = value;
         if (misterOutputDescriptorChanged) {
           if (prepareForFirmwareReset()) {
+            markIntentionalReset();
             watchdog_enable(100, false);
             while (1) {}
           }
@@ -484,6 +487,7 @@ void webhid_write_settings_report(const uint8_t* buffer, uint16_t bufsize) {
       auto_detect_clear_scratch_state();
 
       if (prepareForFirmwareReset()) {
+        markIntentionalReset();
         watchdog_enable(100, false);
         while (1) {}
       }

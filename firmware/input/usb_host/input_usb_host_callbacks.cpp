@@ -72,6 +72,10 @@ UsbHostCallbackStatus usb_host_callback_status() {
   return callbackStatus;
 }
 
+uint32_t usb_host_callback_mount_count() {
+  return callbackStatus.device_mount_count;
+}
+
 bool tuh_enum_descriptor_configuration_cb(uint8_t daddr, uint8_t cfg_index, const tusb_desc_configuration_t* desc_config) {
   callbackStatus.config_desc_count++;
   callbackStatus.last_config_index = cfg_index;

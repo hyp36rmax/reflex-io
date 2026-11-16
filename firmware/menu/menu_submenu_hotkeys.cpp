@@ -15,9 +15,9 @@
 namespace {
 
 #if defined(ADAPT_CAP_DIRECTIONAL_HOTKEYS)
-constexpr uint8_t kHotkeyRowCount = 3;
+constexpr uint8_t kHotkeyRowCount = 4;
 #else
-constexpr uint8_t kHotkeyRowCount = 6;
+constexpr uint8_t kHotkeyRowCount = 7;
 #endif
 constexpr uint8_t kHotkeyValueSize = 12;
 
@@ -38,6 +38,7 @@ struct HotkeyRenderSnapshot {
   uint8_t menu_enabled;
   uint8_t system_enabled;
   uint8_t home_enabled;
+  uint8_t hold_start_enabled;
   uint8_t capture_enabled;
   uint32_t menu_combo;
   uint32_t system_combo;
@@ -87,6 +88,7 @@ bool hotkeyRenderSnapshotMatches(uint8_t cursor) {
          s_hotkey_render_snapshot.menu_enabled == menu_menu_hotkey &&
          s_hotkey_render_snapshot.system_enabled == menu_system_menu_hotkey &&
          s_hotkey_render_snapshot.home_enabled == menu_home_hotkey &&
+         s_hotkey_render_snapshot.hold_start_enabled == menu_hold_start_hotkey &&
          s_hotkey_render_snapshot.capture_enabled == menu_capture_hotkey &&
          s_hotkey_render_snapshot.menu_combo == menu_hotkey_combo &&
          s_hotkey_render_snapshot.system_combo == menu_system_hotkey_combo &&
@@ -101,6 +103,7 @@ void captureHotkeyRenderSnapshot(uint8_t cursor) {
   s_hotkey_render_snapshot.menu_enabled = menu_menu_hotkey;
   s_hotkey_render_snapshot.system_enabled = menu_system_menu_hotkey;
   s_hotkey_render_snapshot.home_enabled = menu_home_hotkey;
+  s_hotkey_render_snapshot.hold_start_enabled = menu_hold_start_hotkey;
   s_hotkey_render_snapshot.capture_enabled = menu_capture_hotkey;
   s_hotkey_render_snapshot.menu_combo = menu_hotkey_combo;
   s_hotkey_render_snapshot.system_combo = menu_system_hotkey_combo;
@@ -139,9 +142,10 @@ void renderHotkeyRows(uint8_t cursor) {
 #if defined(ADAPT_CAP_DIRECTIONAL_HOTKEYS)
   renderHotkeySettingRow(0, cursor, kHotkeyHoldTitle, kHotkeyHoldNames[menu_hotkey_hold_time <= 6 ? menu_hotkey_hold_time : 1]);
   renderHotkeySettingRow(1, cursor, "Down+Start", menu_home_hotkey ? "OSD" : "Off");
-  display.clear(0, 127, 3, 3);
-  display.setCursor(0, 3);
-  printMenuButton(display, "Back", cursor == 2);
+  renderHotkeySettingRow(2, cursor, "Hold Start", menu_hold_start_hotkey ? "OSD" : "Off");
+  display.clear(0, 127, 4, 4);
+  display.setCursor(0, 4);
+  printMenuButton(display, "Back", cursor == 3);
   display.setCursor(0, 5);
 #if defined(ADAPT_CAP_CONTROLLER_HOTKEY_PROFILES)
   display.print(F("Controller defaults"));
@@ -164,11 +168,11 @@ void renderHotkeyRows(uint8_t cursor) {
   renderHotkeySettingRow(3, cursor, "Home", value);
   formatHotkeyValue(value, sizeof(value), menu_capture_hotkey, menu_capture_hotkey_combo);
   renderHotkeySettingRow(4, cursor, "Capture/TPad", value);
+  renderHotkeySettingRow(5, cursor, "Hold Start", menu_hold_start_hotkey ? "Home" : "Off");
 
-  display.setCursor(0, 6);
-  printMenuButton(display, "Back", cursor == 5);
+  display.setCursor(0, 7);
+  printMenuButton(display, "Back", cursor == 6);
   display.clearToEOL();
-  display.clear(0, 127, 7, 7);
 #endif
   captureHotkeyRenderSnapshot(cursor);
 }
@@ -187,6 +191,9 @@ void toggleSelectedHotkey(uint8_t cursor) {
 #if defined(ADAPT_CAP_DIRECTIONAL_HOTKEYS)
       menu_home_hotkey = menu_home_hotkey ? 0 : 1;
       break;
+    case 2:
+      menu_hold_start_hotkey = menu_hold_start_hotkey ? 0 : 1;
+      break;
 #else
       menu_menu_hotkey = menu_hotkey_combo != 0 && !menu_menu_hotkey;
       break;
@@ -203,6 +210,9 @@ void toggleSelectedHotkey(uint8_t cursor) {
       if (menu_capture_hotkey && menu_capture_hotkey_combo == 0) {
         menu_capture_hotkey_combo = defaultHotkeyCombo(HotkeyBindingId::Capture);
       }
+      break;
+    case 5:
+      menu_hold_start_hotkey = menu_hold_start_hotkey ? 0 : 1;
       break;
 #endif
     default:

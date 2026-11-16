@@ -80,12 +80,30 @@ inline bool input_has_independent_digital_triggers(const controller_state_t& fra
   return false;
 }
 
+// True on an identity whose GameControllerDB rows read L2/R2 from axes 4/5
+// (DualShock 2, Saturn 3D): those axes then follow the trigger buttons at
+// 0/255 whenever no analog level is sent.
 inline bool hid_output_digital_trigger_axes() {
 #if ADAPT_POLICY_DYNAMIC_MISTER_INPUT_IDENTITY
   return (bcd_device_version.platform == BCD_PLAT_PSX &&
           bcd_device_version.platform_sub == BCD_DUALSHOCK2_PLATFORM_SUB) ||
          (bcd_device_version.platform == BCD_PLAT_SATURN &&
           bcd_device_version.platform_sub == BCD_SATURN_3D_PLATFORM_SUB);
+#elif ADAPT_POLICY_ALWAYS_REFLEX_PSX_MISTER_IDENTITY
+  // Fixed products always report the DualShock 2 identity.
+  return true;
+#else
+  return false;
+#endif
+}
+
+// Under the neGcon pad identity (ReflexPSNeGcon) axes 4/5 carry Square and
+// Cross for every port, so a neGcon's analog II and I read as those buttons
+// in every core: its pressure where it sends one, any other press at 0/255.
+inline bool hid_output_negcon_pad_axes() {
+#if ADAPT_POLICY_DYNAMIC_MISTER_INPUT_IDENTITY
+  return bcd_device_version.platform == BCD_PLAT_PSX &&
+         bcd_device_version.platform_sub == BCD_NEGCON_PAD_PLATFORM_SUB;
 #else
   return false;
 #endif
@@ -163,8 +181,13 @@ inline void __not_in_flash_func(map_hid_output)(uint8_t port) {
     _hidgp.z = 0x80;
     _hidgp.rx = 0x80;
     const bool triggerAxes = hid_output_digital_trigger_axes();
-    _hidgp.ry = triggerAxes ? ((buttons & INPUT_L2) ? 0xff : 0x00) : 0x80;
-    _hidgp.rz = triggerAxes ? ((buttons & INPUT_R2) ? 0xff : 0x00) : 0x80;
+    if (hid_output_negcon_pad_axes()) {
+      _hidgp.ry = (buttons & INPUT_X) ? 0xff : 0x00;
+      _hidgp.rz = (buttons & INPUT_A) ? 0xff : 0x00;
+    } else {
+      _hidgp.ry = triggerAxes ? ((buttons & INPUT_L2) ? 0xff : 0x00) : 0x80;
+      _hidgp.rz = triggerAxes ? ((buttons & INPUT_R2) ? 0xff : 0x00) : 0x80;
+    }
     debug_hid_x[port] = _hidgp.x;
     debug_hid_y[port] = _hidgp.y;
     debug_hid_z[port] = _hidgp.z;
@@ -263,13 +286,23 @@ inline void __not_in_flash_func(map_hid_output)(uint8_t port) {
 
   _hidgp.ry = analog_mid;
   _hidgp.rz = analog_mid;
-  if (sends_trigger_axes) {
+  if (sends_trigger_axes && hid_output_negcon_pad_axes()) {
+    const bool negconPressure = analog_trigger_mode &&
+      std::strcmp(frame.controller_type_name, "neGcon") == 0;
+    const uint8_t square = (outputButtons & INPUT_X) ? 0xff : 0x00;
+    const uint8_t cross = (outputButtons & INPUT_A) ? 0xff : 0x00;
+    _hidgp.ry = negconPressure && frame.ANALOG_L2 > square ? frame.ANALOG_L2 : square;
+    _hidgp.rz = negconPressure && frame.ANALOG_R2 > cross ? frame.ANALOG_R2 : cross;
+  } else if (sends_trigger_axes) {
     if (analog_trigger_mode) {
       _hidgp.ry = frame.ANALOG_L2;
       _hidgp.rz = frame.ANALOG_R2;
     } else if (has_analog_triggers) {
-      _hidgp.ry = 0;
-      _hidgp.rz = 0;
+      // Digital mode releases the axes, except where the rows read L2/R2
+      // from them: there they follow the buttons, or L2/R2 never press.
+      const bool axisTriggers = hid_output_digital_trigger_axes();
+      _hidgp.ry = (axisTriggers && (outputButtons & INPUT_L2)) ? 0xff : 0x00;
+      _hidgp.rz = (axisTriggers && (outputButtons & INPUT_R2)) ? 0xff : 0x00;
     } else if (!has_analog_triggers && hid_output_digital_trigger_axes()) {
       _hidgp.ry = (outputButtons & INPUT_L2) ? 0xff : 0x00;
       _hidgp.rz = (outputButtons & INPUT_R2) ? 0xff : 0x00;

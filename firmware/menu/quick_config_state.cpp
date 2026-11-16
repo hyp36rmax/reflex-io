@@ -17,6 +17,7 @@
 #endif
 
 #ifdef ENABLE_INPUT_PSX
+#include "../input/psx/input_psx_guncon_runtime_state.h"
 #include "../input/psx/input_psx_jogcon_runtime_state.h"
 #endif
 
@@ -365,6 +366,7 @@ void QuickConfigMenu::open() {
 #if defined(ADAPT_CAP_JVS_INPUT_STATUS)
   temp_jvs_menu_hold = menu_hotkey_hold_time;
   temp_jvs_home_hotkey = menu_home_hotkey;
+  temp_jvs_hold_start = menu_hold_start_hotkey;
 #endif
   temp_input_mode = deviceMode;
   temp_output_mode = canonicalizeOutputMode(configuredOutputMode);
@@ -497,6 +499,10 @@ void QuickConfigMenu::applyAndClose() {
     menu_home_hotkey = temp_jvs_home_hotkey;
     saveSystemSettingByte(SettingId::HomeHotkey, menu_home_hotkey);
   }
+  if (temp_jvs_hold_start != menu_hold_start_hotkey) {
+    menu_hold_start_hotkey = temp_jvs_hold_start;
+    saveSystemSettingByte(SettingId::HoldStartHotkey, menu_hold_start_hotkey);
+  }
 #endif
   should_save = true;
   if (isLiveInputSelection() && transaction_staged_mode == deviceMode) {
@@ -602,6 +608,12 @@ void QuickConfigMenu::applyAndClose() {
     menu_trigger_mode = trigger_mode;
     menu_guncon_offset_x = temp_guncon_x;
     menu_guncon_offset_y = temp_guncon_y;
+#ifdef ENABLE_INPUT_PSX
+    // The gun reads these, as WebHID's GunCon X/Y writes do; until
+    // 2026-11-12 a saved GunCon Align moved the aim only after a restart.
+    offsetX = temp_guncon_x;
+    offsetY = temp_guncon_y;
+#endif
     spinner_speed = temp_spinner;
     menu_jogcon_mode = temp_jogcon_mode;
     menu_jogcon_force = temp_jogcon_force;
@@ -637,7 +649,7 @@ void QuickConfigMenu::applyAndClose() {
     menu_nso_special = nso_special;
     menu_powerpad_mode = temp_powerpad;
     if (negconInputsStoredInRecord(temp_input_mode)) {
-      negcon_digital_inputs = temp_negcon_digital & NEGCON_INPUT_DIGITAL_MASK;
+      negcon_digital_inputs = temp_negcon_digital & NEGCON_INPUT_STORED_MASK;
       negcon_gain = temp_negcon_gain % NEGCON_GAIN_COUNT;
     }
     #ifdef ENABLE_INPUT_PSX

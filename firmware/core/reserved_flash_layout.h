@@ -5,6 +5,8 @@
 #if defined(ARDUINO_ARCH_RP2040)
 #include <hardware/flash.h>
 
+#include "rp2040_update_rollback_layout.h"
+
 extern "C" uint8_t _EEPROM_start;
 
 // Reflex normally reserves three erase sectors immediately below
@@ -63,12 +65,26 @@ inline uintptr_t reflexMappingExportFlashSectorAddress() {
 }
 #endif
 
-// Two sectors for the settings journal, below the existing three so stored
-// data keeps its address on a device in the field.
+// Two sectors for the settings journal. The standard layout takes them below
+// the existing three, so stored data keeps its address on a device in the field.
 #if defined(ADAPT_CAP_SETTINGS_JOURNAL)
-#if ADAPT_POLICY_FIXED_END_RESERVED_FLASH_LAYOUT || defined(ADAPT_CAP_MAPPING_EXPORT_STORE)
-#error "The settings journal needs the standard layout's fourth and fifth sectors"
+#if defined(ADAPT_CAP_MAPPING_EXPORT_STORE)
+#error "The settings journal and the mapping export store want the same sector"
 #endif
+#if ADAPT_POLICY_FIXED_END_RESERVED_FLASH_LAYOUT
+// MODERN2USB's flash below its stores is the updater's LittleFS, so its
+// journal takes the first two sectors of the unused 64 KiB between the
+// rollback recovery records (end 0x144000) and LittleFS (0x154000). The
+// stage-3 linker caps the app at 0x0A0000. A build without stage 3 must still
+// end below them, so the journal checks the image end before using them.
+inline uintptr_t reflexSettingsJournalDataSectorAddress() {
+  return XIP_BASE + MODERN2USB_RP2040_SETTINGS_JOURNAL_DATA_OFFSET;
+}
+
+inline uintptr_t reflexSettingsJournalControlSectorAddress() {
+  return XIP_BASE + MODERN2USB_RP2040_SETTINGS_JOURNAL_CONTROL_OFFSET;
+}
+#else
 inline uintptr_t reflexSettingsJournalDataSectorAddress() {
   return reflexEepromSectorAddress() - (4u * FLASH_SECTOR_SIZE);
 }
@@ -76,6 +92,7 @@ inline uintptr_t reflexSettingsJournalDataSectorAddress() {
 inline uintptr_t reflexSettingsJournalControlSectorAddress() {
   return reflexEepromSectorAddress() - (5u * FLASH_SECTOR_SIZE);
 }
+#endif
 #endif
 
 inline uintptr_t reflexLegacyAuthFlashSectorAddress() {

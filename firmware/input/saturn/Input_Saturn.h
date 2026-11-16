@@ -5,6 +5,7 @@
 #include "../base/RZInputModule.h"
 #include "input_saturn_runtime_state.h"
 #include "m30_identity_latch.h"
+#include "megadrive_pce_alias.h"
 #include "saturnlib_transport.h"
 #include "saturn_mouse_reader.h"
 
@@ -40,6 +41,7 @@ class RZInputSaturn : public RZInputModule {
     bool tapLatchedFromAutoDetect[input_ports] = {};
     SatDeviceType_Enum dtype[MAX_USB_OUT] = {};
     SatDeviceType_Enum stableMegadriveType[MAX_USB_OUT] = {};
+    MegadrivePceAliasTimer megadrivePceAlias[MAX_USB_OUT] = {};
     M30IdentityLatch m30Identity[MAX_USB_OUT] = {};
     uint32_t lastMegadriveTransactionFinishedUs = 0;
     uint32_t slotLastSeenMs[MAX_USB_OUT] = {};

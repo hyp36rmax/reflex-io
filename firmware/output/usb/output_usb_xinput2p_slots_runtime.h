@@ -13,7 +13,11 @@
 #endif
 
 // Multi-player XInput is the Xbox 360 wireless receiver (out_xinputw). Live
-// sources are compacted into its lowest children without re-enumerating.
+// sources are compacted into its lowest children without re-enumerating,
+// unless ADAPT_POLICY_XINPUT2P_STABLE_CHILDREN keeps each source on its own
+// child (Modern2USB: a pad that sleeps or is unplugged leaves the others'
+// player numbers alone).
+constexpr bool kXinput2pCompactsSources = !ADAPT_POLICY_XINPUT2P_STABLE_CHILDREN;
 
 inline uint8_t xinput2p_physical_source_count() {
 #ifdef ENABLE_XINPUT2P_WIRELESS_TRANSPORT
@@ -60,13 +64,14 @@ inline void service_xinput2p_wireless_slot_routing() {
   const uint8_t sourceCount = xinput2p_physical_source_count();
   const uint32_t connectedMask = xinput2p_connected_source_mask();
 
-  if (!xinputw_slot_routing_update(sourceCount, connectedMask, true)) {
+  if (!xinputw_slot_routing_update(sourceCount, connectedMask,
+                                   kXinput2pCompactsSources)) {
     return;
   }
 
-  // Compact all live physical/transport sources into the lowest XInput
-  // children without re-enumerating the receiver. A route change clears stale
-  // feedback and pushes every surviving controller into its new child.
+  // Route every live physical/transport source to its XInput child without
+  // re-enumerating the receiver. A route change clears stale feedback and
+  // pushes every surviving controller into its child.
   for (uint8_t source = 0; source < sourceCount; ++source) {
     rumble_callback(source, 0, 0);
     if ((connectedMask & (1UL << source)) != 0) {

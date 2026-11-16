@@ -29,9 +29,8 @@ const uint16_t maxPossibleX = 461;
 const uint8_t minPossibleY = 25;
 const uint16_t maxPossibleY = 295;
 
-#if GUNCON_FORCE_MODE == 3
-  const uint8_t maxNoLightCount = 254;//80
-#else
+// Mode 3 holds a lost position for guncon_screen::kNoLightHoldMs instead.
+#if GUNCON_FORCE_MODE != 3
   const uint8_t maxNoLightCount = 10;
 #endif
 

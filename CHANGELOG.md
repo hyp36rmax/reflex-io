@@ -4,12 +4,63 @@ User-facing changes to the Classic2USB firmware and its tools. Versions follow
 the scheme in the README's Versioning section. The release package's
 `release.md` repeats the section for its version.
 
-Status words used below:
+## 1.0.1
 
-- **Preliminary, pending testing**: built and host-tested, with limited or no
-  hardware evidence.
-- **Untested**: not yet run on the target hardware or host.
-- **Hardware-test candidate**: available for testers; no hardware pass yet.
+### Inputs
+
+- **Famicom Network Controller (HVC-051)** support.
+- **PlayStation dance pads** are recognised only after Up and Down are held
+  together briefly, so leverless pads no longer switch the D-pad to buttons by
+  mistake.
+
+### Outputs
+
+- **Hold Start** for one second to send Home/Guide/OSD, as Start + Down does.
+- **neGcon L** can act as the right stick X on PC DInput and XInput.
+- **neGcon on DInput or MiSTer DInput:** Analog I and II now map to Cross and
+  Square, and the right stick no longer reads fully right.
+- **MiSTer GunCon** aims correctly in the PSX core without calibrating. Redo
+  calibrations saved with earlier firmware.
+- **GunCon Align** applies at once, and Trigger + A + B off-screen no longer
+  changes the alignment.
+
+### Auto
+
+- Auto checks the host again when it starts talking after power-up: a
+  sleeping PC, a console in rest mode or a booting MiSTer.
+- **PC Engine mouse:** Auto no longer takes it for a Genesis pad. It stays a
+  mouse while it moves, up and down are no longer swapped, and it tracks three
+  times faster without stray sideways jumps.
+
+### Menus and display
+
+- The Factory Reset prompts fit the screen.
+- The Genesis six-button picture matches the Saturn layout.
+
+### Adapt.html
+
+- New layout, and a theme picker: Midnight, Amber, Reflex, Green and White.
+- The open page comes back after a restart or reconnect.
+- The live view shows every OLED screen.
+
+### Adapt Manager 1.1.0
+
+- BOOTSEL recovery asks which product the board is and checks the firmware
+  against it.
+- A Classic2USB that answers slowly is no longer listed as unidentified.
+
+### Fixes
+
+- If the adapter ever stops responding, it restarts by itself instead of
+  needing to be unplugged.
+- Fixed a freeze under steady serial traffic.
+- Turbo starts at the press, and a quick tap always registers.
+- A button held while a menu opens or closes no longer sticks.
+
+### Known issues
+
+- On MiSTer with DInput chosen by hand, a neGcon set to Analog needs a core
+  map. Auto is not affected.
 
 ## 1.0.0
 

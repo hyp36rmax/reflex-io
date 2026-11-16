@@ -17,7 +17,8 @@ Buzzer::Buzzer()
       current_note_index(0),
       note_end_time(0),
       pending_start_time(0),
-      playing(false) {}
+      playing(false),
+      quiet(false) {}
 
 void Buzzer::setFrequency(uint16_t freq) {
 #ifndef ADAPT_FEATURE_BUZZER
@@ -92,6 +93,13 @@ bool Buzzer::isPlaying() {
   return playing;
 }
 
+void Buzzer::setQuiet(bool on) {
+  quiet = on;
+  if (on) {
+    stop();
+  }
+}
+
 void Buzzer::setVolume(uint8_t vol) {
   if (vol > 100) vol = 100;
   volume = vol;
@@ -122,7 +130,7 @@ bool Buzzer::isEventEnabled(uint16_t event) {
 }
 
 void Buzzer::tone(uint16_t frequency, uint16_t duration_ms) {
-  if (!enabled) return;
+  if (!enabled || quiet) return;
   setFrequency(frequency);
   delay(duration_ms);
   stopTone();
@@ -141,13 +149,13 @@ void Buzzer::startMelody(const buzzer_melody_t& melody) {
 }
 
 void Buzzer::play(const buzzer_melody_t& melody) {
-  if (!enabled) return;
+  if (!enabled || quiet) return;
   pending_melody = nullptr;
   startMelody(melody);
 }
 
 void Buzzer::playDelayed(const buzzer_melody_t& melody, uint16_t delay_ms) {
-  if (!enabled) return;
+  if (!enabled || quiet) return;
   pending_melody = &melody;
   pending_start_time = millis() + delay_ms;
 }

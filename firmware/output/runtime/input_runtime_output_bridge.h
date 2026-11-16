@@ -50,11 +50,13 @@ enum bcd_input_platform_enum {
 
 // Every platform value is taken, so CD-i is the first identity with a sub:
 // platform 0 with sub 1, bcdDevice identity 25. Saturn 3D uses platform 4
-// with sub 1, identity 29. DS2 uses PSX platform 22 with sub 1, identity 47.
+// with sub 1, identity 29. DS2 uses PSX platform 22 with sub 1, identity 47,
+// and a neGcon on the generic HID uses PSX sub 2, identity 72.
 constexpr uint8_t BCD_CDI_PLATFORM = BCD_PLAT_N64;
 constexpr uint8_t BCD_CDI_PLATFORM_SUB = 1;
 constexpr uint8_t BCD_SATURN_3D_PLATFORM_SUB = 1;
 constexpr uint8_t BCD_DUALSHOCK2_PLATFORM_SUB = 1;
+constexpr uint8_t BCD_NEGCON_PAD_PLATFORM_SUB = 2;
 
 struct bcd_device_version_t {
   uint8_t platform_sub = 0;

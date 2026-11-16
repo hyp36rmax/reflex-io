@@ -92,6 +92,9 @@ void applyDirectionalHotkeysToOutput(bool enabled = true);
 uint32_t directionalHotkeyOutputButtons(uint8_t port);
 uint32_t directionalHotkeySuppression(uint8_t port);
 bool directionalHomeHotkeyEnabled(uint8_t port);
+// Whether this controller takes a Home shortcut at all (Modern2USB: its Auto,
+// Off or On choice), apart from the global Down+Start and Hold Start toggles.
+bool directionalHomeHotkeyAllowed(uint8_t port);
 #if defined(ADAPT_CAP_CONTROLLER_HOTKEY_PROFILES)
 // The edit token describes a connection, not merely a VID:PID. A replaced or
 // reconnected controller cannot inherit an open menu's pending edits.

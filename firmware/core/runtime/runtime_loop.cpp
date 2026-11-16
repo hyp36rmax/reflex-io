@@ -1,6 +1,7 @@
 #include "../../product_config.h"
 
 #include "runtime_loop.h"
+#include "../../platform/runtime/rp2040_crash_telemetry.h"
 
 #include "../konami_code.h"
 
@@ -48,6 +49,7 @@
 #include "../../menu/menu_working_state.h"
 #include "../../output/output_runtime_state.h"
 #include "../../output/runtime/output_loop_runtime.h"
+#include "../../output/runtime/output_product_services.h"
 #include "../../platform/runtime/platform_background_runtime.h"
 #include "../../platform/runtime/platform_feedback_runtime.h"
 #include "../../platform/runtime/platform_maintenance_runtime.h"
@@ -73,6 +75,20 @@ constexpr uint32_t kIdleFeedbackUiIntervalUs = 16667;
 uint32_t lastPostPollUiServiceUs = 0;
 uint32_t lastFeedbackUiUs = 0;
 bool pendingRuntimeUiUpdate = false;
+bool menuOwnedControllerInputLastPass = false;
+
+// A menu taking the controls neutralizes the frame the host gets, and giving
+// them back restores it, without the controller itself changing. Outputs that
+// report only on a change (DInput, XInput, Keyboard) would otherwise keep a
+// button held through the menu until the next input change.
+void __not_in_flash_func(requestDeliveryWhenMenuOwnershipChanges)() {
+  const bool owned = menuOwnsControllerInput();
+  if (owned == menuOwnedControllerInputLastPass) return;
+  menuOwnedControllerInputLastPass = owned;
+  for (uint8_t i = 0; i < max_devices && i < MAX_USB_OUT; ++i) {
+    if (controllerFrameConst(i).connected) requestControllerFrameDelivery(i);
+  }
+}
 
 bool __not_in_flash_func(outputFramePreparationRequired)() {
 #if defined(ENABLE_OUTPUT_DB15)
@@ -83,6 +99,13 @@ bool __not_in_flash_func(outputFramePreparationRequired)() {
   if (latencyTest.isEnabled() || outputMode == OUTPUT_PS3) {
     return true;
   }
+#ifdef ADAPT_OUTPUT_USB_DEVICE
+  // A product transport that replaces USB (Modern2USB Bluetooth output)
+  // publishes the current frame on every send pass, pending or not.
+  if (productOutputTransportIsActive()) {
+    return true;
+  }
+#endif
   // send_usb_single_report() also sends these outputs without a pending
   // frame (its force_update, including the PS4 keepalive), so finalize every
   // pass; otherwise those reports carry the restored, unremapped frame.
@@ -186,6 +209,7 @@ void runMinimalFastPathRuntimeLoop() {
     }
   }
 
+  requestDeliveryWhenMenuOwnershipChanges();
   {
     LatencyPhaseTraceScope preparePhaseTrace(LATENCY_TRACE_PHASE_PREPARE);
     LatencyTraceGpioScope prepareTrace(PIN_LATENCY_TRACE_PREPARE);
@@ -224,44 +248,57 @@ void __not_in_flash_func(runMainRuntimeLoop)() {
   // Keep the controller-to-USB critical path first: sync the USB device stack,
   // read inputs, process transforms, prepare the output frame, and submit the
   // report before CDC/menu/OLED/WebHID/background services can stall the loop.
+  // Step numbers name the stage a watchdog timeout stopped in (WDSTEP).
+  rp2040CrashTelemetryMarkLoopStep(1);
   runOutputTransportSyncTasks();
 
+  rp2040CrashTelemetryMarkLoopStep(2);
   if (servicePlatformRuntimeExclusiveMaintenance()) {
     return;
   }
   if (usePlatformFastPathRuntime()) {
+    rp2040CrashTelemetryMarkLoopStep(3);
     runMinimalFastPathRuntimeLoop();
     return;
   }
 
+  rp2040CrashTelemetryMarkLoopStep(4);
   if (runPlatformPriorityOutputOverride()) {
     return;
   }
 
   bool polled = false;
   bool updated = false;
+  rp2040CrashTelemetryMarkLoopStep(5);
   if (runInputRuntimeCycle(&polled, &updated)) {
+    rp2040CrashTelemetryMarkLoopStep(11);
     runDeferredRuntimeServices();
     return;
   }
 
+  rp2040CrashTelemetryMarkLoopStep(6);
+  requestDeliveryWhenMenuOwnershipChanges();
   runPostPollOutputTasks(polled);
   updateKonamiCodeObserver(polled);
   runActiveInputAdapterAfterOutputFrameSent(polled, updated);
 
   {
     LatencyPhaseTraceScope prePollUiTrace(LATENCY_TRACE_PHASE_PREPOLL_UI);
+    rp2040CrashTelemetryMarkLoopStep(7);
     if (!latencyServiceDisabled(LATENCY_SERVICE_PREPOLL_UI) && runPlatformPrePollUi()) {
+      rp2040CrashTelemetryMarkLoopStep(11);
       runDeferredRuntimeServices();
       return;
     }
   }
 
+  rp2040CrashTelemetryMarkLoopStep(8);  // post-poll UI and background tasks
   runPostPollUiIfNeeded(polled, updated);
   runLoopBackgroundTasks();
 
   {
     LatencyPhaseTraceScope pendingOutputTrace(LATENCY_TRACE_PHASE_PENDING_OUTPUT);
+    rp2040CrashTelemetryMarkLoopStep(10);
     if (!latencyServiceDisabled(LATENCY_SERVICE_PENDING_OUTPUT)) {
       processPendingOutputRuntimeTasks();
     }
@@ -271,6 +308,7 @@ void __not_in_flash_func(runMainRuntimeLoop)() {
   usb_bt_hci_persist_task();
   #endif
 
+  rp2040CrashTelemetryMarkLoopStep(11);
   runDeferredRuntimeServices();
 
 //  bool anyConnected = input_report[0].connected || input_report[1].connected || input_report[2].connected || input_report[3].connected;

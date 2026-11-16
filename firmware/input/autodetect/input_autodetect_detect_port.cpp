@@ -337,6 +337,22 @@ AutoDetectResult AutoDetector::detectPort(uint8_t port, bool is_hotswap) {
       return finish(AUTODETECT_SATURN);
     }
     #endif
+    #ifdef ENABLE_INPUT_PCE
+    // A PC Engine device blanks all four data lines while TH (its CLR) is
+    // high, which also passes the Mega Drive test; a Mega Drive pad shows its
+    // released directions there. A raw PCE reply now means the PCE stage above
+    // ran before the device was ready, such as a mouse still powering up.
+    // PCE multitaps are manual-mode only, so a tap picks neither PCE nor
+    // Genesis; the Genesis driver would drop its blank port and rescan.
+    if (pceMultitapPresent) {
+      saturn = AUTODETECT_NONE;
+    } else {
+      resetSharedPins(pins, is_hotswap);
+      if (confirmPCEViaRawProbe(pins, is_hotswap)) {
+        return finish(AUTODETECT_PCE);
+      }
+    }
+    #endif
     if (pceCandidate) {
       saturn = AUTODETECT_NONE;
     }

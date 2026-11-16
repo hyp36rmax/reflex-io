@@ -9,8 +9,12 @@
 #include <EEPROM.h>
 #include <hardware/flash.h>
 #include <hardware/sync.h>
+#include <hardware/watchdog.h>
 
+#include "product_flash_services.h"
 #include "reserved_flash_layout.h"
+
+extern "C" uint8_t __flash_binary_end;
 #endif
 
 namespace {
@@ -33,6 +37,9 @@ const uint8_t* targetBytes(uint32_t target) {
 }
 const uint8_t* dataBytes() { return settingsJournalHostDataBytes(); }
 const uint8_t* controlBytes() { return settingsJournalHostControlBytes(); }
+bool journalSectorsUsable() { return true; }
+bool beginFlashSession() { return false; }
+void endFlashSession(bool) {}
 uint32_t openFlashWindow() { return 0; }
 void closeFlashWindow(uint32_t) { settingsJournalHostWindowClosed(); }
 void eraseSector(const uint8_t* sector) { settingsJournalHostErase(sector); }
@@ -46,8 +53,39 @@ const uint8_t* targetBytes(uint32_t target) {
       return reinterpret_cast<const uint8_t*>(reflexEepromSectorAddress());
     case SettingsJournalTarget::kSharedProfiles:
       return reinterpret_cast<const uint8_t*>(reflexBluetoothBondFlashSectorAddress());
+#if ADAPT_POLICY_FIXED_END_RESERVED_FLASH_LAYOUT
+    case SettingsJournalTarget::kHidMappings:
+      return reinterpret_cast<const uint8_t*>(reflexHidMappingFlashSectorAddress());
+    case SettingsJournalTarget::kAuthSector:
+      return reinterpret_cast<const uint8_t*>(reflexAuthFlashSectorAddress());
+#endif
+    default:
+      break;
   }
   return nullptr;
+}
+// The journal sectors must lie past the end of the linked image. Stage 3's
+// linker cap guarantees that for the updater builds; any other build that
+// grew into them would erase its own code, so it saves without the journal.
+bool journalSectorsUsable() {
+#if ADAPT_POLICY_FIXED_END_RESERVED_FLASH_LAYOUT
+  const uintptr_t imageEnd = reinterpret_cast<uintptr_t>(&__flash_binary_end);
+  return imageEnd <= reflexSettingsJournalDataSectorAddress() &&
+         imageEnd <= reflexSettingsJournalControlSectorAddress();
+#else
+  // The standard layout's journal sits directly below the reserved stores.
+  return true;
+#endif
+}
+// MODERN2USB's core 1 runs the PIO USB host, and some of its paths mask
+// interrupts long enough to stall idleOtherCore(). Park it in RAM first, as
+// the learned-mapping and updater writes do. Core 1 can be inside a blocking
+// enumeration delay, so a timeout falls back to the plain window every save
+// used before.
+constexpr unsigned long kFlashQuiesceTimeoutMs = 1000;
+bool beginFlashSession() { return productQuiesceForFlash(kFlashQuiesceTimeoutMs); }
+void endFlashSession(bool quiesced) {
+  if (quiesced) productReleaseFlashQuiesce();
 }
 const uint8_t* dataBytes() {
   return reinterpret_cast<const uint8_t*>(reflexSettingsJournalDataSectorAddress());
@@ -62,9 +100,14 @@ uint32_t openFlashWindow() {
   rp2040.idleOtherCore();
   return irqState;
 }
+// A journaled save is three erases. A factory reset makes a dozen or more
+// saves in one main-loop pass, which can outlast the 4 s runtime watchdog,
+// so each finished window counts as progress, except while an update trial
+// owns the watchdog's expiry.
 void closeFlashWindow(uint32_t irqState) {
   rp2040.resumeOtherCore();
   restore_interrupts(irqState);
+  if (productFlashMayFeedWatchdog()) watchdog_update();
 }
 void eraseSector(const uint8_t* sector) {
   flash_range_erase(reflexFlashOffset(reinterpret_cast<uintptr_t>(sector)), kSectorSize);
@@ -163,16 +206,8 @@ bool sealAndRewrite(SettingsJournalTarget target, const uint8_t* targetSector,
   return memcmp(targetSector, image, length) == 0;
 }
 
-}  // namespace
-
-void settingsJournalRecover() {
-  if (finishSealedSave()) clearJournal();
-}
-
-bool settingsJournalWriteSector(SettingsJournalTarget target, const uint8_t* image,
-                                size_t length) {
-  const uint8_t* targetSector = targetBytes(static_cast<uint32_t>(target));
-  if (targetSector == nullptr || !validImageLength(length)) return false;
+bool writeJournaled(SettingsJournalTarget target, const uint8_t* targetSector,
+                    const uint8_t* image, size_t length) {
   if (!finishSealedSave()) return false;
   if (memcmp(targetSector, image, length) == 0) return true;
 
@@ -181,6 +216,38 @@ bool settingsJournalWriteSector(SettingsJournalTarget target, const uint8_t* ima
   const bool saved = sealAndRewrite(target, targetSector, image, length);
   closeFlashWindow(window);
   if (saved) clearJournal();
+  return saved;
+}
+
+// Only for a build whose image reaches the journal sectors: the save it had
+// before the journal, which a power cut can tear.
+bool writeDirect(const uint8_t* targetSector, const uint8_t* image, size_t length) {
+  if (memcmp(targetSector, image, length) == 0) return true;
+  const uint32_t window = openFlashWindow();
+  eraseSector(targetSector);
+  programPages(targetSector, image, length);
+  closeFlashWindow(window);
+  return memcmp(targetSector, image, length) == 0;
+}
+
+}  // namespace
+
+void settingsJournalRecover() {
+  if (!journalSectorsUsable()) return;
+  const bool quiesced = beginFlashSession();
+  if (finishSealedSave()) clearJournal();
+  endFlashSession(quiesced);
+}
+
+bool settingsJournalWriteSector(SettingsJournalTarget target, const uint8_t* image,
+                                size_t length) {
+  const uint8_t* targetSector = targetBytes(static_cast<uint32_t>(target));
+  if (targetSector == nullptr || !validImageLength(length)) return false;
+  const bool quiesced = beginFlashSession();
+  const bool saved = journalSectorsUsable()
+      ? writeJournaled(target, targetSector, image, length)
+      : writeDirect(targetSector, image, length);
+  endFlashSession(quiesced);
   return saved;
 }
 

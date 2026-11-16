@@ -124,10 +124,9 @@ inline bool get(const PadButton* layout, const PadButton& key, Button& b) {
     if (upper || lower) {
       const int n=(m==GPAD_X || m==GPAD_A)?0:(m==GPAD_Y || m==GPAD_B)?1:2;
       b={int8_t(32+10*n),int8_t((upper?12:24)-4*n),uint8_t(upper?7:9),uint8_t(upper?7:9),Shape::Round};
-#ifdef ENABLE_INPUT_MEGADRIVE
-      if (layout==padLayoutGenesis6 && upper) b.y+=2;
-#endif
-      if ((layout==padLayoutSaturn || layout==padLayoutSaturn3D) && upper) b.y+=3;
+      // One six-button face layout for Genesis/Mega Drive and Saturn: the X/Y/Z row
+      // sits at the same height on both (Genesis was 1 px higher until 2026-11-10).
+      if (upper) b.y+=3;
       return true;
     }
   }

@@ -14,11 +14,17 @@ const uint8_t DETECT_PS4      = (1UL << 2);
 const uint8_t DETECT_OGXBOX   = (1UL << 3);
 const uint8_t DETECT_XBOX360  = (1UL << 4);
 const uint8_t DETECT_SWITCH1  = (1UL << 5);
-// A mounted generic HID host that reads the HID report descriptor but skips
-// the manufacturer string is the documented Xbox One discriminator. Keep the
-// legacy Switch2 alias for products that do not compile Xbox One output.
+// Bit 6 is a verdict, never set in host_detection.any. A Switch 2 reads the
+// HID report descriptor and no manufacturer string; an Xbox One/Series host
+// also sends the shared WCID request. Products without Xbox One output keep
+// the bit for Switch 2. Xbox One builds return both verdicts, so Switch 2
+// takes a value no single flag has and the two case labels stay distinct.
 const uint8_t DETECT_XBOXONE_CANDIDATE = (1UL << 6);
+#ifdef ENABLE_EXPERIMENTAL_XBOXONE_OUTPUT
+const uint8_t DETECT_SWITCH2  = DETECT_XBOXONE_CANDIDATE | (1UL << 5);
+#else
 const uint8_t DETECT_SWITCH2  = DETECT_XBOXONE_CANDIDATE;
+#endif
 const uint8_t DETECT_TIMEOUT  = (1UL << 7);
 
 typedef struct TU_ATTR_PACKED {

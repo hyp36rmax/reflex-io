@@ -160,6 +160,13 @@ class RZInputPSX : public RZInputModule {
       static constexpr uint32_t BEATMANIA_TURN_STEP_MS = 120;
       bool isWaiwai { false };
       bool isDancePad[logical_slots] { false };
+      // Up+Down without Left+Right must stay held for DANCE_PAD_ARM_HOLD_MS
+      // before a port becomes a Dance Pad, so a leverless pad rolling between
+      // Up and Down, or one bad reply, does not latch it. 150 ms is a
+      // judgment, not a measurement: longer than such a roll, shorter than a
+      // landed jump.
+      uint32_t dancePadComboSinceMs[logical_slots] { 0 };
+      static constexpr uint32_t DANCE_PAD_ARM_HOLD_MS = 150;
       uint8_t specialDpadMask[logical_slots] { 0 };
       // D-pad bits held in every reply since this pad connected; Pop'n and
       // GuitarFreaks latch only from these (konamiDpadSignature()).

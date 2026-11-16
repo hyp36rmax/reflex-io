@@ -502,6 +502,7 @@ void RZInputPSX::resetPortHeuristics(uint8_t port) {
     return;
   }
   isDancePad[port] = explicitDancePadMode();
+  dancePadComboSinceMs[port] = 0;
   specialDpadMask[port] = 0;
   dpadHeldSinceConnect[port] = 0xFF;
   isCrazyHit[port] = false;

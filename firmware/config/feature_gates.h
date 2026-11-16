@@ -207,6 +207,20 @@
   #define ENABLE_USB_AUTH_SIDECAR 1
 #endif
 
+// Debug images only: a serial TRIAL runs an output unsaved and restarts into
+// the saved one (features/output_trial/). No shipping env sets the flag, and
+// the [env] build filter leaves the folder out of every other build.
+#if defined(ENABLE_OUTPUT_TRIAL)
+  #if !defined(ADAPT_OUTPUT_USB_DEVICE)
+    #error "The output trial needs a USB-device output"
+  #endif
+  #if defined(ADAPT_ENABLE_HOST_CAPTURE) || defined(ADAPT_ENABLE_N64_CAPTURE) || \
+      defined(ADAPT_ENABLE_JOGCON_CAPTURE) || defined(FORCE_CLASSIC_AUTO_OUTPUT)
+    #error "Capture images force their own output; keep the output trial separate"
+  #endif
+  #define ADAPT_FEATURE_OUTPUT_TRIAL 1
+#endif
+
 #if defined(ADAPT_PRIMARY_EGRESS_CLASSIC_CONSOLE) && !defined(ADAPT_HARDWARE_STUB)
   #define ENABLE_OUTPUT_CONSOLE 1
 #endif

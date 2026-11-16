@@ -363,6 +363,8 @@ inline constexpr SettingSpec kSettingSpecs[] = {
   {SettingScope::Global,  SettingValueType::UInt8,  (uint16_t)offsetof(GlobalSettingsRecord, psx_periph),             0,                            0, 1, nullptr, nullptr},
   // Packed into menu_hotkey bit 6: existing zero records retain Artwork.
   {SettingScope::Global,  SettingValueType::UInt8,  (uint16_t)offsetof(GlobalSettingsRecord, menu_hotkey),            0,                            0, 1, nullptr, nullptr},
+  // Packed into home_hotkey bit 7 as an Off flag: existing records read On.
+  {SettingScope::Global,  SettingValueType::UInt8,  (uint16_t)offsetof(GlobalSettingsRecord, home_hotkey),            1,                            0, 1, nullptr, nullptr},
 };
 
 static_assert((sizeof(kSettingSpecs) / sizeof(kSettingSpecs[0])) == static_cast<size_t>(SettingId::Count),
@@ -391,9 +393,9 @@ inline constexpr bool settingSupportedOnProduct(SettingId id) {
       return false;
 #endif
     case SettingId::Switch2Output:
-      // Only where Auto classifies a Switch 2 host: the Xbox One build reads
-      // that fingerprint as an Xbox One candidate instead.
-#if defined(ADAPT_CAP_USB_OUTPUT_AUTODETECT) && !defined(ENABLE_EXPERIMENTAL_XBOXONE_OUTPUT)
+      // Wherever Auto classifies a Switch 2 host, Xbox One builds included:
+      // their Xbox candidate needs the WCID request a Switch 2 never sends.
+#if defined(ADAPT_CAP_USB_OUTPUT_AUTODETECT)
       return true;
 #else
       return false;
@@ -414,6 +416,8 @@ inline constexpr bool settingSupportedOnProduct(SettingId id) {
     case SettingId::SystemMenuHotkey:
     case SettingId::CaptureHotkey:
     case SettingId::HotkeyHoldTime:
+    // Fixed-preset products run Hold Start under their one Hotkeys toggle.
+    case SettingId::HoldStartHotkey:
       return !ADAPT_POLICY_FIXED_HOTKEY_ASSIGNMENTS;
     case SettingId::ManagementMsc:
       // The USB drive (features/usb_drive), On unless its psx_periph bit is set.
@@ -642,6 +646,12 @@ inline int32_t readRecordSettingValue(const RecordT& record, SettingId id) {
       if (id == SettingId::MisterDisplay) {
         return misterDisplayModeFromRaw(*field);
       }
+      if (id == SettingId::HomeHotkey) {
+        return *field & HOME_HOTKEY_VALUE_MASK;
+      }
+      if (id == SettingId::HoldStartHotkey) {
+        return holdStartHotkeyEnabledFromRaw(*field) ? 1 : 0;
+      }
       if (id == SettingId::HomeScreenDebug) {
         return (*reinterpret_cast<const uint8_t*>(field) & HOME_SCREEN_DEBUG_MASK) ? 1 : 0;
       }
@@ -803,6 +813,14 @@ inline void writeRecordSettingValue(RecordT& record, SettingId id, int32_t value
       }
       if (id == SettingId::MisterDisplay) {
         *field = encodeMisterDisplayMode(*field, static_cast<uint8_t>(value));
+        break;
+      }
+      if (id == SettingId::HomeHotkey) {
+        *field = encodeHomeHotkey(*field, value != 0);
+        break;
+      }
+      if (id == SettingId::HoldStartHotkey) {
+        *field = encodeHoldStartHotkey(*field, value != 0);
         break;
       }
       if (id == SettingId::HomeScreenDebug) {

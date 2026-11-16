@@ -92,6 +92,7 @@ void RZInputPce::setup() {
     mouseIdlePending[i] = false;
     mouseIdleStartUs[i] = 0;
     nextMouseProbeMs[i] = 0;
+    mousePresence[i].reset();
     for (uint8_t c = 0; c < PCE_MAX_CTRL; ++c) {
       mouseType[i][c] = false;
       mouseConfirm[i][c] = 0;

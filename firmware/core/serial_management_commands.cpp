@@ -33,6 +33,7 @@
 #include "../output/output_runtime_state.h"
 #include "../platform/runtime/platform_menu_runtime.h"
 #include "../platform/webhid_runtime.h"
+#include "../features/output_trial/output_trial.h"
 
 #if ADAPT_POLICY_CONTROLLER_FEEDBACK_COMMANDS
 #include "controller_feedback_config.h"
@@ -298,6 +299,10 @@ bool handleOutputCommand(char* text, Print& out) {
     out.println(F("ERR:BAD_OUTPUT_MODE"));
     return true;
   }
+#if defined(ADAPT_FEATURE_OUTPUT_TRIAL)
+  // A saved choice ends a trial, so the trial guard cannot override it.
+  outputTrialEnd();
+#endif
   saveSettingValue(SettingId::ConfiguredOutputMode, mode, RZORD_NONE);
   if (!verifyManagementSettingWrite(
           SettingId::ConfiguredOutputMode, mode, out)) {

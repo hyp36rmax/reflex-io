@@ -20,6 +20,9 @@ namespace {
 // watchdog marker before a UF2 migration.
 constexpr uint32_t kUsbEnumerationGraceMs = 15000;
 constexpr uint32_t kBluetoothAckTimeoutMs = 5000;
+// Transport Auto detaches USB only for a connected Bluetooth host, and
+// attaches it again once that host has been gone this long.
+constexpr uint32_t kBluetoothHostGoneMs = 2000;
 
 ProductOutputTransportPreference preference =
     MODERN2USB_OUTPUT_TRANSPORT_AUTO;
@@ -28,6 +31,9 @@ Modern2UsbActiveOutputTransport activeTransport =
 bool graceStarted = false;
 uint32_t graceStartedAtMs = 0;
 uint32_t bluetoothRequestedAtMs = 0;
+// Auto: the ESP32 acknowledged and advertises while USB stays attached.
+bool bluetoothStandby = false;
+uint32_t bluetoothHostGoneSinceMs = 0;
 uint8_t selectedSourceSlot = 0xFF;
 uint8_t persona = ESP32_SPI_BT_OUTPUT_PERSONA_REFLEX;
 bool firmwareUpdateHold = false;
@@ -177,12 +183,29 @@ void serviceBtOutputTest() {
   advanceBtOutputTestDeadline(nowMs);
 }
 
+// Only latchBluetoothAfterAck() detaches USB; every way back attaches it.
+bool usbDetachedForBluetooth = false;
+
+void attachUsbIfDetached() {
+  if (usbDetachedForBluetooth) {
+    tud_connect();
+    usbDetachedForBluetooth = false;
+  }
+}
+
+bool bluetoothHostConnected(const Esp32SpiRuntimeStatus& status) {
+  return status.bt_output_status_valid && status.bt_output_active &&
+         status.bt_output_connected;
+}
+
 void latchUsb() {
   clearTestFrame();
   stopBtOutputTest(MODERN2USB_BT_OUTPUT_TEST_STOP_TRANSPORT_CHANGED);
   activeTransport = MODERN2USB_ACTIVE_OUTPUT_USB;
   bluetoothRequestedAtMs = 0;
+  bluetoothStandby = false;
   esp32SpiSetBtOutputEnabled(false, persona);
+  attachUsbIfDetached();
 }
 
 void requestBluetooth() {
@@ -205,7 +228,20 @@ void latchBluetoothAfterAck() {
     return;
   }
   tud_disconnect();
+  usbDetachedForBluetooth = true;
+  bluetoothStandby = false;
+  bluetoothHostGoneSinceMs = 0;
   activeTransport = MODERN2USB_ACTIVE_OUTPUT_BLUETOOTH;
+}
+
+// Auto, after its Bluetooth host left: USB attached again, still advertising.
+void returnToBluetoothStandby() {
+  clearTestFrame();
+  stopBtOutputTest(MODERN2USB_BT_OUTPUT_TEST_STOP_TRANSPORT_CHANGED);
+  attachUsbIfDetached();
+  activeTransport = MODERN2USB_ACTIVE_OUTPUT_REQUESTING_BLUETOOTH;
+  bluetoothStandby = true;
+  bluetoothHostGoneSinceMs = 0;
 }
 
 void failBluetoothRequest() {
@@ -213,6 +249,7 @@ void failBluetoothRequest() {
   stopBtOutputTest(MODERN2USB_BT_OUTPUT_TEST_STOP_TRANSPORT_CHANGED);
   esp32SpiSetBtOutputEnabled(false, persona);
   bluetoothRequestedAtMs = 0;
+  bluetoothStandby = false;
   activeTransport = MODERN2USB_ACTIVE_OUTPUT_UNSUPPORTED;
 }
 
@@ -230,6 +267,8 @@ void modern2usbBtOutputInitialize(
   graceStarted = false;
   graceStartedAtMs = 0;
   bluetoothRequestedAtMs = 0;
+  bluetoothStandby = false;
+  bluetoothHostGoneSinceMs = 0;
   selectedSourceSlot = 0xFF;
   clearTestFrame();
   if (firmwareUpdateHold) {
@@ -261,6 +300,7 @@ void modern2usbBtOutputSetFirmwareUpdateHold(bool enabled) {
   if (enabled) {
     activeTransport = MODERN2USB_ACTIVE_OUTPUT_USB;
     bluetoothRequestedAtMs = 0;
+    bluetoothStandby = false;
     selectedSourceSlot = 0xFF;
     clearTestFrame();
   }
@@ -278,6 +318,19 @@ void modern2usbBtOutputTask() {
   }
   if (activeTransport == MODERN2USB_ACTIVE_OUTPUT_BLUETOOTH) {
     esp32SpiSetBtOutputEnabled(true, persona);
+    if (preference == MODERN2USB_OUTPUT_TRANSPORT_AUTO) {
+      // Auto detached USB for a connected host. Once that host has been gone
+      // a while, attach USB again and keep advertising, as before it came.
+      const uint32_t nowMs = millis();
+      if (bluetoothHostConnected(esp32SpiRuntimeStatus())) {
+        bluetoothHostGoneSinceMs = 0;
+      } else if (bluetoothHostGoneSinceMs == 0) {
+        bluetoothHostGoneSinceMs = nowMs == 0 ? 1 : nowMs;
+      } else if (nowMs - bluetoothHostGoneSinceMs >= kBluetoothHostGoneMs) {
+        returnToBluetoothStandby();
+        return;
+      }
+    }
     serviceBtOutputTest();
     return;
   }
@@ -296,9 +349,20 @@ void modern2usbBtOutputTask() {
     }
     esp32SpiSetBtOutputEnabled(true, persona);
     const Esp32SpiRuntimeStatus status = esp32SpiRuntimeStatus();
-    if (status.bt_output_active && status.bt_output_status_valid &&
-        status.bt_output_ready) {
+    const bool acknowledged =
+        status.bt_output_active && status.bt_output_status_valid &&
+        status.bt_output_ready;
+    // Auto keeps USB attached while it advertises, so a host that wakes
+    // later still enumerates and wins (the mount check above). Only a
+    // connected Bluetooth host detaches USB. Bluetooth detaches on the ack.
+    if (acknowledged &&
+        (preference != MODERN2USB_OUTPUT_TRANSPORT_AUTO ||
+         bluetoothHostConnected(status))) {
       latchBluetoothAfterAck();
+      return;
+    }
+    if (acknowledged || bluetoothStandby) {
+      bluetoothStandby = true;
       return;
     }
     if (millis() - bluetoothRequestedAtMs >= kBluetoothAckTimeoutMs) {
@@ -491,7 +555,8 @@ const char* modern2usbBtOutputActiveName() {
   switch (activeTransport) {
     case MODERN2USB_ACTIVE_OUTPUT_USB: return "USB";
     case MODERN2USB_ACTIVE_OUTPUT_BLUETOOTH: return "Bluetooth";
-    case MODERN2USB_ACTIVE_OUTPUT_REQUESTING_BLUETOOTH: return "BT request";
+    case MODERN2USB_ACTIVE_OUTPUT_REQUESTING_BLUETOOTH:
+      return bluetoothStandby ? "BT waiting" : "BT request";
     case MODERN2USB_ACTIVE_OUTPUT_UNSUPPORTED: return "Unsupported";
     case MODERN2USB_ACTIVE_OUTPUT_WAITING:
     default: return "USB grace";

@@ -88,6 +88,9 @@ const menu_line_t menu_items[] = {
   { menu_item_menu_hotkey, "Quick Menu" },
   { menu_item_system_menu_hotkey, "System Menu" },
   { menu_item_home_hotkey, "Home" },
+#if !ADAPT_POLICY_FIXED_HOTKEY_ASSIGNMENTS
+  { menu_item_hold_start_hotkey, "Hold Start" },
+#endif
   { menu_item_capture_hotkey, "Capture/TPad" },
   { menu_item_kiosk_mode, ADAPT_PRODUCT_KIOSK_MENU_LABEL },
 #if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)

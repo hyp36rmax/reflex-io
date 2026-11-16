@@ -41,3 +41,22 @@ size_t sdlGameControllerDbFormatMapping(const HidDescriptorLayout& layout,
 
 SdlGameControllerDbStats sdlGameControllerDbStats();
 const char* sdlGameControllerDbSourceSha256();
+
+// Products that read the table from flash (ADAPT_CAP_SDL_CONTROLLER_FLASH_TABLE)
+// validate it here once, on core 0 before the USB host starts. Until then, and
+// when the flash copy is blank, torn or of another schema, every lookup finds
+// nothing. Elsewhere this does nothing.
+void sdlGameControllerDbInit();
+
+#if defined(SDL_GAMECONTROLLERDB_HOST_TEST)
+// Host tests only: read rows from a table image (nullptr: the compiled-in
+// arrays again). Returns false, leaving the current rows, for an image the
+// firmware would refuse.
+bool sdlGameControllerDbHostUseTableImage(const uint8_t* image,
+                                          uint32_t capacity);
+// Host tests only: the exact mapping record for one identity, all 0xFF for a
+// blocked identity. Returns false when the identity is not listed.
+bool sdlGameControllerDbHostMappingRecord(uint16_t vid, uint16_t pid,
+                                          uint16_t version, uint8_t* record,
+                                          size_t capacity);
+#endif

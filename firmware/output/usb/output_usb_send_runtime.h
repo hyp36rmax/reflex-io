@@ -205,9 +205,24 @@ bool output_mode_uses_usb_feedback_reports() {
 // One USB player from one chosen port: the other physical controllers have no
 // interface. Once the source's submission is complete (or idle), consume their
 // irrelevant deliveries.
+#ifdef ENABLE_OUTPUT_PS5
+// PS5 chosen as PC Mode or MiSTer Mode reaches a host that never checks the
+// signature, so it reports unsigned until a PS5 signing dongle is fitted. Only
+// a host Auto classified as a PC, or fell back on after that host talked to
+// the probe with no PlayStation sign, qualifies. A host Auto never saw (a
+// no-connect fallback: maybe a PS5 in rest mode) or classified as a
+// PlayStation never gets an unsigned report.
+inline bool ps5_unsigned_report_allowed() {
+  return is_auto_output_mode_selected() &&
+         (autoDetectState == AUTO_STATE_WINDOWS ||
+          auto_detect_fallback_saw_generic_host()) &&
+         !ps_auth_dongle_ps5_signer_connected();
+}
+#endif
+
 inline void consume_unsent_source_deliveries(uint8_t source) {
   if (controllerFrameNeedsDelivery(source)) return;
-  for (uint8_t i = 0; i < max_devices; ++i) {
+  for (uint8_t i = 0; i < max_devices && i < MAX_USB_OUT; ++i) {
     if (i != source) completeControllerFrameDelivery(i);
   }
 }
@@ -368,7 +383,12 @@ void __not_in_flash_func(send_usb_single_report)(uint8_t port) {
                 report_data,
                 &ps5_report_size,
                 sizeof(report_data))) {
-            return;
+            if (!ps5_unsigned_report_allowed()) {
+              return;
+            }
+            report_size = sizeof(_ps5_report);
+            memcpy(report_data, &_ps5_report, report_size);
+            break;
           }
           report_size = ps5_report_size;
           ps5_prepared_hash_report = true;

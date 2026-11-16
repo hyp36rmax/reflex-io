@@ -7,6 +7,7 @@
 
 #include "../base/RZInputModule.h"
 #include <PceLib/PceLib.h>
+#include "pce_mouse_presence.h"
 
 #ifndef PCE_TYPE_UPGRADE_CONFIRM_POLLS
   #define PCE_TYPE_UPGRADE_CONFIRM_POLLS 8
@@ -55,6 +56,7 @@ class RZInputPce : public RZInputModule {
     uint32_t nextMouseProbeMs[input_ports] = {};
     bool mouseType[input_ports][PCE_MAX_CTRL] = {};
     uint8_t mouseConfirm[input_ports][PCE_MAX_CTRL] = {};
+    PceMousePresence mousePresence[input_ports] = {};
 #endif
 
     bool rawControllerPresent(uint8_t port) const;

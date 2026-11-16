@@ -227,7 +227,6 @@ inline constexpr uint32_t turbo_button_masks[TURBO_BTN_COUNT] = {
 class TurboController {
 private:
   TurboRate button_rates[TURBO_BTN_COUNT];
-  uint32_t last_toggle_time[TURBO_BTN_COUNT];
   bool turbo_state[TURBO_BTN_COUNT];
   bool any_enabled;
   TurboInputMode input_mode;
@@ -236,6 +235,12 @@ private:
   uint32_t last_physical_buttons[MAX_USB_OUT];
 #if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
   uint32_t button_phase_start_us[TURBO_BTN_COUNT];
+#else
+  // When each player's turbo button began its pulses: at its press, or its
+  // latch switching on, pressed, so a tap is never lost to an off phase.
+  // Same-rate buttons held together share one start (startPressPhase()).
+  uint32_t press_start_ms[MAX_USB_OUT][TURBO_BTN_COUNT];
+  uint32_t startPressPhase(uint8_t device, TurboButton btn);
 #endif
 
   uint32_t getTurboButtonMask(TurboButton btn) const;

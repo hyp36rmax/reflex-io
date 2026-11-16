@@ -69,6 +69,7 @@ struct PceMouseSweep {
   uint8_t buttons[PCE_MAX_CTRL][4] = {};
   uint8_t count = 0;
   bool rawPresent = false;
+  uint8_t rawNibble = 0;  // the first scan's CLR-high read; 0 means present
 };
 
 enum PceDigital_Enum {
@@ -155,6 +156,9 @@ class PcePort {
     uint8_t multitapPorts = 0;
     bool multitapActive = false;
     uint16_t multitapProbeIntervalMs = 0;
+    // Wait after each SEL/CLR edge of a mouse sweep before reading: a PCE mouse
+    // is a microcontroller and needs about 5 us to switch nibbles.
+    uint8_t mouseSettleUs = 10;
     uint32_t lastMultitapProbeMs = 0;
     PceController controllers[PCE_MAX_CTRL];
 
@@ -414,6 +418,8 @@ class PcePort {
       }
     }
 
+    void setMouseSettleUs(uint8_t us) { mouseSettleUs = us ? us : 1; }
+
     void setMultitapProbeIntervalMs(uint16_t intervalMs) {
       multitapProbeIntervalMs = intervalMs;
       lastMultitapProbeMs = millis();
@@ -434,18 +440,21 @@ class PcePort {
       for (uint8_t scan = 0; scan < 4; ++scan) {
         pceWritePinFast(PIN_SEL, HIGH);
         pceWritePinFast(PIN_CLR, LOW);
-        delayMicroseconds(2);
+        delayMicroseconds(mouseSettleUs);
         pceWritePinFast(PIN_CLR, HIGH);
-        delayMicroseconds(2);
-        if (scan == 0) result.rawPresent = readNibble() == 0;
+        delayMicroseconds(mouseSettleUs);
+        if (scan == 0) {
+          result.rawNibble = readNibble();
+          result.rawPresent = result.rawNibble == 0;
+        }
         pceWritePinFast(PIN_CLR, LOW);
-        delayMicroseconds(2);
+        delayMicroseconds(mouseSettleUs);
         for (uint8_t port = 0; port < result.count; ++port) {
           pceWritePinFast(PIN_SEL, HIGH);
-          delayMicroseconds(2);
+          delayMicroseconds(mouseSettleUs);
           const uint8_t data = readNibble();
           pceWritePinFast(PIN_SEL, LOW);
-          delayMicroseconds(2);
+          delayMicroseconds(mouseSettleUs);
           const uint8_t buttons = readNibble();
           result.data[port][scan] = data;
           result.buttons[port][scan] = buttons;

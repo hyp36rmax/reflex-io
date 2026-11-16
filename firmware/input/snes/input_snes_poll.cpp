@@ -225,6 +225,7 @@ bool __not_in_flash_func(RZInputSnes::poll)() {
   //update each port and get number of connected controllers
   uint8_t port_controller_count[input_ports] = {0};
   bool port_mouse_sample[input_ports] = {};
+  bool port_fcnet_sample[input_ports] = {};
   const bool snes_rumbletech_mode = snesRumbleTechEnabled();
   const bool snes_rumble_writes_allowed =
     snes_rumbletech_mode && rumble_level != 0;
@@ -238,6 +239,11 @@ bool __not_in_flash_func(RZInputSnes::poll)() {
         continue;
       }
       if (port < MAX_USB_OUT) {
+        if (famicomNetworkEligible(port) && tryPollFamicomNetwork(port)) {
+          port_fcnet_sample[port] = true;
+          port_controller_count[port] = 1;
+          continue;
+        }
 #ifdef ENABLE_EXPERIMENTAL_CONSOLE_MOUSE
         // A mouse contains a processor; the pad's 2 us bit period is too fast
         // for Hyperkin. Probe empty ports or a mouse ID after a pad swap,
@@ -345,13 +351,17 @@ bool __not_in_flash_func(RZInputSnes::poll)() {
 
   // Debug: capture raw ID and device type from first controller on each port
   if (input_ports > 0 && port_controller_count[0] > 0) {
-    snes_debug_dtype0 = port_mouse_sample[0] ? SNES_DEVICE_MOUSE : snes[0]->getSnesController(0).deviceType();
+    snes_debug_dtype0 = port_mouse_sample[0] ? SNES_DEVICE_MOUSE
+                      : port_fcnet_sample[0] ? SNES_DEVICE_NTT
+                      : snes[0]->getSnesController(0).deviceType();
   } else if (input_ports > 0 && physical_port_enabled(0)) {
     snes_debug_id0 = 0xFF;
     snes_debug_dtype0 = 0xFF; // No controller
   }
   if (input_ports > 1 && port_controller_count[1] > 0) {
-    snes_debug_dtype1 = port_mouse_sample[1] ? SNES_DEVICE_MOUSE : snes[1]->getSnesController(0).deviceType();
+    snes_debug_dtype1 = port_mouse_sample[1] ? SNES_DEVICE_MOUSE
+                      : port_fcnet_sample[1] ? SNES_DEVICE_NTT
+                      : snes[1]->getSnesController(0).deviceType();
   } else if (input_ports > 1 && physical_port_enabled(1)) {
     snes_debug_id1 = 0xFF;
     snes_debug_dtype1 = 0xFF; // No controller
@@ -383,7 +393,9 @@ bool __not_in_flash_func(RZInputSnes::poll)() {
           break;
 
       controller_state_t& frame = inputFrame(i);
-      const SnesController& sc = port_mouse_sample[port] ? snes_mouse[port] : snes[port]->getSnesController(c);
+      const SnesController& sc = port_mouse_sample[port] ? snes_mouse[port]
+                               : port_fcnet_sample[port] ? snes_fcnet[port]
+                               : snes[port]->getSnesController(c);
       slot_physical_port[i] = port;
       setSnesPadDebugRaw(i, sc.currentState.id, sc.currentState.digital, sc.currentState.extended);
 

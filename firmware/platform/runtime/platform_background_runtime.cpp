@@ -13,9 +13,11 @@ void runPlatformBackgroundTasks() {
   static bool ps5QuietWasActive = false;
   if (is_ps5_timing_quiet_mode_active()) {
     // PS5 auth is sensitive to unrelated timing work. Keep PWM/PIO LED
-    // and latency bookkeeping out of the PS5 console loop.
+    // and latency bookkeeping out of the PS5 console loop. Nothing here
+    // updates the buzzer, so it is silenced, not just stopped: a menu beep
+    // started now would otherwise sound until the next save or restart.
     if (!ps5QuietWasActive) {
-      buzzer.stop();
+      buzzer.setQuiet(true);
       ps5QuietWasActive = true;
     }
     runProductTimingQuietBackgroundTasks();
@@ -23,6 +25,7 @@ void runPlatformBackgroundTasks() {
   }
 
   if (ps5QuietWasActive) {
+    buzzer.setQuiet(false);
     resetProductBackgroundAfterTimingQuiet();
   }
   ps5QuietWasActive = false;

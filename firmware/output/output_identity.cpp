@@ -66,6 +66,10 @@ const char* get_reflex_input_product_name() {
 #endif
 #ifdef ENABLE_INPUT_PSX
     case RZORD_PSX:
+      if (bcd_device_version.platform == BCD_PLAT_PSX &&
+          bcd_device_version.platform_sub == BCD_NEGCON_PAD_PLATFORM_SUB) {
+        return "ReflexPSNeGcon";
+      }
       return bcd_device_version.platform == BCD_PLAT_PSX &&
              bcd_device_version.platform_sub == BCD_DUALSHOCK2_PLATFORM_SUB
         ? "ReflexPSDS2" : "ReflexPSDS1";
@@ -156,6 +160,12 @@ uint16_t get_reflex_mister_hid_pid() {
 }
 
 uint16_t get_reflex_mister_hid_device_version() {
+#if ADAPT_POLICY_ALWAYS_REFLEX_PSX_MISTER_IDENTITY
+  // Every product with one fixed MiSTer identity shares the DualShock 2 rows,
+  // which read L2/R2 from axes 4/5 (owner, 2026-11-12).
+  return encode_bcd_device_version(bcd_device_version.revision, BCD_PLAT_PSX,
+                                   BCD_DUALSHOCK2_PLATFORM_SUB);
+#else
 #if ADAPT_POLICY_DYNAMIC_MISTER_INPUT_IDENTITY
   if (bcd_device_version.platform == BCD_PLAT_PSX) {
     return current_bcd_device_version();
@@ -164,4 +174,5 @@ uint16_t get_reflex_mister_hid_device_version() {
   return uses_reflex_psx_mister_mapping_identity()
     ? encode_bcd_device_version(bcd_device_version.revision, BCD_PLAT_PSX)
     : current_bcd_device_version();
+#endif
 }

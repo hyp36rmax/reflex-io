@@ -99,7 +99,26 @@ enum Esp32SpiControlCommand : uint8_t {
   ESP32_SPI_CONTROL_FORGET_WIFI = 12,
   ESP32_SPI_CONTROL_FORGET_BT_OUTPUT_BOND = 13,
   ESP32_SPI_CONTROL_SET_BT_OUTPUT_WINDOW = 14,
+  // The adapter's user acknowledged the ESP32 firmware rollback notice that
+  // the ESP32 publishes in the extended wire trailer. Earlier ESP32 images
+  // ignore unknown commands.
+  ESP32_SPI_CONTROL_ACK_FIRMWARE_NOTICE = 15,
 };
+
+// Link heartbeat (RP2040 -> ESP32). A CRC-valid control packet whose command
+// is NONE is a no-op for every earlier ESP32 image, so a new RP2040 sends one
+// in each transaction that carries no queued control, update or signer
+// request. It proves round-trip link health: `value` echoes the sequence of
+// the last CRC-valid ESP32 bridge packet the RP2040 accepted and `slot`
+// carries the low byte of its accepted-packet counter. `reserved` holds the
+// marker and `flags` the heartbeat state bits below.
+constexpr uint8_t ESP32_SPI_HEARTBEAT_MARKER = 0x48;  // 'H'
+constexpr uint8_t ESP32_SPI_HEARTBEAT_BRIDGE_FRESH = 1u << 0;
+constexpr uint8_t ESP32_SPI_HEARTBEAT_RP2040_UPDATING = 1u << 1;
+constexpr uint8_t ESP32_SPI_HEARTBEAT_RP2040_TRIAL = 1u << 2;
+// A PS4 signer session continues across this packet. Sent only to an ESP32
+// that advertised ESP32_SPI_PS4_SIGN_CAP_SESSION_HOLD.
+constexpr uint8_t ESP32_SPI_HEARTBEAT_SIGNER_HOLD = 1u << 3;
 
 // Control-packet value scope for FORGET_BT_OUTPUT_BOND. The packet CRC covers
 // this bit, so Factory Reset's terminal acknowledgement proves the all-bonds
@@ -262,6 +281,16 @@ enum Esp32SpiRpUpdateError : uint8_t {
   ESP32_SPI_RP_UPDATE_ERROR_STORAGE = 8,
   ESP32_SPI_RP_UPDATE_ERROR_TIMEOUT = 9,
   ESP32_SPI_RP_UPDATE_ERROR_SIGNATURE = 10,
+  // RP2040-local refusals before anything is staged. The candidate's health
+  // trial needs a working ESP32 bridge, so an install while the bridge is down
+  // would always roll back; one during an ESP32 health trial could make the
+  // ESP32 roll back a good image while the RP2040 restarts.
+  ESP32_SPI_RP_UPDATE_ERROR_BRIDGE_DOWN = 11,
+  ESP32_SPI_RP_UPDATE_ERROR_PEER_TRIAL = 12,
+  // The candidate is older than the update floor (core/
+  // modern2usb_update_policy.h). An ESP32 without this code reports a generic
+  // refusal.
+  ESP32_SPI_RP_UPDATE_ERROR_VERSION_FLOOR = 13,
 };
 // MODERN2USB keeps TinyUSB device output on RP2040 core0 and PIO-USB host input
 // on core1. A local RSA-PSS operation blocks core0 for roughly 1.5 seconds,
@@ -288,6 +317,12 @@ constexpr size_t ESP32_SPI_PS4_SIGN_CHUNK_SIZE = 128;
 constexpr uint8_t ESP32_SPI_PS4_SIGN_KEY_CHUNKS = 6;
 constexpr uint8_t ESP32_SPI_PS4_SIGN_NONCE_CHUNKS = 2;
 constexpr uint8_t ESP32_SPI_PS4_SIGN_SIGNATURE_CHUNKS = 2;
+// Capability bits in data[0] of a zero-length signer response (CRC-covered;
+// earlier RP2040 images ignore data when length is zero). SESSION_HOLD: the
+// ESP32 keeps the session across heartbeats flagged SIGNER_HOLD, so the
+// RP2040 may interleave normal bridge transactions while the RSA operation
+// runs instead of starving Bluetooth input.
+constexpr uint8_t ESP32_SPI_PS4_SIGN_CAP_SESSION_HOLD = 1u << 0;
 
 struct __attribute__((packed, aligned(1))) Esp32SpiPs4SignRequest {
   uint32_t magic;
@@ -740,6 +775,59 @@ constexpr uint8_t ESP32_SPI_WIRE_CAP_DURABLE_PERSISTENCE = 1u << 7;
 static_assert(ESP32_SPI_WIRE_TRAILER_OFFSET + 2u <=
                   ESP32_SPI_BRIDGE_WIRE_SIZE,
               "ESP32 SPI capability trailer must fit DMA padding");
+
+// Extended trailer magic. An ESP32 sends 0xB0 | status in trailer byte 0
+// only in the transaction right after it received a valid heartbeat, which
+// only an RP2040 that decodes this form sends; every other packet keeps the
+// 0xA5 magic. Byte 1 keeps its meaning in both forms.
+constexpr uint8_t ESP32_SPI_WIRE_TRAILER_EXT_BASE = 0xB0;
+constexpr uint8_t ESP32_SPI_WIRE_TRAILER_EXT_MASK = 0xF0;
+// An automatic ESP32 rollback is recorded and not yet acknowledged.
+constexpr uint8_t ESP32_SPI_WIRE_EXT_ROLLBACK_NOTICE = 1u << 0;
+// The running ESP32 image is a candidate awaiting its health decision.
+constexpr uint8_t ESP32_SPI_WIRE_EXT_UPDATE_TRIAL = 1u << 1;
+// Recent heartbeats proved that the RP2040 accepts this ESP32's packets.
+constexpr uint8_t ESP32_SPI_WIRE_EXT_LINK_PROVEN = 1u << 2;
+
+inline constexpr bool esp32SpiWireTrailerMagicValid(uint8_t magic) {
+  return magic == ESP32_SPI_WIRE_TRAILER_MAGIC ||
+      (magic & ESP32_SPI_WIRE_TRAILER_EXT_MASK) ==
+          ESP32_SPI_WIRE_TRAILER_EXT_BASE;
+}
+
+inline constexpr bool esp32SpiWireTrailerExtended(uint8_t magic) {
+  return (magic & ESP32_SPI_WIRE_TRAILER_EXT_MASK) ==
+      ESP32_SPI_WIRE_TRAILER_EXT_BASE;
+}
+
+inline constexpr uint8_t esp32SpiWireTrailerExtMagic(uint8_t status) {
+  return static_cast<uint8_t>(
+      ESP32_SPI_WIRE_TRAILER_EXT_BASE |
+      (status & static_cast<uint8_t>(~ESP32_SPI_WIRE_TRAILER_EXT_MASK)));
+}
+static_assert(!esp32SpiWireTrailerExtended(ESP32_SPI_WIRE_TRAILER_MAGIC),
+              "Legacy trailer magic must not decode as extended");
+static_assert(esp32SpiWireTrailerMagicValid(esp32SpiWireTrailerExtMagic(0x0F)),
+              "Extended trailer magic must stay valid");
+
+// Fill the heartbeat fields of a control packet. The caller sets magic,
+// version and CRC through its normal control finalizer.
+inline void esp32SpiFillHeartbeat(
+    Esp32SpiControlPacket& packet, uint8_t echoedSequence,
+    uint8_t acceptedCount, uint8_t flags) {
+  packet = {};
+  packet.command = ESP32_SPI_CONTROL_NONE;
+  packet.value = echoedSequence;
+  packet.slot = acceptedCount;
+  packet.flags = flags;
+  packet.reserved = ESP32_SPI_HEARTBEAT_MARKER;
+}
+
+// True for an already CRC-validated control packet that is a heartbeat.
+inline bool esp32SpiControlIsHeartbeat(const Esp32SpiControlPacket& packet) {
+  return packet.command == ESP32_SPI_CONTROL_NONE &&
+      packet.reserved == ESP32_SPI_HEARTBEAT_MARKER;
+}
 static_assert(sizeof(Esp32SpiRpUpdateRequest) <=
                   ESP32_SPI_BRIDGE_WIRE_SIZE,
               "RP2040 update request must fit the SPI control direction");

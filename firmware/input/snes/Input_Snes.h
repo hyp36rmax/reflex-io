@@ -50,6 +50,16 @@ class RZInputSnes : public RZInputModule {
     SnesPort* snes[input_ports] = {};
     SnesController snes_mouse[input_ports] = {};
     bool snes_mouse_active[input_ports] = {};
+    // Famicom Network Controller (HVC-051), read by famicom_network_reader.h
+    // and handed on as an NTT Data report. Empty ports are probed every 16 ms;
+    // an identified one is read every 4 ms and released after 8 misses.
+    static constexpr uint32_t FCNET_PROBE_INTERVAL_US = 16000;
+    static constexpr uint32_t FCNET_ACTIVE_POLL_US = 4000;
+    static constexpr uint8_t FCNET_LEAVE_MISSES = 8;
+    SnesController snes_fcnet[input_ports] = {};
+    bool fcnet_active[input_ports] = {};
+    uint8_t fcnet_misses[input_ports] = {};
+    uint32_t fcnet_next_read_us[input_ports] = {};
     SnesDeviceType_Enum dtype[MAX_USB_OUT] = {};
     uint8_t disconnect_confirm_frames[MAX_USB_OUT] = {};
     SnesDeviceType_Enum candidate_type[MAX_USB_OUT] = {};
@@ -99,6 +109,9 @@ class RZInputSnes : public RZInputModule {
                                      uint8_t portControllerCount, bool safePollActive);
     bool tryFastPollStandardNes(uint8_t port, uint8_t index);
     bool tryPollSnesMouse(uint8_t port);
+    bool famicomNetworkEligible(uint8_t port);
+    bool tryPollFamicomNetwork(uint8_t port);
+    void resetFamicomNetworkPorts();
     bool vausModeActive();
     bool vausFamicomMode();
     void setupVausPort(uint8_t port);

@@ -91,6 +91,11 @@ void RZInputSnes::applySnesFrameIdentity(uint8_t port, uint8_t index, controller
   }
 
   SnesDeviceType_Enum type = (index < MAX_USB_OUT) ? dtype[index] : SNES_DEVICE_NONE;
+  if (type == SNES_DEVICE_NTT && port < input_ports && fcnet_active[port]) {
+    setInputFrameTypeName(frame, "FC Network");
+    frame.HAS_BTN_HOME = 1;
+    return;
+  }
   switch (getInternalMode()) {
     case 1:
       if (type == SNES_DEVICE_NES_POWERPAD) {
@@ -224,6 +229,11 @@ bool RZInputSnes::rejectUnstableNesFrame(uint8_t index, const SnesController& sc
   const auto observed = sc.deviceType();
   if (observed == SNES_DEVICE_NES_POWERPAD || observed == SNES_DEVICE_NES_ZAPPER ||
       observed == SNES_DEVICE_NES_FOURSCORE) {
+    return false;
+  }
+  // A Famicom Network Controller is a Famicom device read by its own reader,
+  // which only hands on a frame that carries its signature.
+  if (slot_physical_port[index] < input_ports && fcnet_active[slot_physical_port[index]]) {
     return false;
   }
   // An explicitly selected/resolved NES session must not start publishing VB
@@ -690,6 +700,7 @@ void RZInputSnes::setup() {
       frame.HAS_BTN_START = 1;
     }
   }
+  resetFamicomNetworkPorts();
   clearRumbleTechDetection();
 
   bool found_mtap = false;

@@ -224,6 +224,7 @@ private:
   uint32_t note_end_time;
   uint32_t pending_start_time;
   bool playing;
+  bool quiet;
 
   void setFrequency(uint16_t freq);
   void stopTone();
@@ -237,6 +238,10 @@ public:
   void setEnabled(bool en);
   bool isEnabled();
   bool isPlaying();
+
+  // While quiet nothing starts a tone. PS5 output's timing-quiet loop stops
+  // servicing playback, so a beep started there would never end.
+  void setQuiet(bool on);
 
   // Volume control (0-100, default 25 for quieter sound)
   void setVolume(uint8_t vol);

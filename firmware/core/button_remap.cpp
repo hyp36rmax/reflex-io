@@ -212,11 +212,11 @@ constexpr uint8_t kWiiRemapSlots[] = {
 
 #ifdef ENABLE_INPUT_JVS
 // Cabinet order. Each panel role keeps its contract bit (jvs_panel_layout.h):
-// P1-P4 are X A B L1, K1-K4 are Y R1 R2 L2, Push9/10 are L3/R3, Coin arrives
+// P1-P4 are X Y R1 L1, K1-K4 are A B R2 L2, Push9/10 are L3/R3, Coin arrives
 // as Select and Service as Home. Rows are named by cabinet button.
 constexpr uint8_t kJvsRemapSlots[] = {
-  REMAP_SLOT_X, REMAP_SLOT_A, REMAP_SLOT_B, REMAP_SLOT_L1,
-  REMAP_SLOT_Y, REMAP_SLOT_R1, REMAP_SLOT_R2, REMAP_SLOT_L2,
+  REMAP_SLOT_X, REMAP_SLOT_Y, REMAP_SLOT_R1, REMAP_SLOT_L1,
+  REMAP_SLOT_A, REMAP_SLOT_B, REMAP_SLOT_R2, REMAP_SLOT_L2,
   REMAP_SLOT_L3, REMAP_SLOT_R3, REMAP_SLOT_START, REMAP_SLOT_SELECT,
   REMAP_SLOT_HOME REMAP_DPAD_ROWS
 };

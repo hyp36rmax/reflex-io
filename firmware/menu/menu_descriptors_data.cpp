@@ -172,6 +172,18 @@ const MenuItemDescriptor menu_descriptors[] = {
     .on_change = nullptr,
     .on_apply = nullptr
   },
+#if !ADAPT_POLICY_FIXED_HOTKEY_ASSIGNMENTS
+  {
+    .id = menu_item_hold_start_hotkey,
+    .type = MENU_TYPE_BOOL,
+    .menu_var = &menu_hold_start_hotkey,
+    .runtime_var = nullptr,
+    .setting_id = SettingId::HoldStartHotkey,
+    .bool_cfg = { "Off", "On" },
+    .on_change = nullptr,
+    .on_apply = nullptr
+  },
+#endif
   {
     .id = menu_item_capture_hotkey,
     .type = MENU_TYPE_BOOL,

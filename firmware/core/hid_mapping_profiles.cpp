@@ -200,6 +200,12 @@ bool readLatest(HidMappingProfileList& list, uint8_t* active_slot = nullptr,
 }
 
 bool programSector() {
+#if defined(ADAPT_SETTINGS_JOURNAL_ACTIVE) && ADAPT_POLICY_FIXED_END_RESERVED_FLASH_LAYOUT
+  // Both A/B copies share this sector, so only the journal keeps a power cut
+  // mid-save from losing every learned map. It parks the USB host itself.
+  return settingsJournalWriteSector(SettingsJournalTarget::kHidMappings,
+                                    profileFlashScratch, kProfileSectorSize);
+#else
   constexpr uint32_t kFlashQuiesceTimeoutMs = 250;
   if (!productQuiesceForFlash(kFlashQuiesceTimeoutMs)) {
     return false;
@@ -217,6 +223,7 @@ bool programSector() {
 #endif
   productReleaseFlashQuiesce();
   return true;
+#endif
 }
 
 bool writeListNow(const HidMappingProfileList& input) {

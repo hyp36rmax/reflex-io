@@ -202,7 +202,7 @@ const char* getMenuConfirmButtonName(DeviceEnum mode) {
   switch (mode) {
     #ifdef ENABLE_INPUT_JVS
     case RZORD_JVS:
-      return "P2/Start";
+      return "K1/Start";
     #endif
     #ifdef ENABLE_INPUT_PCE
     case RZORD_PCE:
@@ -226,7 +226,7 @@ const char* getMenuBackButtonName(DeviceEnum mode) {
   switch (mode) {
     #ifdef ENABLE_INPUT_JVS
     case RZORD_JVS:
-      return "P3/Coin";
+      return "K2/Coin";
     #endif
     #ifdef ENABLE_INPUT_PCE
     case RZORD_PCE:

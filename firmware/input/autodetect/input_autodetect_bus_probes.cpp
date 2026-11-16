@@ -132,6 +132,14 @@ AutoDetectResult classifySnesProbeSample(SnesProbeSample& sample) {
     return sample.result;
   }
 
+  // Famicom Network Controller (HVC-051): bit 22 is always released and bits
+  // 24-31 read pressed (extended holds bits 16-31, bit 16 first, pressed
+  // high), whatever is held. NES mode reads it (famicom_network_reader.h).
+  if ((extended & 0x02FF) == 0x00FF) {
+    sample.result = AUTODETECT_NES;
+    return sample.result;
+  }
+
   if (snesCredibleVirtualBoyReport(id, snesReverseSerialWord(data))) {
     sample.result = AUTODETECT_VBOY;
   }

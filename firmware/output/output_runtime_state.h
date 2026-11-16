@@ -121,6 +121,13 @@ enum AutoDetectTransitionReason : uint8_t {
   AUTO_TRANSITION_XBOXONE_PROBE_TO_FALLBACK = 9,
   AUTO_TRANSITION_GENERIC_XBOXONE_FINGERPRINT_TO_PROBE = 10,
   AUTO_TRANSITION_GENERIC_XBOXONE_FINGERPRINT_NO_DONOR = 11,
+  // A WCID host configured the Xbox persona but sent no console auth.
+  AUTO_TRANSITION_XBOXONE_PROBE_TO_WINDOWS = 12,
+  // These two decide, not only report: a no-connect fallback re-arms the
+  // probe once when a host first sends SETUP, and a no-connect after that
+  // re-arm is final.
+  AUTO_TRANSITION_GENERIC_REARM_AFTER_NO_CONNECT = 13,
+  AUTO_TRANSITION_GENERIC_NO_CONNECT_AFTER_REARM = 14,
 };
 
 void auto_detect_persist_probe_stage(AutoDetectProbeStage stage);
@@ -155,6 +162,10 @@ extern AutoDetectState autoDetectState;
 
 bool is_auto_output_mode_selected();
 bool auto_detect_no_data_host_fallback_active();
+// Auto fell back to the MiSTer/generic persona after the host talked to the
+// probe and showed no PlayStation sign. A no-traffic fallback may be a
+// console that wakes later, so it does not count.
+bool auto_detect_fallback_saw_generic_host();
 
 bool auto_detect_has_resolved_runtime_mode();
 // True when Auto is running a persona the saved PC Mode, MiSTer Mode or

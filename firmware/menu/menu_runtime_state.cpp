@@ -20,6 +20,7 @@ uint8_t menu_n64_analog_range = CLASSIC_ANALOG_RANGE_DEFAULT;
 uint8_t menu_menu_hotkey = 0;
 uint8_t menu_system_menu_hotkey = 0;
 uint8_t menu_home_hotkey = 1;
+uint8_t menu_hold_start_hotkey = 1;
 uint8_t menu_capture_hotkey = 1;
 uint8_t menu_kiosk_mode = 0;
 uint8_t menu_usb2db15_multi_bind = 1;

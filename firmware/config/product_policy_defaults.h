@@ -4,6 +4,13 @@
   #define ADAPT_POLICY_COOPERATIVE_OLED 0
 #endif
 
+// Every RP2040 product reboots itself from a stuck boot (8 s) or main loop
+// (4 s) and keeps a hard-fault record and the stalled phase and loop step for
+// CRASH STATUS. A product that cannot keep both limits sets 0 and says why.
+#ifndef ADAPT_POLICY_RP2040_CRASH_TELEMETRY
+  #define ADAPT_POLICY_RP2040_CRASH_TELEMETRY 1
+#endif
+
 // Product profiles override only the policy that cannot be derived from a
 // board, ingress/egress role, or fitted capability. Shared modules consume
 // these names and never need a retail-product allow-list.
@@ -148,6 +155,12 @@
 #endif
 #ifndef ADAPT_POLICY_XINPUT2P_OUTPUT_SLOT_CAP
   #define ADAPT_POLICY_XINPUT2P_OUTPUT_SLOT_CAP 0
+#endif
+// 0: live sources fill the lowest XInput receiver children (a lone pad on
+// either port is player 1). 1: each source keeps its own child, so players
+// keep their numbers when another pad drops and returns.
+#ifndef ADAPT_POLICY_XINPUT2P_STABLE_CHILDREN
+  #define ADAPT_POLICY_XINPUT2P_STABLE_CHILDREN 0
 #endif
 #ifndef ADAPT_POLICY_LED_DEFAULT_MODE
   #define ADAPT_POLICY_LED_DEFAULT_MODE LED_MODE_OFF

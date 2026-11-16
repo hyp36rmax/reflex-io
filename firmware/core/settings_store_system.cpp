@@ -36,6 +36,7 @@
 #include "../input/jvs/jvs_analog_config.h"
 #include "../input/jvs/jvs_panel_map.h"
 #endif
+#include "../features/output_trial/output_trial.h"
 
 namespace {
 
@@ -97,6 +98,11 @@ void sanitizeGlobalSettings(GlobalSettingsRecord& settings) {
     const int32_t sanitized = sanitizeSettingValue(id, RZORD_NONE, readRecordSettingValue(settings, id));
     writeRecordSettingValue(settings, id, sanitized);
   }
+#if defined(ADAPT_FEATURE_OUTPUT_TRIAL)
+  // Every global save passes here: it may copy the trial output out of RAM.
+  settings.configured_output_mode =
+      outputTrialSavedOutputToWrite(settings.configured_output_mode);
+#endif
 }
 
 bool readGlobalSettings(GlobalSettingsRecord& settings) {
@@ -280,38 +286,15 @@ bool saveButtonRemaps() {
   return writeRemapsForPair(deviceMode, configuredOutputMode, active_remaps);
 }
 
-bool factoryResetSettings(bool eraseRemaps) {
-  // A factory reset intentionally publishes immediately and reboots. Drop
-  // every staged pre-reset value first so it cannot be flushed afterward and
-  // resurrect user configuration over the freshly written defaults.
-  configurationPersistenceDiscardDeferred();
-  configurationPersistenceBeginImmediate();
+namespace {
 
-  bool externalEraseComplete = true;
-  bool localEraseComplete = productClearPersistentStorage();
-#if ADAPT_POLICY_RESERVED_FEEDBACK_STORAGE
-  (void)hidMappingProfileClear();
-  (void)modern2usbAnalogProfilesClear();
-#endif
-#if defined(ADAPT_CAP_CONTROLLER_HOTKEY_PROFILES)
-  (void)modern2usbHotkeyProfilesClear();
-#endif
+// The records in the EEPROM sector only. Stores in their own flash sectors and
+// on the ESP32 keep what they hold.
+bool resetEepromRecordsToDefaults(bool eraseRemaps) {
 #if defined(ENABLE_INPUT_JVS) && \
     !(ADAPT_POLICY_PS5_DIAGNOSTIC_RUNTIME && !defined(PS5_DIAG_USE_PERSISTED_SETTINGS))
   jvsAnalogClearConfig();
   jvsPanelClearMap();
-#endif
-#ifdef ENABLE_BLUETOOTH_PAIRING
-  localEraseComplete = bluetoothBondClear();
-#endif
-#ifdef ENABLE_INPUT_ESP32_SPI
-  // Bluetooth bonds and home-network credentials live on the ESP32 rather
-  // than in RP2040 settings flash. The combined bond clear has a tokenized
-  // terminal result; pre-SPI repair still leaves its broad erase deferred.
-  const bool bondsErased =
-      esp32SpiForgetAllBondsDurableBlocking(5000);
-  const bool wifiErased = esp32SpiForgetWifiBlocking(5000);
-  externalEraseComplete = bondsErased && wifiErased;
 #endif
 
   // Kept remaps are read before the wipe and restored with the defaults.
@@ -370,7 +353,55 @@ bool factoryResetSettings(bool eraseRemaps) {
   MenuModeVisibilityRecord clearedVisibility{};
   (void)readMenuModeVisibility(clearedVisibility);
 #endif
+  return localPersistenceComplete;
+}
+
+}  // namespace
+
+bool factoryResetSettings(bool eraseRemaps, bool eraseLearnedMaps) {
+  // A factory reset intentionally publishes immediately and reboots. Drop
+  // every staged pre-reset value first so it cannot be flushed afterward and
+  // resurrect user configuration over the freshly written defaults.
+  configurationPersistenceDiscardDeferred();
+  configurationPersistenceBeginImmediate();
+
+  bool externalEraseComplete = true;
+#ifdef ENABLE_INPUT_ESP32_SPI
+  // Bluetooth bonds and home-network credentials live on the ESP32 rather
+  // than in RP2040 settings flash. The combined bond clear has a tokenized
+  // terminal result. It goes first: its waits are the long, uncertain part,
+  // and a reset that stops during them has not yet cleared anything here.
+  const bool bondsErased =
+      esp32SpiForgetAllBondsDurableBlocking(5000);
+  const bool wifiErased = esp32SpiForgetWifiBlocking(5000);
+  externalEraseComplete = bondsErased && wifiErased;
+#endif
+
+  bool localEraseComplete = productClearPersistentStorage();
+#if ADAPT_POLICY_RESERVED_FEEDBACK_STORAGE
+  if (eraseLearnedMaps) (void)hidMappingProfileClear();
+  (void)modern2usbAnalogProfilesClear();
+#else
+  (void)eraseLearnedMaps;
+#endif
+#if defined(ADAPT_CAP_CONTROLLER_HOTKEY_PROFILES)
+  (void)modern2usbHotkeyProfilesClear();
+#endif
+#ifdef ENABLE_BLUETOOTH_PAIRING
+  localEraseComplete = bluetoothBondClear() && localEraseComplete;
+#endif
+
+  const bool localPersistenceComplete =
+      resetEepromRecordsToDefaults(eraseRemaps);
   configurationPersistenceEndImmediate();
   return externalEraseComplete && localEraseComplete &&
          localPersistenceComplete;
+}
+
+bool repairBlankSettingsAtBoot() {
+  configurationPersistenceDiscardDeferred();
+  configurationPersistenceBeginImmediate();
+  const bool repaired = resetEepromRecordsToDefaults(false);
+  configurationPersistenceEndImmediate();
+  return repaired;
 }

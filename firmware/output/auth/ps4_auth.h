@@ -63,6 +63,12 @@ public:
 
   PS4AuthState getState() const;
   uint32_t challengeReportCount() const { return _f0_report_count; }
+  // Moves on every console F0-F3 request, so settings saves can wait for an
+  // exchange to go quiet (settings_persistence_policy.h).
+  uint32_t consoleRequestCount() const {
+    return _f0_report_count + _f1_request_count + _f2_request_count +
+           _f3_request_count;
+  }
   void writeDiagnostics(Print& out) const;
 
 private:
