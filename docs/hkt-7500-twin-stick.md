@@ -53,22 +53,24 @@ existing records continue to load through the existing remap migration path.
 ## Validation status
 
 - **PASS** — HKT-7500 identification and D-pad 2 routing in physical UAT.
-- **PASS** — 8 Twin Stick regression tests and 11 OLED layout tests.
-- **PASS** — Classic2USB build at `f4cff076`; this build predates the Twin Stick-
-  only Start hold shortcut added in `6854deb`.
-- **NOT RUN** — Physical validation of the Start hold shortcut in a firmware
-  build containing `6854deb`.
+- **PASS** — 8 Twin Stick regression tests; the Classic2USB build ran the 11-test
+  OLED layout guard.
+- **PASS** — Classic2USB build at `1f175c2`, including the Twin Stick-only Start
+  hold shortcut.
+- **NOT RUN** — Physical validation of the Start hold shortcut in this firmware
+  build.
 
 Host-side mixed-port and remap tests do not replace Windows input-report
 validation.
 
-## Last validated build before the Start hold change
+## Validated build
 
 - Command: `PLATFORMIO_CORE_DIR=/tmp/reflex-platformio /tmp/reflex-pio312/bin/pio run -e classic2usb`
 - Result: **PASS**
-- UF2: `.pio/build/classic2usb/firmware.uf2` (3,682,816 bytes)
-- SHA-256: `7e2afbae9a5aac1af8649888c95340f909e7c8398602fc717d3246aa217d9b15`
-- Memory: 187,308 / 262,144 bytes RAM (71.5%); 1,829,204 / 2,068,480 bytes flash (88.4%)
+- Source commit: `1f175c2`
+- UF2: `.pio/build/classic2usb/firmware.uf2` (3,682,816 bytes; 7,193 RP2040 UF2 blocks)
+- SHA-256: `fa1e64d396f5d69e8ee53bba6bbf2da43811b24b0a407353b8e013b60b32b3dd`
+- Memory: 187,404 / 262,144 bytes RAM (71.5%); 1,829,300 / 2,068,480 bytes flash (88.4%)
 - Compiler warnings: 8 identical `-Wstringop-overflow` warnings from the bundled
   RP2040 lwIP `dhcp.c` DHCP option writer; no project-source warnings.
 
