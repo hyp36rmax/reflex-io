@@ -76,6 +76,9 @@ class TwinStickRemapTests(unittest.TestCase):
                                        source.index("if (twinStick)")):]
         d2_routes = d2_routes[:d2_routes.index("#endif")]
         self.assertNotIn("_hidgp.hat = 0x8", d2_routes)
+        xinput = read("firmware/output/xinput/output_xinput_mapping_runtime.h")
+        self.assertIn("const bool includeDpad1 = effective_dpad_mode == DPAD_MODE_DPAD", xinput)
+        self.assertIn("const uint8_t hat = dreamcastTwinStickHat(up, down, left, right)", xinput)
 
         # Both sources target the hat: all eight diagonals and deterministic
         # cancellation of opposed inputs. Releasing both returns neutral.

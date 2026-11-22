@@ -68,10 +68,16 @@ inline void apply_xinput_dpad_and_stick_modes(uint8_t port, const controller_sta
     const uint8_t mode = dreamcastTwinStickModeFromRemaps(active_remaps);
     const DreamcastTwinStickDirections d2 = dreamcastTwinStickDpad2(frame);
     if (mode == DPAD_MODE_DPAD) {
-      report.dpad_up |= d2.up;
-      report.dpad_down |= d2.down;
-      report.dpad_left |= d2.left;
-      report.dpad_right |= d2.right;
+      const bool includeDpad1 = effective_dpad_mode == DPAD_MODE_DPAD;
+      const bool up = (includeDpad1 && frame.PAD_U) || d2.up;
+      const bool down = (includeDpad1 && frame.PAD_D) || d2.down;
+      const bool left = (includeDpad1 && frame.PAD_L) || d2.left;
+      const bool right = (includeDpad1 && frame.PAD_R) || d2.right;
+      const uint8_t hat = dreamcastTwinStickHat(up, down, left, right);
+      report.dpad_up = hat == 0 || hat == 1 || hat == 7;
+      report.dpad_down = hat == 3 || hat == 4 || hat == 5;
+      report.dpad_left = hat == 5 || hat == 6 || hat == 7;
+      report.dpad_right = hat == 1 || hat == 2 || hat == 3;
     } else if (mode == DPAD_MODE_LEFT_STICK) {
       if (d2.left || d2.right) lx = dreamcastTwinStickAxis(d2.left, d2.right, 32767);
       if (d2.up || d2.down) ly = dreamcastTwinStickAxis(d2.up, d2.down, 32767);
