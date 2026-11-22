@@ -28,7 +28,16 @@ scale; an opposing pair on one axis centers that axis.
 The existing A/B/X/Y and trigger/thumb assignments are unchanged. Twin Stick
 direction and Pause assignments are available in the OLED remap menu and
 Adapt.html. Quick Config exposes D-pad 1 and D-pad 2 routing when the detected
-controller is the HKT-7500.
+controller is the HKT-7500. In the OLED remap menu, select a Twin Stick source,
+then use the menu navigation controls to cycle through destinations supported
+by the selected output. Select confirms the destination; Save writes the
+remaps. Other controller profiles keep their existing physical-button
+destination selection.
+
+Mixed Dreamcast ports share the Dreamcast input/output remap pair. Automatic
+Twin Stick initialization checks every connected Dreamcast frame. Direction
+and Pause transformations remain gated by each frame's own controller type, so
+a standard pad on another port does not receive Twin Stick inputs.
 
 ## Storage
 
@@ -39,10 +48,25 @@ existing records continue to load through the existing remap migration path.
 
 ## Validation status
 
-- Host helper checks: mode encoding, full-scale axis values, opposing directions,
-  and hat direction handling passed.
-- Existing OLED layout test: passed.
-- Adapt.html inline JavaScript syntax check: passed.
-- `pio run -e classic2usb`: blocked in the current workspace because PlatformIO
-  is unavailable. No UF2 was produced or inspected.
-- Physical HKT-7500 behavior has not been verified on hardware.
+- **PASS** — Twin Stick source regression checks and mixed-port frame tests.
+- **PASS** — Existing OLED layout tests.
+- **PASS** — `pio run -e classic2usb`; see the current build details below.
+- **NOT RUN** — Physical HKT-7500, Windows XInput/DInput reports, flash restore,
+  and hot-plug hardware validation.
+
+No hardware has been flashed. Mixed-port and remap tests are host-side tests;
+they do not replace Windows input-report or physical controller validation.
+
+## Current build
+
+- Command: `PLATFORMIO_CORE_DIR=/tmp/reflex-platformio /tmp/reflex-pio312/bin/pio run -e classic2usb`
+- Result: **PASS**
+- UF2: `.pio/build/classic2usb/firmware.uf2` (3,681,792 bytes)
+- SHA-256: `04a7a80201e9bcea8c7ec1515244ba1094ecd73bcbea9aaad40b76cb5ce211c6`
+- Memory: 187,308 / 262,144 bytes RAM (71.5%); 1,828,684 / 2,068,480 bytes flash (88.4%)
+- Compiler warnings: 8 identical `-Wstringop-overflow` warnings from the bundled
+  RP2040 lwIP `dhcp.c` DHCP option writer; no project-source warnings.
+
+Host checks cover direction/source routing, remap initialization and reset
+paths, output-pair persistence calls, and port-scoped Twin Stick detection.
+They do not simulate flash power loss or validate a physical adapter.

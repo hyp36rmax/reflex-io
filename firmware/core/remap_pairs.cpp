@@ -7,6 +7,7 @@
 #include "controller_selection_state.h"
 #include "dreamcast_twin_stick.h"
 #include "device_runtime_state.h"
+#include "../input/runtime/input_frame_runtime.h"
 #include "remap_pair_store.h"
 #include "settings_store.h"
 #include "../output/output_capabilities.h"
@@ -28,9 +29,9 @@ DeviceEnum loadedInput = RZORD_NONE;
 outputMode_t loadedOutput = OUTPUT_MISTER;
 bool loadedTwinStick = false;
 
-bool selectedDreamcastTwinStick() {
-  return deviceMode == RZORD_DREAMCAST && selectedControllerFrame().connected &&
-         controllerFrameIsDreamcastTwinStick(selectedControllerFrame());
+bool dreamcastTwinStickConnected() {
+  return deviceMode == RZORD_DREAMCAST &&
+         controllerFramesContainDreamcastTwinStick(controller_frames, inputPortCount());
 }
 
 bool setDreamcastTwinStickDefaults(uint8_t* remaps, outputMode_t selected) {
@@ -104,7 +105,7 @@ bool sanitizeRemapValuesForMode(DeviceEnum mode, uint8_t* remaps) {
 bool applyDreamcastTwinStickDefaults(DeviceEnum input, outputMode_t selected,
                                      uint8_t* remaps) {
 #ifdef ENABLE_INPUT_DREAMCAST
-  if (input == RZORD_DREAMCAST && selectedDreamcastTwinStick()) {
+  if (input == RZORD_DREAMCAST && dreamcastTwinStickConnected()) {
     return setDreamcastTwinStickDefaults(remaps, selected);
   }
 #else
@@ -126,7 +127,7 @@ void readRemapsForPair(DeviceEnum input, outputMode_t selected, uint8_t (&remaps
   } else {
     remapTableFromRecord(remaps, settings.remaps);
   }
-  if (input == RZORD_DREAMCAST && selectedDreamcastTwinStick()) {
+  if (input == RZORD_DREAMCAST && dreamcastTwinStickConnected()) {
     (void)setDreamcastTwinStickDefaults(remaps, selected);
   }
   sanitizeRemapValuesForMode(input, remaps);
@@ -180,11 +181,11 @@ void noteActiveRemapPair(DeviceEnum input, outputMode_t output) {
   loadedValid = true;
   loadedInput = input;
   loadedOutput = output;
-  loadedTwinStick = selectedDreamcastTwinStick();
+  loadedTwinStick = dreamcastTwinStickConnected();
 }
 
 bool activeRemapPairIsStale(DeviceEnum input) {
   return loadedValid && loadedInput == input &&
          (loadedOutput != remapPairOutputFor(configuredOutputMode) ||
-          loadedTwinStick != selectedDreamcastTwinStick());
+          loadedTwinStick != dreamcastTwinStickConnected());
 }

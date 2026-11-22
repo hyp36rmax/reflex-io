@@ -15,6 +15,15 @@ inline bool controllerFrameIsDreamcastTwinStick(const controller_state_t& frame)
   return strcmp(frame.controller_type_name, "Twin-Stick") == 0;
 }
 
+inline bool controllerFramesContainDreamcastTwinStick(
+    const controller_state_t* frames, uint8_t frameCount) {
+  if (frames == nullptr) return false;
+  for (uint8_t i = 0; i < frameCount; ++i) {
+    if (frames[i].connected && controllerFrameIsDreamcastTwinStick(frames[i])) return true;
+  }
+  return false;
+}
+
 inline uint8_t dreamcastTwinStickModeFromRemaps(const uint8_t* remaps) {
   if (remaps == nullptr) return DPAD_MODE_BUTTONS;
   const uint8_t encoded = remaps[DREAMCAST_TWIN_STICK_MODE_SLOT];

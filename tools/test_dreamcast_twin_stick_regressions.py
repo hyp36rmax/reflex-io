@@ -160,6 +160,18 @@ class TwinStickRemapTests(unittest.TestCase):
         self.assertIn('dreamcastDeviceHasProductName(info, "Twin-Stick")', detection)
         self.assertIn("0x0000FEFE", detection)
 
+    def test_mixed_port_detection_and_routing_are_frame_scoped(self) -> None:
+        pairs = read("firmware/core/remap_pairs.cpp")
+        self.assertIn("controllerFramesContainDreamcastTwinStick(controller_frames, inputPortCount())", pairs)
+        self.assertIn("dreamcastTwinStickConnected()", pairs)
+
+        remap = read("firmware/core/button_remap_menu.cpp")
+        self.assertIn("controllerFrameIsDreamcastTwinStick(report)", remap)
+        xinput = read("firmware/output/xinput/output_xinput_mapping_runtime.h")
+        self.assertIn("controllerFrameIsDreamcastTwinStick(frame)", xinput)
+        hid = read("firmware/output/usb/output_hid_mapping_runtime.h")
+        self.assertIn("controllerFrameIsDreamcastTwinStick(frame)", hid)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
