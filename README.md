@@ -8,7 +8,7 @@ mode does not require a firmware reflash.
 ## Getting started
 
 - **Setup and controller compatibility:** [Classic2USB setup and manual](https://docs.misteraddons.com/products/reflex-adapt/classic2usb/)
-- **Firmware:** download tested UF2 files from [GitHub Releases](https://github.com/misteraddons/reflex-io/releases).
+- **Firmware:** download tested UF2 files from [GitHub Releases](https://github.com/hyp36rmax/reflex-io/releases).
 - **Configure:** use the adapter's OLED menu or the [Adapt browser configurator](web/Adapt.html) to select modes and remap controls. The configurator can also update firmware.
 - **MiSTer:** [`reflex_adapt_manager.sh`](tools/release_assets/adapt-manager/mister/Scripts/Reflex_Adapt/reflex_adapt_manager.sh) manages firmware, rollback, and mappings.
 - **Hardware:** [Reflex Adapt Classic2USB](https://misteraddons.com/collections/kits/products/reflex-adapt) and [HDMI controller adapters](https://misteraddons.com/products/hdmi-controller-adapters).

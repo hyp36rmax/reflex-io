@@ -6,8 +6,15 @@ the scheme in the README's Versioning section. The release package's
 
 ## Unreleased
 
+## 1.0.2
+
+### Inputs
+
 - Sega Dreamcast HKT-7500 Twin Stick support with separate D-pad routing and
-  remappable Pause (D).
+  remappable Pause (D). Twin Stick D-pad 2 directions map to XInput buttons
+  and DInput buttons 15–18 by default.
+- Holding Start for one second sends Home/Guide only on an identified Twin
+  Stick; a normal Start press still sends Start.
 
 ## 1.0.1
 
