@@ -11,6 +11,9 @@
 #include "button_remap.h"
 #include "device_runtime_state.h"
 #include "dpad_mode.h"
+#ifdef ENABLE_INPUT_DREAMCAST
+#include "dreamcast_twin_stick.h"
+#endif
 #include "firmware_support.h"
 #include "firmware_hotkeys.h"
 #include "hotkey_combo.h"
@@ -27,8 +30,8 @@ struct HeldVirtualHotkeyState {
   bool active = false;
 };
 
-// Start held alone this long sends Home, beside Down+Start (owner, 2026-11-14).
-// Start reaches the host until then, so a tap is still Start.
+// On a Dreamcast Twin Stick, Start held alone this long sends Home. Start
+// reaches the host until then, so a tap is still Start.
 constexpr uint32_t kHoldStartHomeMs = 1000;
 // Home is then a tap while Start is still held: MiSTer Main opens its OSD on
 // the menu key's release (menu.cpp, KEY_F12 | UPSTROKE), and a held one is a
@@ -274,6 +277,12 @@ void __not_in_flash_func(updateHeldControllerHotkeysBeforeTransforms)() {
   const bool holdStartOn = holdStartHomeEnabled();
   for (uint8_t i = 0; i < max_devices && i < MAX_USB_OUT; ++i) {
     controller_state_t& frame = controllerFrame(i);
+#if defined(ENABLE_INPUT_DREAMCAST)
+    const bool isTwinStick = deviceMode == RZORD_DREAMCAST &&
+                             controllerFrameIsDreamcastTwinStick(frame);
+#else
+    constexpr bool isTwinStick = false;
+#endif
 #if defined(ADAPT_CAP_CONTROLLER_HOTKEY_PROFILES)
     const uint32_t connection = directionalHotkeyEditIdentity(i);
     if (connection != previousConnection[i]) {
@@ -286,10 +295,10 @@ void __not_in_flash_func(updateHeldControllerHotkeysBeforeTransforms)() {
       virtualHotkeySuppressedButtons[i] = 0;
     }
     const uint32_t homeCombo = directionalHomeHotkeyEnabled(i) ? (INPUT_START | INPUT_PAD_D) : 0;
-    // Hold Start follows the controller's own Home choice, as Down+Start does.
-    const bool holdStartEnabled = holdStartOn && directionalHomeHotkeyAllowed(i);
+    const bool holdStartEnabled = holdStartOn && isTwinStick &&
+                                  directionalHomeHotkeyAllowed(i);
 #else
-    const bool holdStartEnabled = holdStartOn;
+    const bool holdStartEnabled = holdStartOn && isTwinStick;
 #endif
     if (!frame.connected) {
       if (homeHotkeyState[i].active || captureHotkeyState[i].active ||
