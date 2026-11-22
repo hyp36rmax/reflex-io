@@ -357,6 +357,7 @@ private:
   bool hasRightStick(DeviceEnum mode);
   uint8_t getDpadModeMax(outputMode_t mode);
   bool isTempDpadModeAllowed(uint8_t mode);
+  bool isTempDpad2ModeAllowed(uint8_t mode);
   void cycleTempDpadMode(bool forward);
   void cycleTempDpad2Mode(bool forward);
   void cyclePointerMouseSource(bool forward);

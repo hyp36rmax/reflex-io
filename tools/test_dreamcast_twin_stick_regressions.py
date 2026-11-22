@@ -121,6 +121,26 @@ class TwinStickRemapTests(unittest.TestCase):
         self.assertIn("remapPairRead(input, remapPairOutputFor(selected), remaps)", pairs)
         self.assertIn("remapPairWrite(input, remapPairOutputFor(selected), sanitized)", pairs)
 
+    def test_twin_stick_dpad2_buttons_mode_is_available_on_xinput(self) -> None:
+        capabilities = read("firmware/menu/quick_config_capabilities.cpp")
+        dpad2_allowed = capabilities[
+            capabilities.index("bool QuickConfigMenu::isTempDpad2ModeAllowed"):
+            capabilities.index("void QuickConfigMenu::cycleTempDpadMode")
+        ]
+        self.assertIn("mode == DPAD_MODE_BUTTONS", dpad2_allowed)
+        self.assertIn("temp_input_mode == RZORD_DREAMCAST", dpad2_allowed)
+        self.assertIn("controllerFrameIsDreamcastTwinStick(frame)", dpad2_allowed)
+        self.assertIn("return true;", dpad2_allowed)
+
+        choices = read("firmware/menu/quick_config_choice_picker.cpp")
+        dpad2_choices = choices[choices.index("case QCI_DPAD2_MODE:"):]
+        self.assertIn("if (isTempDpad2ModeAllowed(mode)) add(mode);", dpad2_choices)
+        self.assertIn("if (isTempDpadModeAllowed(mode)) add(mode);", choices)
+        actions = read("firmware/menu/quick_config_capabilities.cpp")
+        dpad2_cycle = actions[actions.index("void QuickConfigMenu::cycleTempDpad2Mode"):
+                              actions.index("uint8_t QuickConfigMenu::getStickInvertMax")]
+        self.assertIn("isTempDpad2ModeAllowed(value)", dpad2_cycle)
+
     def test_xinput_report_fields_release_and_dinput_button_numbering(self) -> None:
         remap = read("firmware/core/button_remap_menu.cpp")
         self.assertIn("original[16] = (report.EXTRA & (1u << 0)) != 0", remap)

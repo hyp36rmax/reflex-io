@@ -245,9 +245,13 @@ uint8_t QuickConfigMenu::fillChoiceValues(QuickConfigItem item, uint8_t* values)
       addRange(0, max_switch_device_selection_for_input_mode(temp_input_mode) + 1);
       break;
     case QCI_DPAD_BUTTONS:
-    case QCI_DPAD2_MODE:
       for (uint8_t mode = 0; mode < 4; ++mode) {
         if (isTempDpadModeAllowed(mode)) add(mode);
+      }
+      break;
+    case QCI_DPAD2_MODE:
+      for (uint8_t mode = 0; mode < 4; ++mode) {
+        if (isTempDpad2ModeAllowed(mode)) add(mode);
       }
       break;
     case QCI_MOUSE_SOURCE:
