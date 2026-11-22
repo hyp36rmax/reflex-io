@@ -157,7 +157,13 @@ class TwinStickRemapTests(unittest.TestCase):
         self.assertIn("controllerFrameIsDreamcastTwinStick(selectedControllerFrame())", source)
         self.assertIn("*count = sizeof(kDreamcastRemapSlots)", source)
         detection = read("firmware/input/dreamcast/input_dreamcast_debug.cpp")
-        self.assertIn('dreamcastDeviceHasProductName(info, "Twin-Stick")', detection)
+        twin_stick_detection = detection[
+            detection.index("bool dreamcastDeviceIsTwinStickController"):
+            detection.index("\n}\n}  // namespace", detection.index("bool dreamcastDeviceIsTwinStickController"))
+        ]
+        self.assertIn('dreamcastDeviceHasProductName(info, "Twin-Stick")', twin_stick_detection)
+        self.assertIn('dreamcastDeviceHasProductName(info, "Twin Stick")', twin_stick_detection)
+        self.assertIn("info.func_data[0] == kDreamcastTwinStickCapabilityMask", twin_stick_detection)
         self.assertIn("0x0000FEFE", detection)
 
     def test_mixed_port_detection_and_routing_are_frame_scoped(self) -> None:

@@ -91,7 +91,8 @@ bool dreamcastDeviceIsMissionStickController(const MapleDeviceInfo& info) {
 }
 
 bool dreamcastDeviceIsTwinStickController(const MapleDeviceInfo& info) {
-  return dreamcastDeviceHasProductName(info, "Twin-Stick") &&
+  return (dreamcastDeviceHasProductName(info, "Twin-Stick") ||
+          dreamcastDeviceHasProductName(info, "Twin Stick")) &&
          info.func_data[0] == kDreamcastTwinStickCapabilityMask;
 }
 }  // namespace
