@@ -3,9 +3,9 @@
 ## Detection
 
 The Dreamcast profile labels a controller `Twin-Stick` only when Maple reports
-the exact product name `Twin-Stick` and capability mask `0x0000FEFE`. Other
-dual-D-pad devices continue through their existing profile detection, including
-the Mission Stick.
+the product name `Twin-Stick` or `Twin Stick` and the exact capability mask
+`0x0000FEFE`. Other dual-D-pad devices continue through their existing profile
+detection, including the Mission Stick.
 
 ## Routing and defaults
 
@@ -34,6 +34,10 @@ by the selected output. Select confirms the destination; Save writes the
 remaps. Other controller profiles keep their existing physical-button
 destination selection.
 
+When the Hold Start setting is enabled, holding Start alone for 1000 ms on a
+detected Twin Stick sends a brief Home/Guide signal. A short press remains
+Start. Standard Dreamcast controllers do not use this shortcut.
+
 Mixed Dreamcast ports share the Dreamcast input/output remap pair. Automatic
 Twin Stick initialization checks every connected Dreamcast frame. Direction
 and Pause transformations remain gated by each frame's own controller type, so
@@ -48,22 +52,23 @@ existing records continue to load through the existing remap migration path.
 
 ## Validation status
 
-- **PASS** — Twin Stick source regression checks and mixed-port frame tests.
-- **PASS** — Existing OLED layout tests.
-- **PASS** — `pio run -e classic2usb`; see the current build details below.
-- **NOT RUN** — Physical HKT-7500, Windows XInput/DInput reports, flash restore,
-  and hot-plug hardware validation.
+- **PASS** — HKT-7500 identification and D-pad 2 routing in physical UAT.
+- **PASS** — 8 Twin Stick regression tests and 11 OLED layout tests.
+- **PASS** — Classic2USB build at `f4cff076`; this build predates the Twin Stick-
+  only Start hold shortcut added in `6854deb`.
+- **NOT RUN** — Physical validation of the Start hold shortcut in a firmware
+  build containing `6854deb`.
 
-No hardware has been flashed. Mixed-port and remap tests are host-side tests;
-they do not replace Windows input-report or physical controller validation.
+Host-side mixed-port and remap tests do not replace Windows input-report
+validation.
 
-## Current build
+## Last validated build before the Start hold change
 
 - Command: `PLATFORMIO_CORE_DIR=/tmp/reflex-platformio /tmp/reflex-pio312/bin/pio run -e classic2usb`
 - Result: **PASS**
-- UF2: `.pio/build/classic2usb/firmware.uf2` (3,681,792 bytes)
-- SHA-256: `04a7a80201e9bcea8c7ec1515244ba1094ecd73bcbea9aaad40b76cb5ce211c6`
-- Memory: 187,308 / 262,144 bytes RAM (71.5%); 1,828,684 / 2,068,480 bytes flash (88.4%)
+- UF2: `.pio/build/classic2usb/firmware.uf2` (3,682,816 bytes)
+- SHA-256: `7e2afbae9a5aac1af8649888c95340f909e7c8398602fc717d3246aa217d9b15`
+- Memory: 187,308 / 262,144 bytes RAM (71.5%); 1,829,204 / 2,068,480 bytes flash (88.4%)
 - Compiler warnings: 8 identical `-Wstringop-overflow` warnings from the bundled
   RP2040 lwIP `dhcp.c` DHCP option writer; no project-source warnings.
 
