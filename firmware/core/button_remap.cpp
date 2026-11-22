@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "controller_selection_state.h"
+#include "dreamcast_twin_stick.h"
 #include "eeprom_helper.h"
 #include "n64_assignment_runtime.h"
 #include "settings_store.h"
@@ -378,13 +379,34 @@ const char* remapDpadName(uint8_t slot) {
   return remapSlotIsDpad(slot) ? remap_button_names[slot] : nullptr;
 }
 
-uint8_t nextRemapTarget(DeviceEnum mode, uint8_t source, uint8_t current, bool forward) {
+uint8_t nextRemapTarget(DeviceEnum mode, outputMode_t output, uint8_t source,
+                        uint8_t current, bool forward) {
 #if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
   // Cabinet rows step through actions, not the controller's own buttons.
   if (usb2db15ArcadeSessionReady()) {
     return usb2db15ArcadeNextBinding(source, current, forward);
   }
 #endif
+  if (mode == RZORD_DREAMCAST && deviceMode == mode &&
+      selectedControllerFrame().connected &&
+      controllerFrameIsDreamcastTwinStick(selectedControllerFrame())) {
+    const uint8_t outputCount = remapOutputFamily(output) == n64_assignment::Family::DInput
+        ? 19 : 14;
+    const uint8_t count = outputCount + (remapSlotIsDpad(source) ? 1 : 0);
+    int8_t index = forward ? -1 : 0;
+    for (uint8_t i = 0; i < count; ++i) {
+      const uint8_t candidate = i < outputCount ? i : source;
+      if (candidate == current) { index = i; break; }
+    }
+    for (uint8_t step = 0; step < count; ++step) {
+      index = forward ? (int8_t)((index + 1) % count)
+                      : (int8_t)((index + count - 1) % count);
+      const uint8_t candidate = index < outputCount ? (uint8_t)index : source;
+      if (remapValueAllowed(mode, source, candidate) &&
+          strcmp(remapOutputButtonName(output, candidate), "--") != 0) return candidate;
+    }
+    return current;
+  }
   const uint8_t count = getRemapButtonCount(mode);
   if (count == 0) return current;
   uint8_t display = getRemapButtonDisplayIndex(mode, current);

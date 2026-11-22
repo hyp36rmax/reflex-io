@@ -73,12 +73,12 @@ inline void apply_xinput_dpad_and_stick_modes(uint8_t port, const controller_sta
       report.dpad_left |= d2.left;
       report.dpad_right |= d2.right;
     } else if (mode == DPAD_MODE_LEFT_STICK) {
-      lx = dreamcastTwinStickAxis(d2.left, d2.right, 32767);
-      ly = dreamcastTwinStickAxis(d2.up, d2.down, 32767);
+      if (d2.left || d2.right) lx = dreamcastTwinStickAxis(d2.left, d2.right, 32767);
+      if (d2.up || d2.down) ly = dreamcastTwinStickAxis(d2.up, d2.down, 32767);
       if (stick_invert & 0x01) ly = -ly;
     } else if (mode == DPAD_MODE_RIGHT_STICK) {
-      rx = dreamcastTwinStickAxis(d2.left, d2.right, 32767);
-      ry = dreamcastTwinStickAxis(d2.up, d2.down, 32767);
+      if (d2.left || d2.right) rx = dreamcastTwinStickAxis(d2.left, d2.right, 32767);
+      if (d2.up || d2.down) ry = dreamcastTwinStickAxis(d2.up, d2.down, 32767);
       if (stick_invert & 0x02) ry = -ry;
     }
   }

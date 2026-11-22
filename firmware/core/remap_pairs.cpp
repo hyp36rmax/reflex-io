@@ -34,22 +34,22 @@ bool selectedDreamcastTwinStick() {
 }
 
 bool setDreamcastTwinStickDefaults(uint8_t* remaps, outputMode_t selected) {
-  bool changed = false;
-  if (remaps[DREAMCAST_TWIN_STICK_MODE_SLOT] < DREAMCAST_TWIN_STICK_MODE_BASE ||
-      remaps[DREAMCAST_TWIN_STICK_MODE_SLOT] >= DREAMCAST_TWIN_STICK_MODE_BASE + 4) {
-    remaps[DREAMCAST_TWIN_STICK_MODE_SLOT] =
-        dreamcastTwinStickModeEncoding(DPAD_MODE_BUTTONS);
-    changed = true;
-  }
+  const bool uninitialized =
+      remaps[DREAMCAST_TWIN_STICK_MODE_SLOT] < DREAMCAST_TWIN_STICK_MODE_BASE ||
+      remaps[DREAMCAST_TWIN_STICK_MODE_SLOT] >= DREAMCAST_TWIN_STICK_MODE_BASE + 4;
+  if (!uninitialized) return false;
+
+  remaps[DREAMCAST_TWIN_STICK_MODE_SLOT] =
+      dreamcastTwinStickModeEncoding(DPAD_MODE_BUTTONS);
   const outputMode_t output = remapPairOutputFor(selected);
-  if (output == OUTPUT_XINPUT || output == OUTPUT_XINPUT2P) {
-    if (remaps[16] == 16) { remaps[16] = 4; changed = true; }  // D-Pad 2 Up -> LB
-    if (remaps[14] == 14) { remaps[14] = 5; changed = true; }  // D-Pad 2 Down -> RB
-    if (remaps[17] == 17) { remaps[17] = 8; changed = true; }  // D-Pad 2 Left -> LS
-    if (remaps[18] == 18) { remaps[18] = 9; changed = true; }  // D-Pad 2 Right -> RS
-    if (remaps[15] == 15) { remaps[15] = 11; changed = true; } // Pause (D) -> Back
+  if (output == OUTPUT_XINPUT || output == OUTPUT_XINPUTW || output == OUTPUT_XINPUT2P) {
+    remaps[16] = 4;   // D-Pad 2 Up -> LB
+    remaps[14] = 5;   // D-Pad 2 Down -> RB
+    remaps[17] = 8;   // D-Pad 2 Left -> LS
+    remaps[18] = 9;   // D-Pad 2 Right -> RS
+    remaps[15] = 11;  // Pause (D) -> Back
   }
-  return changed;
+  return true;
 }
 
 #if !ADAPT_REMAPS_PER_OUTPUT

@@ -76,7 +76,7 @@ void ButtonRemapMenu::clearRemaps() {
     temp_remap[DREAMCAST_TWIN_STICK_MODE_SLOT] =
         dreamcastTwinStickModeEncoding(DPAD_MODE_BUTTONS);
     const outputMode_t output = remapPairOutputFor(configuredOutputMode);
-    if (output == OUTPUT_XINPUT || output == OUTPUT_XINPUT2P) {
+    if (output == OUTPUT_XINPUT || output == OUTPUT_XINPUTW || output == OUTPUT_XINPUT2P) {
       temp_remap[16] = 4;
       temp_remap[14] = 5;
       temp_remap[17] = 8;
@@ -89,6 +89,19 @@ void ButtonRemapMenu::clearRemaps() {
 
 void ButtonRemapMenu::navigate(bool reverse) {
   if (state == REMAP_EDIT_SOURCE) {
+    if (active_mode == RZORD_DREAMCAST && deviceMode == active_mode &&
+        selectedControllerFrame().connected &&
+        controllerFrameIsDreamcastTwinStick(selectedControllerFrame())) {
+      const uint8_t source = getRemapButtonSlot(active_mode, edit_source_index);
+      if (source != 0xFF) {
+        // When both D-pads share a destination, D-pad 2 is the active editor
+        // target; its current assignment is advanced independently.
+        temp_remap[source] = nextRemapTarget(active_mode, get_effective_output_mode(),
+            source, temp_remap[source], !reverse);
+        needs_redraw = true;
+      }
+      return;
+    }
     state = REMAP_NAVIGATE;
     needs_redraw = true;
     return;
@@ -130,9 +143,11 @@ uint8_t ButtonRemapMenu::select() {
 
 void ButtonRemapMenu::setDestination(uint8_t button_index) {
   if (state != REMAP_EDIT_SOURCE) return;
-  if (getRemapButtonDisplayIndex(active_mode, button_index) == 0xFF) return;
-
   const uint8_t source_slot = getRemapButtonSlot(active_mode, edit_source_index);
+  const bool twinStick = active_mode == RZORD_DREAMCAST && deviceMode == active_mode &&
+      selectedControllerFrame().connected &&
+      controllerFrameIsDreamcastTwinStick(selectedControllerFrame());
+  if (!twinStick && getRemapButtonDisplayIndex(active_mode, button_index) == 0xFF) return;
   if (source_slot == 0xFF || !remapValueAllowed(active_mode, source_slot, button_index)) return;
 
   temp_remap[source_slot] = button_index;

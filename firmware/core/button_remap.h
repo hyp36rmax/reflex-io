@@ -94,9 +94,10 @@ inline bool remapValueAllowed(DeviceEnum mode, uint8_t source, uint8_t value) {
   if (remapSlotIsDpad(value)) return value == source;
   return true;
 }
-// The next allowed controller-to-controller target for a remap row, among the
-// input's own buttons (and, for a direction, itself).
-uint8_t nextRemapTarget(DeviceEnum mode, uint8_t source, uint8_t current, bool forward);
+// Selects a valid destination. Twin Stick destinations are output buttons,
+// independent of the input's physical source list.
+uint8_t nextRemapTarget(DeviceEnum mode, outputMode_t output, uint8_t source,
+                        uint8_t current, bool forward);
 // "Up", "Down", "Left", "Right" for a D-pad slot, else nullptr.
 const char* remapDpadName(uint8_t slot);
 

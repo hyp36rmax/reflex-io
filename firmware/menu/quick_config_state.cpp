@@ -184,6 +184,7 @@ void QuickConfigMenu::restageRemapsForOutput() {
   uint8_t remaps[REMAP_MAX_BUTTONS];
   readRemapsForPair(temp_input_mode, temp_output_mode, remaps);
   transaction.resetRemaps(remaps);
+  temp_dpad2_mode = dreamcastTwinStickModeFromRemaps(remaps);
 }
 
 bool QuickConfigMenu::saveStagedRemaps() {

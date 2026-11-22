@@ -3,7 +3,13 @@
 #include <cstring>
 
 #include "../../core/button_map_mode.h"
+#ifdef __cplusplus
+extern "C++" {
+#endif
 #include "../../core/button_remap.h"
+#ifdef __cplusplus
+}
+#endif
 #include "../../core/dreamcast_twin_stick.h"
 #include "../../core/negcon_input_modes.h"
 #include "../../core/rotary_settings.h"
@@ -305,19 +311,21 @@ inline void __not_in_flash_func(map_hid_output)(uint8_t port) {
   if (twinStick) {
     const DreamcastTwinStickDirections d2 = dreamcastTwinStickDpad2(frame);
     if (twinStickDpad2Mode == DPAD_MODE_DPAD) {
-      _hidgp.hat = effective_dpad_mode == DPAD_MODE_BUTTONS
-          ? dreamcastTwinStickHat(d2.up, d2.down, d2.left, d2.right)
-          : dreamcastTwinStickHat(frame.PAD_U || d2.up,
+      // Combine sources only when both target the native hat. Otherwise D2
+      // owns the hat and must not inherit D1's analog/button routing.
+      _hidgp.hat = effective_dpad_mode == DPAD_MODE_DPAD
+          ? dreamcastTwinStickHat(frame.PAD_U || d2.up,
                 frame.PAD_D || d2.down, frame.PAD_L || d2.left,
-                frame.PAD_R || d2.right);
+                frame.PAD_R || d2.right)
+          : dreamcastTwinStickHat(d2.up, d2.down, d2.left, d2.right);
     } else if (twinStickDpad2Mode == DPAD_MODE_LEFT_STICK) {
-      lx = dreamcastTwinStickAxis(d2.left, d2.right, 127);
-      ly = dreamcastTwinStickAxis(d2.up, d2.down, 127);
-      _hidgp.hat = 0x8;
+      // D-Pad 2 wins while active if both sources target the same stick;
+      // otherwise D-Pad 1's current value remains in place.
+      if (d2.left || d2.right) lx = dreamcastTwinStickAxis(d2.left, d2.right, 127);
+      if (d2.up || d2.down) ly = dreamcastTwinStickAxis(d2.up, d2.down, 127);
     } else if (twinStickDpad2Mode == DPAD_MODE_RIGHT_STICK) {
-      rx = dreamcastTwinStickAxis(d2.left, d2.right, 127);
-      ry = dreamcastTwinStickAxis(d2.up, d2.down, 127);
-      _hidgp.hat = 0x8;
+      if (d2.left || d2.right) rx = dreamcastTwinStickAxis(d2.left, d2.right, 127);
+      if (d2.up || d2.down) ry = dreamcastTwinStickAxis(d2.up, d2.down, 127);
     }
   }
 #endif

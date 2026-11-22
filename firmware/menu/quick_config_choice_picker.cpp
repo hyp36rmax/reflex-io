@@ -199,7 +199,7 @@ uint8_t QuickConfigMenu::fillRemapChoices() {
   if (usb2db15ArcadeSessionReady()) before_first = 0xFF;
 #endif
   return walkChoices(remaps[source], before_first, choice_values, kChoiceCapacity, [&] {
-    remaps[source] = nextRemapTarget(temp_input_mode, source, remaps[source], true);
+    remaps[source] = nextRemapTarget(temp_input_mode, output, source, remaps[source], true);
   });
 }
 
