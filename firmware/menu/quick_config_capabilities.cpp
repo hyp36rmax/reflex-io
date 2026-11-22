@@ -324,6 +324,19 @@ void QuickConfigMenu::cycleTempDpadMode(bool forward) {
   temp_dpad_mode = DPAD_MODE_DPAD;
 }
 
+void QuickConfigMenu::cycleTempDpad2Mode(bool forward) {
+  uint8_t value = temp_dpad2_mode;
+  for (uint8_t attempts = 0; attempts < 4; ++attempts) {
+    value = forward ? static_cast<uint8_t>((value + 1) % 4)
+                    : (value == 0 ? 3 : static_cast<uint8_t>(value - 1));
+    if (isTempDpadModeAllowed(value)) {
+      temp_dpad2_mode = value;
+      return;
+    }
+  }
+  temp_dpad2_mode = DPAD_MODE_BUTTONS;
+}
+
 uint8_t QuickConfigMenu::getStickInvertMax(DeviceEnum mode) {
   return hasRightStick(mode) ? 3 : 1;
 }

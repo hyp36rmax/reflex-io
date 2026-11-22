@@ -12,6 +12,7 @@
 #include "controller_frame_state.h"
 #include "device_runtime_state.h"
 #include "controller_state.h"
+#include "dreamcast_twin_stick.h"
 #include "n64_button_assignment.h"
 #include "remap_table.h"
 #include "../output/output_mode.h"
@@ -79,6 +80,11 @@ inline bool isN64StoredAssignment(DeviceEnum mode, uint8_t slot, uint8_t value) 
 // combined bindings keep their own encodings.
 inline bool remapValueAllowed(DeviceEnum mode, uint8_t source, uint8_t value) {
   if (source >= REMAP_MAX_BUTTONS) return false;
+#ifdef ENABLE_INPUT_DREAMCAST
+  if (mode == RZORD_DREAMCAST && source == DREAMCAST_TWIN_STICK_MODE_SLOT &&
+      value >= DREAMCAST_TWIN_STICK_MODE_BASE &&
+      value < DREAMCAST_TWIN_STICK_MODE_BASE + 4) return true;
+#endif
   if (isN64StoredAssignment(mode, source, value)) return true;
 #if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
   if ((usb2db15_bindings::allowedSources & (1u << source)) && usb2db15_bindings::isCombined(value)) return true;

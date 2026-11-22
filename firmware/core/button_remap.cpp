@@ -200,6 +200,12 @@ constexpr uint8_t kDreamcastRemapSlots[] = {
   REMAP_SLOT_A, REMAP_SLOT_B, REMAP_SLOT_X, REMAP_SLOT_Y,
   REMAP_SLOT_L2, REMAP_SLOT_R2, REMAP_SLOT_START REMAP_DPAD_ROWS
 };
+constexpr uint8_t kDreamcastTwinStickRemapSlots[] = {
+  REMAP_SLOT_A, REMAP_SLOT_B, REMAP_SLOT_X, REMAP_SLOT_Y,
+  REMAP_SLOT_L2, REMAP_SLOT_R2, REMAP_SLOT_START,
+  REMAP_SLOT_EXTRA0, REMAP_SLOT_EXTRA1, REMAP_SLOT_EXTRA2,
+  REMAP_SLOT_EXTRA3, REMAP_SLOT_EXTRA4 REMAP_DPAD_ROWS
+};
 #endif
 
 #ifdef ENABLE_INPUT_WII
@@ -332,6 +338,11 @@ const uint8_t* getRemapSlotTable(DeviceEnum mode, uint8_t* count) {
     #endif
     #ifdef ENABLE_INPUT_DREAMCAST
     case RZORD_DREAMCAST:
+      if (mode == deviceMode && selectedControllerFrame().connected &&
+          controllerFrameIsDreamcastTwinStick(selectedControllerFrame())) {
+        *count = sizeof(kDreamcastTwinStickRemapSlots) / sizeof(kDreamcastTwinStickRemapSlots[0]);
+        return kDreamcastTwinStickRemapSlots;
+      }
       *count = sizeof(kDreamcastRemapSlots) / sizeof(kDreamcastRemapSlots[0]);
       return kDreamcastRemapSlots;
     #endif
@@ -878,6 +889,11 @@ const char* getRemapButtonName(DeviceEnum mode, uint8_t index) {
         case 4: return "L";
         case 5: return "R";
         case 6: return "Sta";
+        case 7: return "D2 Up";
+        case 8: return "D2 Dn";
+        case 9: return "D2 Lt";
+        case 10: return "D2 Rt";
+        case 11: return "Pause(D)";
       }
       break;
     #endif

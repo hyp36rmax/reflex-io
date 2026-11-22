@@ -245,6 +245,7 @@ uint8_t QuickConfigMenu::fillChoiceValues(QuickConfigItem item, uint8_t* values)
       addRange(0, max_switch_device_selection_for_input_mode(temp_input_mode) + 1);
       break;
     case QCI_DPAD_BUTTONS:
+    case QCI_DPAD2_MODE:
       for (uint8_t mode = 0; mode < 4; ++mode) {
         if (isTempDpadModeAllowed(mode)) add(mode);
       }
@@ -294,6 +295,7 @@ uint8_t QuickConfigMenu::swapChoiceValue(uint8_t value) {
     case QCI_JOGCON_FORCE: return swapStaged(temp_jogcon_force, value);
     case QCI_NSO_SPECIAL: return swapStaged(temp_nso_special, value);
     case QCI_DPAD_BUTTONS: return swapStaged(temp_dpad_mode, value);
+    case QCI_DPAD2_MODE: return swapStaged(temp_dpad2_mode, value);
     case QCI_MOUSE_SOURCE: return swapStaged(temp_pointer_source, value);
 #ifdef ENABLE_INPUT_PSX
     case QCI_NEGCON_GAIN: return swapStaged(temp_negcon_gain, value);

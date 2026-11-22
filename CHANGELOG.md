@@ -4,6 +4,11 @@ User-facing changes to the Classic2USB firmware and its tools. Versions follow
 the scheme in the README's Versioning section. The release package's
 `release.md` repeats the section for its version.
 
+## Unreleased
+
+- Sega Dreamcast HKT-7500 Twin Stick support with separate D-pad routing and
+  remappable Pause (D).
+
 ## 1.0.1
 
 ### Inputs

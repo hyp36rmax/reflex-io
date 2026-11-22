@@ -1,4 +1,6 @@
 #pragma once
+#include "../../core/button_remap.h"
+#include "../../core/dreamcast_twin_stick.h"
 #if defined(ADAPT_CAP_DIRECTIONAL_HOTKEYS)
 #include "../output_directional_hotkeys.h"
 #endif
@@ -61,6 +63,26 @@ inline void apply_xinput_dpad_and_stick_modes(uint8_t port, const controller_sta
 
   if (stick_invert & 0x01) ly = -ly;
   if (stick_invert & 0x02) ry = -ry;
+#ifdef ENABLE_INPUT_DREAMCAST
+  if (deviceMode == RZORD_DREAMCAST && controllerFrameIsDreamcastTwinStick(frame)) {
+    const uint8_t mode = dreamcastTwinStickModeFromRemaps(active_remaps);
+    const DreamcastTwinStickDirections d2 = dreamcastTwinStickDpad2(frame);
+    if (mode == DPAD_MODE_DPAD) {
+      report.dpad_up |= d2.up;
+      report.dpad_down |= d2.down;
+      report.dpad_left |= d2.left;
+      report.dpad_right |= d2.right;
+    } else if (mode == DPAD_MODE_LEFT_STICK) {
+      lx = dreamcastTwinStickAxis(d2.left, d2.right, 32767);
+      ly = dreamcastTwinStickAxis(d2.up, d2.down, 32767);
+      if (stick_invert & 0x01) ly = -ly;
+    } else if (mode == DPAD_MODE_RIGHT_STICK) {
+      rx = dreamcastTwinStickAxis(d2.left, d2.right, 32767);
+      ry = dreamcastTwinStickAxis(d2.up, d2.down, 32767);
+      if (stick_invert & 0x02) ry = -ry;
+    }
+  }
+#endif
 }
 
 inline void map_xinput_output_to_report(uint8_t port, xinput_report_t& report) {

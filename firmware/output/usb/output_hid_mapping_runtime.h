@@ -3,6 +3,8 @@
 #include <cstring>
 
 #include "../../core/button_map_mode.h"
+#include "../../core/button_remap.h"
+#include "../../core/dreamcast_twin_stick.h"
 #include "../../core/negcon_input_modes.h"
 #include "../../core/rotary_settings.h"
 #include "../../core/rotary_motion_state.h"
@@ -161,21 +163,43 @@ inline uint32_t mapPs3GenericHidButtons(uint32_t buttons) {
 inline void __not_in_flash_func(map_hid_output)(uint8_t port) {
   const controller_state_t& frame = controllerFrameConst(port);
   const outputMode_t effectiveOutputMode = get_effective_output_mode();
+#ifdef ENABLE_INPUT_DREAMCAST
+  const bool twinStick = deviceMode == RZORD_DREAMCAST &&
+                         controllerFrameIsDreamcastTwinStick(frame);
+  const uint8_t twinStickDpad2Mode = twinStick
+      ? dreamcastTwinStickModeFromRemaps(active_remaps) : DPAD_MODE_BUTTONS;
+#else
+  const bool twinStick = false;
+  const uint8_t twinStickDpad2Mode = DPAD_MODE_BUTTONS;
+#endif
   if ((effectiveOutputMode == OUTPUT_HID || effectiveOutputMode == OUTPUT_MISTER) &&
       dpad_mode == DPAD_MODE_DPAD &&
+      !(twinStick && (twinStickDpad2Mode == DPAD_MODE_LEFT_STICK ||
+                      twinStickDpad2Mode == DPAD_MODE_RIGHT_STICK)) &&
       !frame.HAS_ANALOG_STICK_MAIN &&
       !frame.HAS_ANALOG_STICK_AUX &&
       !frame.HAS_ANALOG_TRIGGERS &&
       !frame.HAS_ANALOG_DPAD &&
       !frame.HAS_ANALOG_MAIN_BUTTONS) {
-    const uint32_t buttons = applyPositionButtonMapToOutputButtons(
+    uint32_t buttons = applyPositionButtonMapToOutputButtons(
       applyZButtonOutputMode(frame.digital_buttons, frame));
+#ifdef ENABLE_INPUT_DREAMCAST
+    if (twinStick && twinStickDpad2Mode != DPAD_MODE_BUTTONS) {
+      buttons &= ~((uint32_t)0x0F << 14);
+    }
+#endif
     // The hat cannot show opposed directions, so a dance pad keeps them as
     // buttons, as the analog path does for Up+Down.
     const bool opposed = (frame.PAD_U && frame.PAD_D) || (frame.PAD_L && frame.PAD_R);
     _hidgp.buttons = opposed
       ? buttons : buttons & ~(INPUT_PAD_U | INPUT_PAD_D | INPUT_PAD_L | INPUT_PAD_R);
     _hidgp.hat = directionsToHat(port);
+    if (twinStick && twinStickDpad2Mode == DPAD_MODE_DPAD) {
+      const DreamcastTwinStickDirections d2 = dreamcastTwinStickDpad2(frame);
+      _hidgp.hat = dreamcastTwinStickHat(frame.PAD_U || d2.up,
+          frame.PAD_D || d2.down, frame.PAD_L || d2.left,
+          frame.PAD_R || d2.right);
+    }
     _hidgp.x = 0x80;
     _hidgp.y = 0x80;
     _hidgp.z = 0x80;
@@ -225,6 +249,11 @@ inline void __not_in_flash_func(map_hid_output)(uint8_t port) {
 
   uint32_t outputButtons = applyPositionButtonMapToOutputButtons(
     applyZButtonOutputMode(frame.digital_buttons, frame));
+#ifdef ENABLE_INPUT_DREAMCAST
+  if (twinStick && twinStickDpad2Mode != DPAD_MODE_BUTTONS) {
+    outputButtons &= ~((uint32_t)0x0F << 14);
+  }
+#endif
   outputButtons = output_apply_n64_c_buttons_to_face_buttons(outputButtons, frame);
   // Only HID/MiSTer carry trigger axes. The generic PS3 report has none, so
   // analog-only triggers stay digital L2/R2 there in every trigger mode.
@@ -271,6 +300,27 @@ inline void __not_in_flash_func(map_hid_output)(uint8_t port) {
     }
     _hidgp.hat = 0x8;
   }
+
+#ifdef ENABLE_INPUT_DREAMCAST
+  if (twinStick) {
+    const DreamcastTwinStickDirections d2 = dreamcastTwinStickDpad2(frame);
+    if (twinStickDpad2Mode == DPAD_MODE_DPAD) {
+      _hidgp.hat = effective_dpad_mode == DPAD_MODE_BUTTONS
+          ? dreamcastTwinStickHat(d2.up, d2.down, d2.left, d2.right)
+          : dreamcastTwinStickHat(frame.PAD_U || d2.up,
+                frame.PAD_D || d2.down, frame.PAD_L || d2.left,
+                frame.PAD_R || d2.right);
+    } else if (twinStickDpad2Mode == DPAD_MODE_LEFT_STICK) {
+      lx = dreamcastTwinStickAxis(d2.left, d2.right, 127);
+      ly = dreamcastTwinStickAxis(d2.up, d2.down, 127);
+      _hidgp.hat = 0x8;
+    } else if (twinStickDpad2Mode == DPAD_MODE_RIGHT_STICK) {
+      rx = dreamcastTwinStickAxis(d2.left, d2.right, 127);
+      ry = dreamcastTwinStickAxis(d2.up, d2.down, 127);
+      _hidgp.hat = 0x8;
+    }
+  }
+#endif
 
   if (stick_invert & 0x01) ly = -ly;
   if (stick_invert & 0x02) ry = -ry;

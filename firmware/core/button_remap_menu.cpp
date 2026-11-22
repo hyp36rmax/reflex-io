@@ -2,6 +2,8 @@
 #include "button_remap.h"
 #include "controller_button_pressure.h"
 #include "controller_selection_state.h"
+#include "remap_pairs.h"
+#include "../output/output_runtime_state.h"
 #include "../input/shared/input_button_bits.h"
 #include "../menu/menu_list_navigation.h"
 #if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
@@ -68,6 +70,19 @@ void ButtonRemapMenu::getRemaps(uint8_t* data) {
 void ButtonRemapMenu::clearRemaps() {
   for (uint8_t i = 0; i < REMAP_MAX_BUTTONS; i++) {
     temp_remap[i] = i;
+  }
+  if (active_mode == RZORD_DREAMCAST && selectedControllerFrame().connected &&
+      controllerFrameIsDreamcastTwinStick(selectedControllerFrame())) {
+    temp_remap[DREAMCAST_TWIN_STICK_MODE_SLOT] =
+        dreamcastTwinStickModeEncoding(DPAD_MODE_BUTTONS);
+    const outputMode_t output = remapPairOutputFor(configuredOutputMode);
+    if (output == OUTPUT_XINPUT || output == OUTPUT_XINPUT2P) {
+      temp_remap[16] = 4;
+      temp_remap[14] = 5;
+      temp_remap[17] = 8;
+      temp_remap[18] = 9;
+      temp_remap[15] = 11;
+    }
   }
   needs_redraw = true;
 }
@@ -170,12 +185,27 @@ void ButtonRemapMenu::applyRemap(controller_state_t& report, const uint8_t* rema
   original[12] = report.HOME;
   original[13] = report.CAPTURE;
   const bool remapJaguarExtras = deviceMode == RZORD_JAGUAR;
+  const bool twinStick = deviceMode == RZORD_DREAMCAST &&
+      controllerFrameIsDreamcastTwinStick(report);
+  const bool remapDreamcastExtras = twinStick;
+  const uint8_t twinStickDpad2Mode = twinStick
+      ? dreamcastTwinStickModeFromRemaps(remap) : DPAD_MODE_BUTTONS;
   if (remapJaguarExtras) {
     original[14] = (report.EXTRA & (1u << 1)) != 0;
     original[15] = (report.EXTRA & (1u << 4)) != 0;
     original[16] = (report.EXTRA & (1u << 0)) != 0;
     original[17] = (report.EXTRA & (1u << 2)) != 0;
     original[18] = (report.EXTRA & (1u << 3)) != 0;
+  }
+  if (remapDreamcastExtras) {
+    original[14] = (report.EXTRA & (1u << 1)) != 0;
+    original[15] = (report.EXTRA & (1u << 4)) != 0;
+    original[16] = (report.EXTRA & (1u << 0)) != 0;
+    original[17] = (report.EXTRA & (1u << 2)) != 0;
+    original[18] = (report.EXTRA & (1u << 3)) != 0;
+    if (twinStick && twinStickDpad2Mode != DPAD_MODE_BUTTONS) {
+      original[14] = original[16] = original[17] = original[18] = 0;
+    }
   }
 #if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
   // Arcade source IDs preserve GL/GR at 14/15 and add C/Z at 16/17.
@@ -226,6 +256,14 @@ void ButtonRemapMenu::applyRemap(controller_state_t& report, const uint8_t* rema
     report.EXTRA &= (uint16_t)~((1u << 0) | (1u << 1) | (1u << 2) |
                                 (1u << 3) | (1u << 4));
   }
+  if (remapDreamcastExtras) {
+    if (twinStick && twinStickDpad2Mode != DPAD_MODE_BUTTONS) {
+      report.EXTRA &= (uint16_t)~(1u << 4);
+    } else {
+      report.EXTRA &= (uint16_t)~((1u << 0) | (1u << 1) | (1u << 2) |
+                                  (1u << 3) | (1u << 4));
+    }
+  }
 #if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
   report.EXTRA &= (uint16_t)~((1u << 1) | (1u << 2) | (1u << 3) | (1u << 4));
 #endif
@@ -269,19 +307,19 @@ void ButtonRemapMenu::applyRemap(controller_state_t& report, const uint8_t* rema
           case 12: report.HOME = 1; break;
           case 13: report.CAPTURE = 1; break;
           case 14:
-            if (remapJaguarExtras) report.EXTRA |= (1u << 1);
+            if (remapJaguarExtras || remapDreamcastExtras) report.EXTRA |= (1u << 1);
             break;
           case 15:
-            if (remapJaguarExtras) report.EXTRA |= (1u << 4);
+            if (remapJaguarExtras || remapDreamcastExtras) report.EXTRA |= (1u << 4);
             break;
           case 16:
-            if (remapJaguarExtras) report.EXTRA |= (1u << 0);
+            if (remapJaguarExtras || remapDreamcastExtras) report.EXTRA |= (1u << 0);
             break;
           case 17:
-            if (remapJaguarExtras) report.EXTRA |= (1u << 2);
+            if (remapJaguarExtras || remapDreamcastExtras) report.EXTRA |= (1u << 2);
             break;
           case 18:
-            if (remapJaguarExtras) report.EXTRA |= (1u << 3);
+            if (remapJaguarExtras || remapDreamcastExtras) report.EXTRA |= (1u << 3);
             break;
           default:
             // A direction left as itself (validation allows no other D-pad target).
