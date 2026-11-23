@@ -2,18 +2,16 @@
 
 ## Detection
 
-The Dreamcast profile labels a controller `Twin-Stick` only when Maple reports
-the product name `Twin-Stick` or `Twin Stick` and the exact capability mask
-`0x0000FEFE`. Other dual-D-pad devices continue through their existing profile
-detection, including the Mission Stick.
+Twin Stick identification requires Maple product name `Twin-Stick` or
+`Twin Stick` plus capability mask `0x0000FEFE`. Mission Stick and other
+dual-D-pad devices retain existing detection behavior.
 
 ## Routing and defaults
 
-D-pad 1 remains the Dreamcast native D-pad and uses the existing D-pad mode
-setting. D-pad 2 keeps its four directions in the Dreamcast `EXTRA` bits until
-the final output mapping stage. Its mode is independently configurable as
-D-pad, Left Stick, Right Stick, or Buttons. Digital stick routing uses full
-scale; an opposing pair on one axis centers that axis.
+D-pad 1 follows standard Dreamcast routing. D-pad 2 directions remain in
+Dreamcast `EXTRA` bits until output mapping. Each D-pad supports independent
+routing to D-pad, Left Stick, Right Stick, or Buttons. Digital-to-analog routing
+uses full scale; opposing directions center corresponding axes.
 
 | Input | XInput | DInput / generic HID |
 | --- | --- | --- |
@@ -25,52 +23,51 @@ scale; an opposing pair on one axis centers that axis.
 | Pause (D) | Back | Button 19 |
 | Start | Start | Existing Start |
 
-The existing A/B/X/Y and trigger/thumb assignments are unchanged. Twin Stick
-direction and Pause assignments are available in the OLED remap menu and
-Adapt.html. Quick Config exposes D-pad 1 and D-pad 2 routing when the detected
-controller is the HKT-7500. In the OLED remap menu, select a Twin Stick source,
-then use the menu navigation controls to cycle through destinations supported
-by the selected output. Select confirms the destination; Save writes the
-remaps. Other controller profiles keep their existing physical-button
+Existing A/B/X/Y and trigger/thumb assignments remain unchanged.
+OLED remapping and `Adapt.html` expose D-pad 2 directions and Pause (D)
+when HKT-7500 is detected. Quick Config offers separate D-pad routing.
+
+OLED remapping: select source, cycle available output destinations, confirm
+selection, then Save. Standard Dreamcast pads retain physical-button
 destination selection.
 
-When the Hold Start setting is enabled, holding Start alone for 1000 ms on a
-detected Twin Stick sends a brief Home/Guide signal. A short press remains
-Start. Standard Dreamcast controllers do not use this shortcut.
+With Hold Start enabled, holding Start alone for 1000 ms sends Home/Guide.
+Short press sends Start. Standard Dreamcast controllers retain normal Start
+behavior.
 
-Mixed Dreamcast ports share the Dreamcast input/output remap pair. Automatic
-Twin Stick initialization checks every connected Dreamcast frame. Direction
-and Pause transformations remain gated by each frame's own controller type, so
-a standard pad on another port does not receive Twin Stick inputs.
+Both Dreamcast ports share one input/output remap pair. Initialization scans
+connected frames for HKT-7500. Directional and Pause processing stays scoped
+to identified Twin Stick frames; standard pads do not receive Twin Stick
+extra inputs.
 
 ## Storage
 
-D-pad 2 mode uses Dreamcast remap slot 13, which is unused by Dreamcast input.
-The setting is encoded in that existing slot. Direction and Pause assignments
-reuse slots 14–18. Remap table widths and flash record versions are unchanged;
-existing records continue to load through the existing remap migration path.
+Dreamcast remap slot 13 stores D-pad 2 mode. Slots 14–18 hold directional
+and Pause assignments. Remap table sizes, flash record versions, and
+migration paths remain unchanged.
 
 ## Validation status
 
-All validation gates have been completed, including physical HKT-7500 testing.
+Physical HKT-7500 UAT complete. All validation gates passed.
 
 | Gate | Status | Result |
 | --- | --- | --- |
-| HKT-7500 detection | PASS | Classic2USB identifies the Twin Stick using its Maple product name and capability mask. |
-| D-pad routing | PASS | Both D-pads operate independently. Directional, diagonal, opposing-input, analog-stick, and neutral-release behavior validated. |
-| XInput | PASS | D-pad 2 maps to LB, RB, LS, and RS. Pause (D) maps to Back. Start and existing controls retain their assignments. |
-| DInput | PASS | D-pad 1 uses the POV hat. D-pad 2 uses buttons 15 through 18, and Pause (D) uses button 19. |
-| Start hold shortcut | PASS | The Twin Stick Start hold sends Home/Guide after 1000 ms. A short press remains Start; standard Dreamcast Start behavior is unchanged. |
-| Configuration and persistence | PASS | OLED and WebHID remapping, default restoration, saved mappings across reboot, and output switching validated. |
-| Mixed-port hardware | PASS | Twin Stick and standard Dreamcast controllers validated in both port orders, including disconnect and reconnect. |
-| Twin Stick regression tests | PASS | 8 host-side checks covering routing, defaults, identification, and input behavior. |
-| OLED layout checks | PASS | 11 layout checks completed. |
-| Classic2USB firmware | PASS | PlatformIO build completed; RP2040 UF2 validated. The recorded build measurements appear below. |
-| Firmware 1.0.2 UAT | PASS | Project hardware validation completed. The final 1.0.2 UF2 hash is not included in the earlier build record below. |
+| HKT-7500 detection | PASS | Maple identity and capability mask confirmed on Classic2USB. |
+| D-pad routing | PASS | Independent directions, diagonals, opposing inputs, analog routing, and neutral release confirmed. |
+| XInput | PASS | D-pad 2: LB/RB/LS/RS. Pause (D): Back. Start and existing controls retained. |
+| DInput | PASS | D-pad 1: POV hat. D-pad 2: Buttons 15–18. Pause (D): Button 19. |
+| Start hold | PASS | Hold Start for 1000 ms: Home/Guide. Short press: Start. Standard pad behavior retained. |
+| Configuration | PASS | OLED, WebHID, default restoration, save/reboot persistence, and output switching. |
+| Mixed-port hardware | PASS | Both port orders, disconnect, and reconnect. |
+| Twin Stick regression | PASS | 8 host-side checks for routing, defaults, detection, and input handling. |
+| OLED layout | PASS | 11 checks. |
+| Classic2USB build | PASS | PlatformIO build and RP2040 UF2 checks. |
+| Firmware 1.0.2 UAT | PASS | Hardware validation completed. Latest UF2 checksum not recorded below. |
 
 ## Recorded firmware build
 
-The following measurements are from commit `1f175c2`. They are not a build record for the later 1.0.2 branch head.
+Build measurements from commit `1f175c2`, preceding later 1.0.2 branch
+updates. Values below identify only this recorded build.
 
 - Command: `pio run -e classic2usb` using PlatformIO with Python 3.12
 - Result: PASS
@@ -78,4 +75,4 @@ The following measurements are from commit `1f175c2`. They are not a build recor
 - SHA-256: `fa1e64d396f5d69e8ee53bba6bbf2da43811b24b0a407353b8e013b60b32b3dd`
 - RAM: 187,404 / 262,144 bytes, 71.5%
 - Flash: 1,829,300 / 2,068,480 bytes, 88.4%
-- Warnings: 8 repeated `-Wstringop-overflow` diagnostics in bundled RP2040 lwIP `dhcp.c`; none from project source
+- Warnings: 8 repeated `-Wstringop-overflow` diagnostics in bundled RP2040 lwIP `dhcp.c`; no project-source warnings
