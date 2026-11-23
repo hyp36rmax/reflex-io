@@ -52,28 +52,30 @@ existing records continue to load through the existing remap migration path.
 
 ## Validation status
 
-- **PASS** — HKT-7500 identification and D-pad 2 routing in physical UAT.
-- **PASS** — 8 Twin Stick regression tests; the Classic2USB build ran the 11-test
-  OLED layout guard.
-- **PASS** — Classic2USB build at `1f175c2`, including the Twin Stick-only Start
-  hold shortcut.
-- **NOT RUN** — Physical validation of the Start hold shortcut in this firmware
-  build.
+Results are recorded against the build or hardware session actually tested.
 
-Host-side mixed-port and remap tests do not replace Windows input-report
-validation.
+| Gate | Status | Result |
+| --- | --- | --- |
+| HKT-7500 detection | PASS | Physical Classic2USB testing confirmed Twin Stick identification. |
+| D-pad 2 routing | PASS | D-pad 2 configuration and operation were confirmed during earlier physical testing. Full USB report coverage is not established by this result. |
+| Twin Stick regression tests | PASS | 8 host-side tests covering directional routing, remap defaults, port detection, and input handling. |
+| OLED layout checks | PASS | 11 tests completed during the recorded Classic2USB build. |
+| Classic2USB build | PASS | PlatformIO completed at source commit `1f175c2`. The resulting RP2040 UF2 passed structural checks. |
+| Firmware 1.0.2 build | NEEDS VALIDATION | The branch advanced to `1ec2fa4` for the 1.0.2 version update after the recorded build. Rebuild and record the new UF2 hash before release. |
+| Start hold shortcut | NEEDS VALIDATION | On physical HKT-7500 hardware, confirm that holding Start for 1000 ms sends Home/Guide, a short press sends Start, and standard Dreamcast controllers retain their existing behavior. |
+| USB reports and persistence | NEEDS VALIDATION | Verify XInput LB, RB, LS, RS, and Back; DInput buttons 15 through 19; save and reboot; output switching; and legacy flash migration on hardware. |
+| Mixed-port hardware | NEEDS VALIDATION | Verify both controller port orders and disconnect/reconnect with physical controllers. Mixed-port host tests have passed, but do not establish hardware behavior. |
 
-## Validated build
+The physical results above apply to the earlier tested firmware. Host tests do not replace USB report captures or save and reboot testing.
 
-- Command: `PLATFORMIO_CORE_DIR=/tmp/reflex-platformio /tmp/reflex-pio312/bin/pio run -e classic2usb`
-- Result: **PASS**
-- Source commit: `1f175c2`
-- UF2: `.pio/build/classic2usb/firmware.uf2` (3,682,816 bytes; 7,193 RP2040 UF2 blocks)
+## Recorded firmware build
+
+The following measurements are from commit `1f175c2`. They are not a build record for the later 1.0.2 branch head.
+
+- Command: `pio run -e classic2usb` using PlatformIO with Python 3.12
+- Result: PASS
+- UF2: `.pio/build/classic2usb/firmware.uf2`, 3,682,816 bytes, 7,193 RP2040 UF2 blocks
 - SHA-256: `fa1e64d396f5d69e8ee53bba6bbf2da43811b24b0a407353b8e013b60b32b3dd`
-- Memory: 187,404 / 262,144 bytes RAM (71.5%); 1,829,300 / 2,068,480 bytes flash (88.4%)
-- Compiler warnings: 8 identical `-Wstringop-overflow` warnings from the bundled
-  RP2040 lwIP `dhcp.c` DHCP option writer; no project-source warnings.
-
-Host checks cover direction/source routing, remap initialization and reset
-paths, output-pair persistence calls, and port-scoped Twin Stick detection.
-They do not simulate flash power loss or validate a physical adapter.
+- RAM: 187,404 / 262,144 bytes, 71.5%
+- Flash: 1,829,300 / 2,068,480 bytes, 88.4%
+- Warnings: 8 repeated `-Wstringop-overflow` diagnostics in bundled RP2040 lwIP `dhcp.c`; none from project source
