@@ -40,9 +40,9 @@ No dedicated Twin Stick artwork is included.
 
 ## Validation
 
-Version 1.0.3 source staged on `feature/classic2usb-v1.0.3-guide-hold`,
-based on Classic2USB 1.0.2 Twin Stick implementation. Firmware build, source
-regressions, WebHID read/write tests, and hardware OLED and timing UAT are
-pending. No release has been published. Test Hotkeys On and Off, all six durations, brief Start presses,
-Start+direction combinations, reboot persistence, settings reset, and old
-firmware compatibility.
+Feature implementation lives in `feature/guide-hold-duration` and is integrated
+with Twin Stick support on `develop` for Classic2USB 1.0.3-RC1. Firmware build,
+source regressions, WebHID read/write tests, and hardware OLED and timing UAT
+are pending. No release has been published. Test Hotkeys On and Off, all six
+durations, brief Start presses, Start+direction combinations, reboot persistence,
+settings reset, and old firmware compatibility.

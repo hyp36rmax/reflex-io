@@ -1,4 +1,4 @@
-# Reflex Adapt Classic2USB 1.0.3
+# Reflex Adapt Classic2USB 1.0.3-RC1 (planned candidate)
 
 This update adds configurable global Hold Start/Guide timing. Twin Stick
 support and the original Classic2USB OLED presentation are retained from
@@ -19,7 +19,7 @@ support and the original Classic2USB OLED presentation are retained from
 
 ## Validation
 
-Source staged on `feature/classic2usb-v1.0.3-guide-hold`.
+Combined source staged on `develop`.
 Firmware compilation, software regression run, WebHID read/write checks,
 physical timing UAT, and hardware MODE-menu verification remain pending.
 No UF2 or GitHub release published yet.

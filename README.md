@@ -36,6 +36,19 @@ controls whether shortcuts are active.
 See the [HKT-7500 Twin Stick guide](docs/hkt-7500-twin-stick.md) for detection,
 routing, configuration, and validation details.
 
+## Development branches
+
+- `main`: follows upstream `misteraddons/reflex-io/main`. Do not merge
+  fork-specific changes into it.
+- `feature/hkt-7500-twin-stick`: Twin Stick input and output support, sent to
+  upstream as PR #2; no custom OLED artwork or special Guide hold.
+- `feature/guide-hold-duration`: global configurable Guide hold and its
+  Adapt Web / hardware System Settings selectors.
+- `develop`: the **only** combined integration branch for the upcoming
+  Classic2USB 1.0.3-RC1 firmware. No other integration feature branches.
+
+See [Branching and releases](docs/BRANCHING.md) for update and build rules.
+
 ## Build from source
 
 Install [PlatformIO Core](https://platformio.org/) and run this command from the
@@ -55,6 +68,7 @@ from a release.
 - [Common questions](docs/FAQ.md)
 - [HKT-7500 Twin Stick technical guide](docs/hkt-7500-twin-stick.md)
 - [Guide Hold Duration](docs/guide-hold-duration.md)
+- [Branching and releases](docs/BRANCHING.md)
 - [Third-party notices and project lineage](NOTICE.md)
 
 ## Project lineage and license

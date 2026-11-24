@@ -4,7 +4,7 @@ User-facing changes to the Classic2USB firmware and its tools. Versions follow
 the scheme in the README's Versioning section. The release package's
 `release.md` repeats the section for its version.
 
-## 1.0.3 — pending build and hardware UAT
+## 1.0.3-RC1 — development candidate; build and hardware UAT pending
 
 - Replace fixed 1,000 ms Classic2USB Hold Start/Guide timing with global,
   configurable 500-3,000 ms duration, 500 ms steps, default 2,000 ms.
