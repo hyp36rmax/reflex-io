@@ -7,10 +7,6 @@
 #include "menu_home_pad_geometry.h"
 #include "menu_classic_wheel_art.h"
 #include "menu_pad_layouts_internal.h"
-#ifdef ENABLE_INPUT_DREAMCAST
-#include "../core/dreamcast_twin_stick.h"
-#include "menu_dreamcast_twin_stick_home.h"
-#endif
 #if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
 #include "../features/usb2db15/usb2db15_arcade_mapping.h"
 #include "../features/usb2db15/usb2db15_arcade_session.h"
@@ -170,43 +166,6 @@ bool renderFamicomNetworkHome(bool forceRedraw, bool* exited) {
   display.setFont(ReflexPad5x7);
   ntt_data_home::drawFamicomNetwork(display, state, previous,
                                     forceRedraw || !active || lastPlayer != player);
-  display.setFont(System5x7);
-  previous = state;
-  active = true;
-  lastPlayer = player;
-  return true;
-}
-#endif
-
-#ifdef ENABLE_INPUT_DREAMCAST
-// Full-width HKT-7500 panel; retain normal multi-controller presentation.
-bool renderDreamcastTwinStickHome(bool forceRedraw, bool* exited) {
-  static bool active = false;
-  static uint8_t lastPlayer = 0xFF;
-  static uint16_t previous = 0;
-  *exited = false;
-  uint8_t count = 0;
-  uint8_t player = 0xFF;
-  if (deviceMode == RZORD_DREAMCAST) {
-    for (uint8_t i = 0; i < max_devices && i < MAX_USB_OUT; ++i) {
-      if (!controllerFrameConst(i).connected) continue;
-      ++count;
-      player = i;
-    }
-  }
-  const bool show = count == 1 && player != 0xFF &&
-      controllerFrameIsDreamcastTwinStick(controllerFrameConst(player));
-  if (!show) {
-    *exited = active;
-    active = false;
-    lastPlayer = 0xFF;
-    previous = 0;
-    return false;
-  }
-  const uint16_t state = dreamcast_twin_stick_home::read(controllerFrameConst(player));
-  display.setFont(ReflexPad5x7);
-  dreamcast_twin_stick_home::draw(display, state, previous,
-                                 forceRedraw || !active || lastPlayer != player);
   display.setFont(System5x7);
   previous = state;
   active = true;
@@ -2417,15 +2376,6 @@ void updateRealtimeButtons() {
   renderUsb2db15ArcadeHome(forceRedraw);
   lastDeviceMode = deviceMode;
   return;
-#endif
-
-#ifdef ENABLE_INPUT_DREAMCAST
-  bool twinStickPanelExited = false;
-  if (renderDreamcastTwinStickHome(forceRedraw, &twinStickPanelExited)) {
-    lastDeviceMode = deviceMode;
-    return;
-  }
-  if (twinStickPanelExited) forceRedraw = true;
 #endif
 
 #ifdef ENABLE_INPUT_SNES

@@ -6,15 +6,11 @@ the scheme in the README's Versioning section. The release package's
 
 ## Unreleased
 
-- HKT-7500 Twin Stick OLED panel with two physical D-pads, four upper
-  buttons, and vertically centered Pause/Start. Four upper indicators now map
-  X/Y/A/B to physical trigger/top buttons; earlier L2/L1/R2/R1 assumption
-  made RC1 indicators nonfunctional. Photo-based spacing corrections included.
-  New build and hardware UAT pending.
 - Restore upstream global Hold Start/Guide behavior and Hotkeys On/Off;
   remove Twin Stick-only timing restriction. Adjustable duration remains
   on a separate branch.
-- New OLED build and hardware validation pending.
+- Revert experimental HKT-7500 OLED artwork pending upstream source
+  publication. Existing OLED presentation is unchanged. Rebuild required.
 
 ## 1.0.2
 

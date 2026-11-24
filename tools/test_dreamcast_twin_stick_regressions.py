@@ -194,29 +194,6 @@ class TwinStickRemapTests(unittest.TestCase):
         self.assertNotIn("if (isTwinStick) {", hotkeys)
         self.assertNotIn("dreamcast_twin_stick.h", hotkeys)
 
-    def test_dedicated_twin_stick_oled_panel(self) -> None:
-        panel = read("firmware/menu/menu_dreamcast_twin_stick_home.h")
-        display = read("firmware/menu/menu_main_display_pad_render.cpp")
-        for token in ("LeftUp", "LeftDown", "LeftLeft", "LeftRight",
-                      "RightUp", "RightDown", "RightLeft", "RightRight",
-                      "LeftTrigger", "LeftTop", "RightTrigger", "RightTop",
-                      "Pause", "Start"):
-            self.assertIn(token, panel)
-        self.assertIn("frame.EXTRA & (1u << 4)", panel)
-        for mapping in ("frame.X) mask |= LeftTrigger", "frame.Y) mask |= LeftTop",
-                        "frame.A) mask |= RightTrigger", "frame.B) mask |= RightTop"):
-            self.assertIn(mapping, panel)
-        self.assertNotIn("frame.L2) mask |= LeftTrigger", panel)
-        self.assertNotIn("frame.R2) mask |= RightTrigger", panel)
-        self.assertIn("pad_dpad_graphics::draw(display, 33, 4", panel)
-        self.assertIn("pad_dpad_graphics::draw(display, 77, 4", panel)
-        self.assertIn("positions[] = {34, 47, 78, 91}", panel)
-        self.assertIn("drawCenterButton(display, 62, 4", panel)
-        self.assertIn("drawCenterButton(display, 62, 6", panel)
-        self.assertIn("renderDreamcastTwinStickHome", display)
-        self.assertIn("count == 1 && player != 0xFF", display)
-        self.assertIn("twinStickPanelExited", display)
-
     def test_mixed_port_detection_and_routing_are_frame_scoped(self) -> None:
         pairs = read("firmware/core/remap_pairs.cpp")
         self.assertIn("controllerFramesContainDreamcastTwinStick(controller_frames, inputPortCount())", pairs)

@@ -44,21 +44,12 @@ connected frames for HKT-7500. Directional and Pause processing stays scoped
 to identified Twin Stick frames; standard pads do not receive Twin Stick
 extra inputs.
 
-## OLED input display
+## OLED status
 
-Dedicated 128x64 Twin Stick Home panel matches two physical directional pads,
-two upper buttons on each stick, centered Pause and Start. All 14 indicators
-reflect physical Maple button assignments: left trigger X, left top Y, right
-trigger A, right top B. HKT-7500 does not expose normal analog L2/R2 triggers.
-D-pad 2 reads EXTRA bits 0-3; Pause reads EXTRA bit 4. Two directional crosses
-sit close together with four small upper circles; Pause and Start are stacked
-vertically in their center gap, matching the supplied hardware reference photo.
-Panel draws only with one connected HKT-7500; multiplayer uses existing pad
-layout. Disconnect or mode change restores regular artwork.
-
-Status: RC1 hardware UAT failed on OLED visual fidelity and upper-button
-feedback. Source corrections pending a new build and hardware retest.
-Earlier OLED layout tests do not validate this dedicated panel.
+Dedicated HKT-7500 OLED artwork is deferred. Existing Classic2USB OLED
+presentation stays unchanged. A test firmware with an upstream Twin Stick
+screen exists, but matching source is not yet published. Do not integrate
+or recreate that implementation until source is available for review.
 
 ## Storage
 
@@ -68,8 +59,8 @@ migration paths remain unchanged.
 
 ## Validation status
 
-Earlier HKT-7500 routing UAT passed. New OLED panel and revised firmware
-require separate build and hardware validation.
+Earlier HKT-7500 routing UAT passed. Dedicated Twin Stick OLED changes have
+been reverted. A new Classic2USB build is required to verify this revert.
 
 | Gate | Status | Result |
 | --- | --- | --- |
@@ -81,8 +72,8 @@ require separate build and hardware validation.
 | Configuration | PASS | OLED, WebHID, default restoration, save/reboot persistence, and output switching. |
 | Mixed-port hardware | PASS | Both port orders, disconnect, and reconnect. |
 | Twin Stick regression | PASS | 8 host-side checks for routing, defaults, detection, and input handling. |
-| Existing OLED layout | PASS | 11 earlier layout checks; separate from new Twin Stick panel. |
-| Dedicated Twin Stick OLED | FAIL RC1 / PENDING RETEST | Corrected X/Y/A/B input indicators and photo-based layout; rebuild and hardware UAT required. |
+| Existing OLED layout | PASS | 11 earlier layout checks; existing layout retained. |
+| Dedicated Twin Stick OLED | DEFERRED | Experimental renderer removed pending upstream source publication. |
 | Classic2USB build | PASS | PlatformIO build and RP2040 UF2 checks. |
 | Firmware 1.0.2 UAT | PASS | Hardware validation completed. Latest UF2 checksum not recorded below. |
 
