@@ -59,6 +59,8 @@ void leaveList() {
 }
 
 bool enumValueOffered(const MenuItemDescriptor& desc, uint8_t value) {
+  // Guide Hold persists 1-6 (500ms steps). Never offer reserved value 0.
+  if (desc.setting_id == SettingId::GuideHoldTime) return value >= 1 && value <= 6;
   // A preference the image cannot honour falls back to something else, so a
   // list that named it would promise an output the host never gets.
   return (desc.setting_id != SettingId::WinOutput && desc.setting_id != SettingId::MisterOutput) ||

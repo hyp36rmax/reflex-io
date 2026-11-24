@@ -36,6 +36,21 @@ class GuideHoldTests(unittest.TestCase):
         self.assertIn("saveSystemSettingByte(SettingId::GuideHoldTime, value)", report)
         self.assertIn("value >= 1 && value <= 6", report)
 
+    def test_oled_system_settings_access(self):
+        item = source("firmware/menu/menu_item_defs.h")
+        catalog = source("firmware/menu/menu_catalog.cpp")
+        descriptor = source("firmware/menu/menu_descriptors_data.cpp")
+        visibility = source("firmware/menu/menu_helpers_visibility.cpp")
+        chooser = source("firmware/menu/menu_choice_list.cpp")
+        self.assertIn("menu_item_guide_hold_time", item)
+        self.assertIn('{ menu_item_guide_hold_time, "Guide Hold" }', catalog)
+        self.assertIn("case menu_item_guide_hold_time:", visibility)
+        self.assertIn(".setting_id = SettingId::GuideHoldTime", descriptor)
+        self.assertIn(".menu_var = &menu_guide_hold_time", descriptor)
+        self.assertIn('guide_hold_time_names[] = { "-", "0.5s", "1.0s", "1.5s", "2.0s", "2.5s", "3.0s" }', descriptor)
+        self.assertIn("if (desc.setting_id == SettingId::GuideHoldTime)", chooser)
+        self.assertIn("return value >= 1 && value <= 6;", chooser)
+
     def test_adapt_web_support_and_compatibility(self):
         html = source("web/Adapt.html")
         self.assertIn('id="setting-guide-hold"', html)

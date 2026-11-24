@@ -453,6 +453,7 @@ bool is_system_setting(menu_item_enum item) {
     case menu_item_mister_display:
     case menu_item_psx_periph:
     case menu_item_hotkeys:
+    case menu_item_guide_hold_time:
     case menu_item_kiosk_mode:
     case menu_item_menu_hotkey:
     case menu_item_system_menu_hotkey:

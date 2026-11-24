@@ -102,6 +102,9 @@ const menu_line_t menu_items[] = {
 #else
   { menu_item_hotkeys, "Hotkey" },
 #endif
+#if defined(PRODUCT_CLASSIC2USB)
+  { menu_item_guide_hold_time, "Guide Hold" },
+#endif
   { menu_item_stick_invert, "Stick Invert" },
   { menu_item_rumble, "Rumble" },
   { menu_item_trigger_mode, "Triggers" },

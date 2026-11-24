@@ -22,6 +22,10 @@ const char* const n64_cstick_mode_names[] = { "Auto", "Buttons", "Stick" };
 const char* const classic_analog_range_names[] = { "Raw", "Norm", "Cal", "Learn" };
 const char* const nes_device_names[] = { "Pad", "Power Pad", "Vaus NES", "Vaus FC" };
 const char* const hotkey_hold_time_names[] = { "Press", "0.5s", "1.0s", "1.5s", "2.0s", "2.5s", "3.0s" };
+#if defined(PRODUCT_CLASSIC2USB)
+// Value 0 is a reserved sentinel; choice list hides it (only 1-6 displayed).
+const char* const guide_hold_time_names[] = { "-", "0.5s", "1.0s", "1.5s", "2.0s", "2.5s", "3.0s" };
+#endif
 const char* const switch_device_names[] = { "Switch Pro", "Genesis NSO", "NES NSO", "SNES NSO", "N64 NSO", "GC Adapter" };
 const char* const menu_ok_back_names[] = { "X / A", "East", "South" };
 
@@ -56,6 +60,18 @@ const MenuItemDescriptor menu_descriptors[] = {
     .runtime_var = nullptr,
     .setting_id = SettingId::HomeHotkey,
     .bool_cfg = { "Off", "On" },
+    .on_change = nullptr,
+    .on_apply = nullptr
+  },
+#endif
+#if defined(PRODUCT_CLASSIC2USB)
+  {
+    .id = menu_item_guide_hold_time,
+    .type = MENU_TYPE_ENUM,
+    .menu_var = &menu_guide_hold_time,
+    .runtime_var = nullptr,
+    .setting_id = SettingId::GuideHoldTime,
+    .enum_cfg = { guide_hold_time_names, 7, nullptr },
     .on_change = nullptr,
     .on_apply = nullptr
   },

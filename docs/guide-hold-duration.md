@@ -8,13 +8,22 @@ unchanged. Existing Hotkeys On/Off continues to enable or disable Guide.
 
 ## Adapt Web
 
-System Settings > Menus and buttons > Hotkeys > Hold Start Duration.
+System Settings > Menus and buttons: Hold Start Duration appears directly
+below Hotkeys On/Off.
 
 - 500, 1000, 1500, 2000, 2500, or 3000 ms
 - Factory default: 2000 ms
 - Hidden when connected firmware does not advertise support
 - Writes only edited settings, reads back current value after save
 - Reset to Defaults restores 2000 ms
+
+## Hardware OLED
+
+Hold MODE to open System Settings. Scroll to `Guide Hold`, immediately after
+`Hotkeys`, press MODE to open six choices, select 0.5s–3.0s and save.
+The existing six-choice OLED list is backed by `SettingId::GuideHoldTime`;
+reserved value 0 is never offered. The same stored value is shown in Adapt Web.
+No dedicated Twin Stick artwork is included.
 
 ## Implementation
 
@@ -31,8 +40,8 @@ System Settings > Menus and buttons > Hotkeys > Hold Start Duration.
 
 ## Validation
 
-Implementation staged on `feature/guide-hold-duration`. Build, host
-regressions, WebHID read/write tests, and physical timing UAT required before
-release. Test Hotkeys On and Off, all six durations, brief Start presses,
-Start+direction combinations, reboot persistence, settings reset, and old
-firmware compatibility.
+Standalone feature source staged on `feature/guide-hold-duration`, based
+on upstream main. Combined Twin Stick + Guide Hold candidate is on `develop`
+for Classic2USB 1.0.3-RC1; firmware build and hardware UAT remain pending.
+Test Hotkeys On/Off, all six durations, brief Start presses, Start+direction
+combinations, reboot persistence, settings reset, and old firmware compatibility.
