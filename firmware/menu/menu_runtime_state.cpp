@@ -42,5 +42,6 @@ uint8_t menu_home_screen_debug = 0;
 uint8_t menu_home_button_labels = 0;
 uint8_t menu_home_jvs_view = 0;
 uint8_t menu_hotkey_hold_time = 1;
+uint8_t menu_guide_hold_time = 4;  // 2.0s, independent of Menu Hold.
 uint8_t menu_classic_dual_merge = 0;
 uint8_t menu_usb_descriptor_reboot_required = 0;

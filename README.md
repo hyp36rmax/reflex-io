@@ -11,6 +11,8 @@ changing controllers or hosts does not need a reflash.
   installs firmware, rollbacks and mappings.
 - **Browser tool:** [`web/Adapt.html`](web/Adapt.html) changes settings, remaps
   buttons and updates firmware.
+- **Guide Hold Duration:** [configuration and compatibility](docs/guide-hold-duration.md)
+  explains global Hold Start timing for Classic2USB.
 - **Hardware:** [Reflex Adapt](https://misteraddons.com/collections/kits/products/reflex-adapt)
   and [HDMI controller adapters](https://misteraddons.com/products/hdmi-controller-adapters).
 - **Reflex Adapt V1:** the original firmware is in

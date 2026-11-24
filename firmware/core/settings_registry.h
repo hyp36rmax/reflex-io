@@ -365,6 +365,8 @@ inline constexpr SettingSpec kSettingSpecs[] = {
   {SettingScope::Global,  SettingValueType::UInt8,  (uint16_t)offsetof(GlobalSettingsRecord, menu_hotkey),            0,                            0, 1, nullptr, nullptr},
   // Packed into home_hotkey bit 7 as an Off flag: existing records read On.
   {SettingScope::Global,  SettingValueType::UInt8,  (uint16_t)offsetof(GlobalSettingsRecord, home_hotkey),            1,                            0, 1, nullptr, nullptr},
+  // 500ms steps, 0.5-3.0s. Stored in capture_hotkey bits 1-3.
+  {SettingScope::Global,  SettingValueType::UInt8,  (uint16_t)offsetof(GlobalSettingsRecord, capture_hotkey),         GUIDE_HOLD_TIME_DEFAULT,      1, 6, nullptr, nullptr},
 };
 
 static_assert((sizeof(kSettingSpecs) / sizeof(kSettingSpecs[0])) == static_cast<size_t>(SettingId::Count),
@@ -419,6 +421,12 @@ inline constexpr bool settingSupportedOnProduct(SettingId id) {
     // Fixed-preset products run Hold Start under their one Hotkeys toggle.
     case SettingId::HoldStartHotkey:
       return !ADAPT_POLICY_FIXED_HOTKEY_ASSIGNMENTS;
+    case SettingId::GuideHoldTime:
+#if defined(PRODUCT_CLASSIC2USB)
+      return true;
+#else
+      return false;
+#endif
     case SettingId::ManagementMsc:
       // The USB drive (features/usb_drive), On unless its psx_periph bit is set.
 #if defined(ADAPT_FEATURE_USB_DRIVE)
@@ -649,6 +657,12 @@ inline int32_t readRecordSettingValue(const RecordT& record, SettingId id) {
       if (id == SettingId::HomeHotkey) {
         return *field & HOME_HOTKEY_VALUE_MASK;
       }
+      if (id == SettingId::CaptureHotkey) {
+        return (*field & CAPTURE_HOTKEY_ENABLED_MASK) ? 1 : 0;
+      }
+      if (id == SettingId::GuideHoldTime) {
+        return guideHoldTimeFromRaw(*field);
+      }
       if (id == SettingId::HoldStartHotkey) {
         return holdStartHotkeyEnabledFromRaw(*field) ? 1 : 0;
       }
@@ -821,6 +835,14 @@ inline void writeRecordSettingValue(RecordT& record, SettingId id, int32_t value
       }
       if (id == SettingId::HoldStartHotkey) {
         *field = encodeHoldStartHotkey(*field, value != 0);
+        break;
+      }
+      if (id == SettingId::CaptureHotkey) {
+        *field = encodeCaptureHotkey(*field, value != 0);
+        break;
+      }
+      if (id == SettingId::GuideHoldTime) {
+        *field = encodeGuideHoldTime(*field, static_cast<uint8_t>(value));
         break;
       }
       if (id == SettingId::HomeScreenDebug) {

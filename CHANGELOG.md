@@ -4,6 +4,15 @@ User-facing changes to the Classic2USB firmware and its tools. Versions follow
 the scheme in the README's Versioning section. The release package's
 `release.md` repeats the section for its version.
 
+## Unreleased
+
+- Classic2USB: global Hold Start to Home/Guide duration, configurable in
+  Adapt Web > System Settings > Menus and buttons. 500-3000 ms in 500 ms
+  steps, default 2000 ms. Existing Hotkeys On/Off remains authoritative.
+- General Menu Hold default remains 500 ms. Saved setting survives restart.
+- Other Reflex products retain original 1000 ms Hold Start timing.
+- Build and hardware validation pending.
+
 ## 1.0.1
 
 ### Inputs

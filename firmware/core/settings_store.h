@@ -54,6 +54,11 @@ constexpr uint8_t MENU_HOTKEY_FORMAT_MASK = 0x80;
 // Hold Start off, so records written before Hold Start existed read it as On.
 constexpr uint8_t HOME_HOTKEY_VALUE_MASK = 0x7F;
 constexpr uint8_t HOLD_START_HOTKEY_OFF_MASK = 0x80;
+// Guide Hold reuses free capture_hotkey bits; legacy records default to 2.0s.
+constexpr uint8_t GUIDE_HOLD_TIME_SHIFT = 1;
+constexpr uint8_t GUIDE_HOLD_TIME_MASK = 0x0E;
+constexpr uint8_t GUIDE_HOLD_TIME_DEFAULT = 4;
+constexpr uint8_t CAPTURE_HOTKEY_ENABLED_MASK = 0x01;
 constexpr uint8_t WIN_OUTPUT_VALUE_MASK = 0x07;
 constexpr uint8_t WIN_OUTPUT_TRANSPORT_SHIFT = 3;
 constexpr uint8_t WIN_OUTPUT_TRANSPORT_MASK = 0x18;
@@ -205,6 +210,19 @@ inline constexpr uint8_t encodeHoldStartHotkey(uint8_t raw, bool enabled) {
       (enabled ? 0 : HOLD_START_HOTKEY_OFF_MASK));
 }
 
+inline constexpr uint8_t guideHoldTimeFromRaw(uint8_t raw) {
+  const uint8_t stored = (raw & GUIDE_HOLD_TIME_MASK) >> GUIDE_HOLD_TIME_SHIFT;
+  return stored >= 1 && stored <= 6 ? stored : GUIDE_HOLD_TIME_DEFAULT;
+}
+inline constexpr uint8_t encodeCaptureHotkey(uint8_t raw, bool enabled) {
+  return static_cast<uint8_t>((raw & GUIDE_HOLD_TIME_MASK) |
+      (enabled ? CAPTURE_HOTKEY_ENABLED_MASK : 0));
+}
+inline constexpr uint8_t encodeGuideHoldTime(uint8_t raw, uint8_t value) {
+  const uint8_t sanitized = value >= 1 && value <= 6 ? value : GUIDE_HOLD_TIME_DEFAULT;
+  return static_cast<uint8_t>((raw & CAPTURE_HOTKEY_ENABLED_MASK) |
+      ((sanitized << GUIDE_HOLD_TIME_SHIFT) & GUIDE_HOLD_TIME_MASK));
+}
 inline constexpr uint8_t encodeMisterDisplayMode(uint8_t raw, uint8_t mode) {
   const uint8_t preserve = static_cast<uint8_t>(
       (raw & static_cast<uint8_t>(~MISTER_DISPLAY_INPUTS_MASK)) |
@@ -419,6 +437,7 @@ enum class SettingId : uint8_t {
   Ps2RemoteOutput,
   MisterDisplay,
   HoldStartHotkey,
+  GuideHoldTime,
   Count,
 };
 
@@ -428,6 +447,8 @@ static_assert(static_cast<uint8_t>(SettingId::MisterDisplay) == 74,
               "MiSTer display setting must remain appended after existing IDs");
 static_assert(static_cast<uint8_t>(SettingId::HoldStartHotkey) == 75,
               "Hold Start setting must remain appended after existing IDs");
+static_assert(static_cast<uint8_t>(SettingId::GuideHoldTime) == 76,
+              "Guide Hold setting must stay appended");
 
 extern uint16_t g_eeprom_remap_index;
 

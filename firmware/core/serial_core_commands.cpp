@@ -179,6 +179,7 @@ const char* settingIdName(SettingId id) {
     case SettingId::Ps2RemoteOutput: return "PS2_REMOTE_OUTPUT";
     case SettingId::MisterDisplay: return "MISTER_DISPLAY";
     case SettingId::HoldStartHotkey: return "HOLD_START_HOTKEY";
+    case SettingId::GuideHoldTime: return "GUIDE_HOLD_TIME";
     case SettingId::Count: break;
   }
   return "UNKNOWN";
@@ -647,6 +648,9 @@ bool applyStoredSettingToRuntime(SettingId id, DeviceEnum mode) {
     case SettingId::HoldStartHotkey:
       menu_hold_start_hotkey = static_cast<uint8_t>(value);
       return true;
+    case SettingId::GuideHoldTime:
+      menu_guide_hold_time = static_cast<uint8_t>(value);
+      return true;
     case SettingId::CaptureHotkey:
       menu_capture_hotkey = static_cast<uint8_t>(value);
       return true;
@@ -753,6 +757,7 @@ bool readRuntimeSettingValue(SettingId id, DeviceEnum mode, int32_t* value) {
     case SettingId::SystemMenuHotkey: *value = menu_system_menu_hotkey; break;
     case SettingId::HomeHotkey: *value = menu_home_hotkey; break;
     case SettingId::HoldStartHotkey: *value = menu_hold_start_hotkey; break;
+    case SettingId::GuideHoldTime: *value = menu_guide_hold_time; break;
     case SettingId::CaptureHotkey: *value = menu_capture_hotkey; break;
     case SettingId::KioskMode: *value = menu_kiosk_mode; break;
     case SettingId::Usb2Db15MultiBind: *value = menu_usb2db15_multi_bind; break;

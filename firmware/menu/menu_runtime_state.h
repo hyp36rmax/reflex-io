@@ -49,5 +49,7 @@ extern uint8_t menu_home_screen_debug;
 extern uint8_t menu_home_button_labels;
 extern uint8_t menu_home_jvs_view;
 extern uint8_t menu_hotkey_hold_time;
+// Global duration for supported Hold Start -> Home/Guide shortcuts.
+extern uint8_t menu_guide_hold_time;
 extern uint8_t menu_classic_dual_merge;
 extern uint8_t menu_usb_descriptor_reboot_required;

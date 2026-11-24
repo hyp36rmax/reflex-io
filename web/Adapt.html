@@ -2598,6 +2598,17 @@
               <option value="1">On</option>
             </select>
           </div>
+          <div id="setting-guide-hold" class="form-group" style="display:none">
+            <label class="form-label" for="settings-guide-hold">Hold Start Duration</label>
+            <select id="settings-guide-hold" class="select">
+              <option value="1">500 ms</option>
+              <option value="2">1,000 ms</option>
+              <option value="3">1,500 ms</option>
+              <option value="4">2,000 ms</option>
+              <option value="5">2,500 ms</option>
+              <option value="6">3,000 ms</option>
+            </select>
+          </div>
           <div id="setting-capture-hotkey" class="form-group">
             <label class="form-label" for="settings-capture-hotkey">Capture/TPad</label>
             <select id="settings-capture-hotkey" class="select">
@@ -3403,6 +3414,9 @@
     const WEBHID_SETTINGS_MISTER_OUTPUT_SHIFT = 5;
     const WEBHID_SETTINGS_MISTER_OUTPUT_MASK = 0xE0;
     const WEBHID_SETTING_MISTER_OUTPUT = 49;
+    const WEBHID_SETTING_GUIDE_HOLD = 50;
+    const WEBHID_SETTINGS_GUIDE_HOLD_INDEX = 45;
+    const WEBHID_SETTINGS_GUIDE_HOLD_MARKER = 0x80;
     const WEBHID_SETTINGS_GUNCON_X_INDEX = 61;
     const WEBHID_SETTINGS_GUNCON_Y_INDEX = 62;
     const WEBHID_TURBO_BUTTON_COUNT = 17;
@@ -18300,6 +18314,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
     function resetDirectionHotkeyUi() {
       directionHotkeySnapshot = null;
       document.getElementById('direction-hotkeys').style.display = 'none';
+      document.getElementById('setting-guide-hold').style.display = 'none';
       for (const id of ['setting-hotkey-hold', 'setting-quick-menu-hotkey', 'setting-system-menu-hotkey',
                         'setting-home-hotkey', 'setting-capture-hotkey'])
         document.getElementById(id).style.display = '';
@@ -18712,7 +18727,12 @@ document.getElementById('authorize-serial').addEventListener('click', function (
           winOutput: data[42] ?? 0,
           misterOutput: rawMisterOutput <= 7 ? rawMisterOutput : 0,
           homeScreenDebug: data[43] ?? 0,
-          homeJvsView: data[45] ?? 0,
+          homeJvsView: (data[WEBHID_SETTINGS_GUIDE_HOLD_INDEX] & WEBHID_SETTINGS_GUIDE_HOLD_MARKER)
+            ? 0 : (data[45] ?? 0),
+          guideHoldTime: (data[WEBHID_SETTINGS_GUIDE_HOLD_INDEX] & WEBHID_SETTINGS_GUIDE_HOLD_MARKER) &&
+            (data[WEBHID_SETTINGS_GUIDE_HOLD_INDEX] & 0x7F) >= 1 &&
+            (data[WEBHID_SETTINGS_GUIDE_HOLD_INDEX] & 0x7F) <= 6
+              ? (data[WEBHID_SETTINGS_GUIDE_HOLD_INDEX] & 0x7F) : null,
           hotkeyHoldTime: data[46] ?? 2,
           n64CStickMode: data[47] ?? 0,
           powerpadMode: data[48] ?? 0,
@@ -18890,6 +18910,9 @@ document.getElementById('authorize-serial').addEventListener('click', function (
       showSetting('settings-quick-menu-hotkey', settings.quickMenuHotkey ? 1 : 0);
       showSetting('settings-system-menu-hotkey', settings.systemMenuHotkey ? 1 : 0);
       showSetting('settings-home-hotkey', settings.homeHotkey ? 1 : 0);
+      document.getElementById('setting-guide-hold').style.display =
+        activeAdaptProduct.id === 'Classic2USB' && settings.guideHoldTime !== null ? '' : 'none';
+      if (settings.guideHoldTime !== null) showSetting('settings-guide-hold', settings.guideHoldTime);
       showSetting('settings-capture-hotkey', settings.captureHotkey ? 1 : 0);
       showSetting('settings-kiosk-mode', settings.kioskMode ? 1 : 0);
       document.getElementById('settings-players').textContent = `Players: ${settings.maxPlayers}`;
@@ -19144,7 +19167,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
       'settings-btn-map': 23, 'settings-n64-z': 24, 'settings-wii-range': 25, 'settings-n64-range': 26,
       'settings-win-output': 33, 'settings-hotkey-hold': 37, 'settings-n64-cstick': 38, 'settings-powerpad': 39,
       'settings-quick-menu-hotkey': 42, 'settings-system-menu-hotkey': 43, 'settings-home-hotkey': 44,
-      'settings-capture-hotkey': 45, 'settings-kiosk-mode': 46, 'settings-guncon-x': 47, 'settings-guncon-y': 48,
+      'settings-guide-hold': WEBHID_SETTING_GUIDE_HOLD, 'settings-capture-hotkey': 45, 'settings-kiosk-mode': 46, 'settings-guncon-x': 47, 'settings-guncon-y': 48,
       'settings-mister-output': WEBHID_SETTING_MISTER_OUTPUT,
     });
 
@@ -19154,7 +19177,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
       9: 'nsoSpecial', 10: 'socdMode', 11: 'screensaver', 12: 'oledContrast', 23: 'buttonMapMode', 24: 'n64ZMode',
       25: 'wiiAnalogRange', 26: 'n64AnalogRange', 33: 'winOutput', 37: 'hotkeyHoldTime', 38: 'n64CStickMode',
       39: 'powerpadMode', 42: 'quickMenuHotkey', 43: 'systemMenuHotkey', 44: 'homeHotkey', 45: 'captureHotkey',
-      46: 'kioskMode', 47: 'gunconOffsetX', 48: 'gunconOffsetY', [WEBHID_SETTING_MISTER_OUTPUT]: 'misterOutput',
+      [WEBHID_SETTING_GUIDE_HOLD]: 'guideHoldTime', 46: 'kioskMode', 47: 'gunconOffsetX', 48: 'gunconOffsetY', [WEBHID_SETTING_MISTER_OUTPUT]: 'misterOutput',
     });
 
     const PER_MODE_FIXED_SETTINGS = new Set([1, 2, 3, 7, 8, 9, 10, 23, 24, 25, 26, 38, 39, 47, 48]);
@@ -19223,6 +19246,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
       const quickMenuHotkey = parseInt(document.getElementById('settings-quick-menu-hotkey').value) || 0;
       const systemMenuHotkey = parseInt(document.getElementById('settings-system-menu-hotkey').value) || 0;
       const homeHotkey = parseInt(document.getElementById('settings-home-hotkey').value) || 0;
+      const guideHold = parseInt(document.getElementById('settings-guide-hold').value) || 4;
       const captureHotkey = parseInt(document.getElementById('settings-capture-hotkey').value) || 0;
       const kioskMode = parseInt(document.getElementById('settings-kiosk-mode').value) || 0;
 
@@ -19255,6 +19279,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
           [42, quickMenuHotkey],
           [43, systemMenuHotkey],
           [44, homeHotkey],
+          [WEBHID_SETTING_GUIDE_HOLD, guideHold],
           [45, captureHotkey],
           [46, kioskMode],
           [47, gunconX & 0xFF],
@@ -19367,6 +19392,7 @@ document.getElementById('authorize-serial').addEventListener('click', function (
         'settings-quick-menu-hotkey',
         'settings-system-menu-hotkey',
         'settings-home-hotkey',
+        'settings-guide-hold',
         'settings-capture-hotkey',
         'settings-kiosk-mode'
       ];
@@ -19611,6 +19637,11 @@ document.getElementById('authorize-serial').addEventListener('click', function (
         return;
       }
       const plan = settingsResetPlan(settingsResetRows(scope), values);
+      if (scope === 'system' && activeAdaptProduct.id === 'Classic2USB' &&
+          lastSettingsSnapshot?.guideHoldTime !== null &&
+          lastSettingsSnapshot?.guideHoldTime !== 4) {
+        plan.push({ id: -WEBHID_SETTING_GUIDE_HOLD, label: 'Hold Start Duration', defaultValue: 4 });
+      }
       if (!plan.length) {
         showToast('These settings are already at their defaults.');
         return;
@@ -19624,6 +19655,10 @@ document.getElementById('authorize-serial').addEventListener('click', function (
       dirtySettingControls.clear();
       for (const item of plan) {
         try {
+          if (item.id === -WEBHID_SETTING_GUIDE_HOLD) {
+            await sendSettingsAction(WEBHID_SETTING_GUIDE_HOLD, item.defaultValue);
+            continue;
+          }
           const result = await writeDeviceSetting(item.id, item.defaultValue);
           restart ||= result.rebootRequired;
         } catch (error) {

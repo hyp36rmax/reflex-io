@@ -164,6 +164,7 @@ void initializeCoreRuntimeSettingsFromStorage(const GlobalSettingsRecord& global
   menu_system_menu_hotkey = (uint8_t)loadSettingValue(SettingId::SystemMenuHotkey, RZORD_NONE);
   menu_home_hotkey = (uint8_t)loadSettingValue(SettingId::HomeHotkey, RZORD_NONE);
   menu_hold_start_hotkey = (uint8_t)loadSettingValue(SettingId::HoldStartHotkey, RZORD_NONE);
+  menu_guide_hold_time = (uint8_t)loadSettingValue(SettingId::GuideHoldTime, RZORD_NONE);
   menu_capture_hotkey = (uint8_t)loadSettingValue(SettingId::CaptureHotkey, RZORD_NONE);
   menu_kiosk_mode = (uint8_t)loadSettingValue(SettingId::KioskMode, RZORD_NONE);
 #if defined(ADAPT_CAP_ARCADE_MAPPING_SESSION)
