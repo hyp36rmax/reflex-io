@@ -40,6 +40,18 @@ connected frames for HKT-7500. Directional and Pause processing stays scoped
 to identified Twin Stick frames; standard pads do not receive Twin Stick
 extra inputs.
 
+## OLED input display
+
+Dedicated 128x64 Twin Stick Home panel matches two physical directional pads,
+two upper buttons on each stick, centered Pause and Start. All 14 indicators
+reflect raw Maple input, independent of USB output mappings. Trigger and top
+button indicators read L2/L1 and R2/R1. D-pad 2 reads EXTRA bits 0-3; Pause
+reads EXTRA bit 4. Panel draws only with one connected HKT-7500; multiplayer
+uses existing pad layout. Disconnect or mode change restores regular artwork.
+
+Status: implementation committed; new build, display checks, and hardware UAT
+pending. Earlier OLED layout tests do not validate this dedicated panel.
+
 ## Storage
 
 Dreamcast remap slot 13 stores D-pad 2 mode. Slots 14–18 hold directional
@@ -48,7 +60,8 @@ migration paths remain unchanged.
 
 ## Validation status
 
-Physical HKT-7500 UAT complete. All validation gates passed.
+Earlier HKT-7500 routing UAT passed. New OLED panel and revised firmware
+require separate build and hardware validation.
 
 | Gate | Status | Result |
 | --- | --- | --- |
@@ -60,7 +73,8 @@ Physical HKT-7500 UAT complete. All validation gates passed.
 | Configuration | PASS | OLED, WebHID, default restoration, save/reboot persistence, and output switching. |
 | Mixed-port hardware | PASS | Both port orders, disconnect, and reconnect. |
 | Twin Stick regression | PASS | 8 host-side checks for routing, defaults, detection, and input handling. |
-| OLED layout | PASS | 11 checks. |
+| Existing OLED layout | PASS | 11 earlier layout checks; separate from new Twin Stick panel. |
+| Dedicated Twin Stick OLED | PENDING | 14 live indicators; new build and physical UAT required. |
 | Classic2USB build | PASS | PlatformIO build and RP2040 UF2 checks. |
 | Firmware 1.0.2 UAT | PASS | Hardware validation completed. Latest UF2 checksum not recorded below. |
 

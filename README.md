@@ -27,6 +27,9 @@ Dreamcast A/B/X/Y, trigger, and thumb controls retain their mappings.
 | Pause (D) | Back | Button 19 |
 | Start | Start | Existing Start |
 
+A dedicated Twin Stick OLED Home panel shows both physical D-pads,
+four upper buttons, Pause and Start. Build and hardware UAT pending.
+
 See the [HKT-7500 Twin Stick guide](docs/hkt-7500-twin-stick.md) for detection,
 routing, configuration, and validation details.
 

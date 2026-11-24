@@ -6,6 +6,12 @@ the scheme in the README's Versioning section. The release package's
 
 ## Unreleased
 
+## Unreleased
+
+- HKT-7500 Twin Stick OLED panel with two physical D-pads, four upper
+  buttons, and centered Pause/Start. Live raw-input indicators.
+- New panel build and hardware validation pending; existing layouts unchanged.
+
 ## 1.0.2
 
 ### Inputs

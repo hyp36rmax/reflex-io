@@ -186,6 +186,23 @@ class TwinStickRemapTests(unittest.TestCase):
         self.assertIn("info.func_data[0] == kDreamcastTwinStickCapabilityMask", twin_stick_detection)
         self.assertIn("0x0000FEFE", detection)
 
+    def test_dedicated_twin_stick_oled_panel(self) -> None:
+        panel = read("firmware/menu/menu_dreamcast_twin_stick_home.h")
+        display = read("firmware/menu/menu_main_display_pad_render.cpp")
+        for token in ("LeftUp", "LeftDown", "LeftLeft", "LeftRight",
+                      "RightUp", "RightDown", "RightLeft", "RightRight",
+                      "LeftTrigger", "LeftTop", "RightTrigger", "RightTop",
+                      "Pause", "Start"):
+            self.assertIn(token, panel)
+        self.assertIn("frame.EXTRA & (1u << 4)", panel)
+        self.assertIn("frame.L2", panel)
+        self.assertIn("frame.R2", panel)
+        self.assertIn("pad_dpad_graphics::draw(display, 18, 4", panel)
+        self.assertIn("pad_dpad_graphics::draw(display, 92, 4", panel)
+        self.assertIn("renderDreamcastTwinStickHome", display)
+        self.assertIn("count == 1 && player != 0xFF", display)
+        self.assertIn("twinStickPanelExited", display)
+
     def test_mixed_port_detection_and_routing_are_frame_scoped(self) -> None:
         pairs = read("firmware/core/remap_pairs.cpp")
         self.assertIn("controllerFramesContainDreamcastTwinStick(controller_frames, inputPortCount())", pairs)
