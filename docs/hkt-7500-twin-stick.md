@@ -48,13 +48,17 @@ extra inputs.
 
 Dedicated 128x64 Twin Stick Home panel matches two physical directional pads,
 two upper buttons on each stick, centered Pause and Start. All 14 indicators
-reflect raw Maple input, independent of USB output mappings. Trigger and top
-button indicators read L2/L1 and R2/R1. D-pad 2 reads EXTRA bits 0-3; Pause
-reads EXTRA bit 4. Panel draws only with one connected HKT-7500; multiplayer
-uses existing pad layout. Disconnect or mode change restores regular artwork.
+reflect physical Maple button assignments: left trigger X, left top Y, right
+trigger A, right top B. HKT-7500 does not expose normal analog L2/R2 triggers.
+D-pad 2 reads EXTRA bits 0-3; Pause reads EXTRA bit 4. Two directional crosses
+sit close together with four small upper circles; Pause and Start are stacked
+vertically in their center gap, matching the supplied hardware reference photo.
+Panel draws only with one connected HKT-7500; multiplayer uses existing pad
+layout. Disconnect or mode change restores regular artwork.
 
-Status: implementation committed; new build, display checks, and hardware UAT
-pending. Earlier OLED layout tests do not validate this dedicated panel.
+Status: RC1 hardware UAT failed on OLED visual fidelity and upper-button
+feedback. Source corrections pending a new build and hardware retest.
+Earlier OLED layout tests do not validate this dedicated panel.
 
 ## Storage
 
@@ -78,7 +82,7 @@ require separate build and hardware validation.
 | Mixed-port hardware | PASS | Both port orders, disconnect, and reconnect. |
 | Twin Stick regression | PASS | 8 host-side checks for routing, defaults, detection, and input handling. |
 | Existing OLED layout | PASS | 11 earlier layout checks; separate from new Twin Stick panel. |
-| Dedicated Twin Stick OLED | PENDING | 14 live indicators; new build and physical UAT required. |
+| Dedicated Twin Stick OLED | FAIL RC1 / PENDING RETEST | Corrected X/Y/A/B input indicators and photo-based layout; rebuild and hardware UAT required. |
 | Classic2USB build | PASS | PlatformIO build and RP2040 UF2 checks. |
 | Firmware 1.0.2 UAT | PASS | Hardware validation completed. Latest UF2 checksum not recorded below. |
 

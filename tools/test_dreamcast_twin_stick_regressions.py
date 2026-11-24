@@ -203,10 +203,16 @@ class TwinStickRemapTests(unittest.TestCase):
                       "Pause", "Start"):
             self.assertIn(token, panel)
         self.assertIn("frame.EXTRA & (1u << 4)", panel)
-        self.assertIn("frame.L2", panel)
-        self.assertIn("frame.R2", panel)
-        self.assertIn("pad_dpad_graphics::draw(display, 18, 4", panel)
-        self.assertIn("pad_dpad_graphics::draw(display, 92, 4", panel)
+        for mapping in ("frame.X) mask |= LeftTrigger", "frame.Y) mask |= LeftTop",
+                        "frame.A) mask |= RightTrigger", "frame.B) mask |= RightTop"):
+            self.assertIn(mapping, panel)
+        self.assertNotIn("frame.L2) mask |= LeftTrigger", panel)
+        self.assertNotIn("frame.R2) mask |= RightTrigger", panel)
+        self.assertIn("pad_dpad_graphics::draw(display, 33, 4", panel)
+        self.assertIn("pad_dpad_graphics::draw(display, 77, 4", panel)
+        self.assertIn("positions[] = {34, 47, 78, 91}", panel)
+        self.assertIn("drawCenterButton(display, 62, 4", panel)
+        self.assertIn("drawCenterButton(display, 62, 6", panel)
         self.assertIn("renderDreamcastTwinStickHome", display)
         self.assertIn("count == 1 && player != 0xFF", display)
         self.assertIn("twinStickPanelExited", display)

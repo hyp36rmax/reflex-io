@@ -31,10 +31,12 @@ inline uint16_t read(const controller_state_t& frame) {
   if (frame.EXTRA & (1u << 1)) mask |= RightDown;
   if (frame.EXTRA & (1u << 2)) mask |= RightLeft;
   if (frame.EXTRA & (1u << 3)) mask |= RightRight;
-  if (frame.L2) mask |= LeftTrigger;
-  if (frame.L1) mask |= LeftTop;
-  if (frame.R2) mask |= RightTrigger;
-  if (frame.R1) mask |= RightTop;
+  // HKT-7500 physical buttons: left X trigger / Y top, right A trigger / B top.
+  // No standard Dreamcast analog triggers exist on this controller.
+  if (frame.X) mask |= LeftTrigger;
+  if (frame.Y) mask |= LeftTop;
+  if (frame.A) mask |= RightTrigger;
+  if (frame.B) mask |= RightTop;
   if (frame.EXTRA & (1u << 4)) mask |= Pause;
   if (frame.START) mask |= Start;
   return mask;
@@ -52,19 +54,16 @@ void drawCircle(Display& display, uint8_t x, bool pressed) {
 template <typename Display>
 void drawCenterButton(Display& display, uint8_t x, uint8_t page,
                       bool pressed, bool isStart) {
-  // P / S distinguish Pause from Start even on an unpressed monochrome OLED.
-  static constexpr uint8_t kP[5] = {0x7F, 0x09, 0x09, 0x09, 0x06};
-  static constexpr uint8_t kS[5] = {0x46, 0x49, 0x49, 0x49, 0x31};
-  const uint8_t* letter = isStart ? kS : kP;
+  // Match reference photo: compact upper Pause marker and lower Start dash.
+  static constexpr uint8_t kPauseOutline[7] = {0x30, 0x48, 0x44, 0x42, 0x44, 0x48, 0x30};
+  static constexpr uint8_t kPausePressed[7] = {0x30, 0x78, 0x7C, 0x7E, 0x7C, 0x78, 0x30};
+  static constexpr uint8_t kStartOutline[7] = {0x1C, 0x22, 0x22, 0x22, 0x22, 0x22, 0x1C};
+  static constexpr uint8_t kStartPressed[7] = {0x1C, 0x3E, 0x3E, 0x3E, 0x3E, 0x3E, 0x1C};
+  const uint8_t* glyph = isStart
+      ? (pressed ? kStartPressed : kStartOutline)
+      : (pressed ? kPausePressed : kPauseOutline);
   display.setCursor(x, page);
-  for (uint8_t i = 0; i < 11; ++i) {
-    uint8_t bits = pressed ? 0x7F : 0x00;
-    if (i == 0 || i == 10)
-      bits = pressed ? 0x7F : 0x3E;
-    else if (i >= 3 && i < 8)
-      bits = pressed ? uint8_t(0x7F & ~letter[i - 3]) : letter[i - 3];
-    display.ssd1306WriteRamBuf(bits);
-  }
+  for (uint8_t i = 0; i < 7; ++i) display.ssd1306WriteRamBuf(glyph[i]);
 }
 
 template <typename Display>
@@ -75,25 +74,25 @@ void draw(Display& display, uint16_t state, uint16_t previous, bool force) {
   }
   oled_pixel::Origin origin(oled_pixel::centerOffset(24, 55));
   if (force || ((state ^ previous) & kLeftDirections) != 0) {
-    pad_dpad_graphics::draw(display, 18, 4,
+    pad_dpad_graphics::draw(display, 33, 4,
         (state & LeftUp) != 0, (state & LeftDown) != 0,
         (state & LeftLeft) != 0, (state & LeftRight) != 0);
   }
   if (force || ((state ^ previous) & kRightDirections) != 0) {
-    pad_dpad_graphics::draw(display, 92, 4,
+    pad_dpad_graphics::draw(display, 77, 4,
         (state & RightUp) != 0, (state & RightDown) != 0,
         (state & RightLeft) != 0, (state & RightRight) != 0);
   }
   constexpr uint16_t upper[] = {LeftTrigger, LeftTop, RightTrigger, RightTop};
-  constexpr uint8_t positions[] = {14, 30, 92, 108};
+  constexpr uint8_t positions[] = {34, 47, 78, 91};
   for (uint8_t i = 0; i < 4; ++i) {
     if (force || ((state ^ previous) & upper[i]) != 0)
       drawCircle(display, positions[i], (state & upper[i]) != 0);
   }
   if (force || ((state ^ previous) & Pause) != 0)
-    drawCenterButton(display, 51, 5, (state & Pause) != 0, false);
+    drawCenterButton(display, 62, 4, (state & Pause) != 0, false);
   if (force || ((state ^ previous) & Start) != 0)
-    drawCenterButton(display, 67, 5, (state & Start) != 0, true);
+    drawCenterButton(display, 62, 6, (state & Start) != 0, true);
 }
 
 } // namespace dreamcast_twin_stick_home
