@@ -28,9 +28,10 @@ Dreamcast A/B/X/Y, trigger, and thumb controls retain their mappings.
 | Start | Start | Existing Start |
 
 Existing Classic2USB OLED presentation is retained. Dedicated Twin Stick
-OLED artwork is deferred pending upstream source publication. Upstream global
-Hotkeys On/Off controls the existing 1000 ms Hold Start/Guide shortcut;
-adjustable duration is maintained on a separate branch.
+OLED artwork is deferred pending upstream source publication. Classic2USB
+1.0.3 replaces the fixed 1,000 ms Hold Start/Guide threshold with one global
+configurable duration (500-3,000 ms, default 2,000 ms). Hotkeys On/Off still
+controls whether shortcuts are active.
 
 See the [HKT-7500 Twin Stick guide](docs/hkt-7500-twin-stick.md) for detection,
 routing, configuration, and validation details.
@@ -53,6 +54,7 @@ from a release.
 - [Classic2USB setup and manual](https://docs.misteraddons.com/products/reflex-adapt/classic2usb/)
 - [Common questions](docs/FAQ.md)
 - [HKT-7500 Twin Stick technical guide](docs/hkt-7500-twin-stick.md)
+- [Guide Hold Duration](docs/guide-hold-duration.md)
 - [Third-party notices and project lineage](NOTICE.md)
 
 ## Project lineage and license

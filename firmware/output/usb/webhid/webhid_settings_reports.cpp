@@ -133,7 +133,12 @@ uint16_t webhid_get_settings_report(uint8_t* buffer) {
       (menu_capture_hotkey ? 0x08 : 0) |
       (menu_kiosk_mode ? 0x10 : 0) |
       ((menu_mister_output << WEBHID_SETTINGS_MISTER_OUTPUT_SHIFT) & WEBHID_SETTINGS_MISTER_OUTPUT_MASK);
-  buffer[45] = 0;  // Retired 1P input/output view; single pads are always centered.
+#if defined(PRODUCT_CLASSIC2USB)
+  buffer[WEBHID_SETTINGS_GUIDE_HOLD_INDEX] =
+      WEBHID_SETTINGS_GUIDE_HOLD_MARKER | menu_guide_hold_time;
+#else
+  buffer[45] = 0;  // Retired 1P input/output view.
+#endif
   buffer[46] = menu_hotkey_hold_time;
   buffer[47] = n64_cstick_mode;
   buffer[48] = menu_powerpad_mode;
@@ -183,7 +188,7 @@ void webhid_write_settings_report(const uint8_t* buffer, uint16_t bufsize) {
   //             42=Quick Menu hotkey, 43=System Menu hotkey,
   //             44=Home hotkey, 45=Capture hotkey, 46=Kiosk,
   //             47=GunCon X alignment, 48=GunCon Y alignment,
-  //             49=MiSTer/Linux output preference,
+  //             49=MiSTer/Linux output preference, 50=Guide Hold duration,
   //             0xFE=save calibration, 0xFF=mode change (will reboot)
   if (bufsize < 3 || buffer[0] != WEBHID_MAGIC_BYTE) return;
 
@@ -431,6 +436,14 @@ void webhid_write_settings_report(const uint8_t* buffer, uint16_t bufsize) {
       saveGunconOffsets(menu_guncon_offset_x, menu_guncon_offset_y);
       break;
     }
+    case WEBHID_SETTING_GUIDE_HOLD:
+#if defined(PRODUCT_CLASSIC2USB)
+      if (value >= 1 && value <= 6) {
+        saveSystemSettingByte(SettingId::GuideHoldTime, value);
+        menu_guide_hold_time = (uint8_t)loadSettingValue(SettingId::GuideHoldTime, RZORD_NONE);
+      }
+#endif
+      break;
     case WEBHID_SETTING_MISTER_OUTPUT:
       if (value > HOST_OUTPUT_PREFERENCE_MAX) value = HOST_OUTPUT_PREFERENCE_DINPUT;
       {

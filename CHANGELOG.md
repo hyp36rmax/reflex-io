@@ -4,13 +4,20 @@ User-facing changes to the Classic2USB firmware and its tools. Versions follow
 the scheme in the README's Versioning section. The release package's
 `release.md` repeats the section for its version.
 
-## Unreleased
+## 1.0.3 — pending build and hardware UAT
 
-- Restore upstream global Hold Start/Guide behavior and Hotkeys On/Off;
-  remove Twin Stick-only timing restriction. Adjustable duration remains
-  on a separate branch.
-- Revert experimental HKT-7500 OLED artwork pending upstream source
-  publication. Existing OLED presentation is unchanged. Rebuild required.
+- Replace fixed 1,000 ms Classic2USB Hold Start/Guide timing with global,
+  configurable 500-3,000 ms duration, 500 ms steps, default 2,000 ms.
+- Adapt Web: System Settings > Menus and buttons > Hold Start Duration,
+  below existing Hotkeys On/Off.
+- Hardware: hold MODE > System Settings > Guide Hold (directly after
+  Hotkeys) to select duration. Setting persists across reboot and matches
+  Adapt Web.
+- Retain 500 ms Menu Hold default and existing Hotkeys On/Off behavior.
+  Other Reflex products retain original 1,000 ms Hold Start timing.
+- Existing HKT-7500 mappings and original Classic2USB OLED presentation
+  unchanged; dedicated Twin Stick OLED artwork remains deferred.
+- New firmware build, regression tests, and physical UAT required.
 
 ## 1.0.2
 

@@ -27,9 +27,8 @@ struct HeldVirtualHotkeyState {
   bool active = false;
 };
 
-// Start held alone this long sends Home, beside Down+Start (owner, 2026-11-14).
-// Start reaches the host until then, so a tap is still Start.
-constexpr uint32_t kHoldStartHomeMs = 1000;
+// Hold Start threshold comes from global Guide Hold setting (500ms steps).
+// A normal Start press remains native; Menu Hold has a separate default.
 // Home is then a tap while Start is still held: MiSTer Main opens its OSD on
 // the menu key's release (menu.cpp, KEY_F12 | UPSTROKE), and a held one is a
 // long press there (user_io.cpp opens joystick setup), so holding Home until
@@ -63,7 +62,8 @@ bool holdStartHomeEnabled() {
 // of Start on its own, held on its own, counts; anything else waits for
 // Start's release.
 HoldStartAction __not_in_flash_func(updateHoldStartHome)(HoldStartHotkeyState& state, bool enabled,
-                                                         uint32_t physicalButtons, uint32_t now) {
+                                                         uint32_t physicalButtons, uint32_t now,
+                                                         uint32_t holdMs) {
   const uint32_t buttons = physicalButtons & HOTKEY_ALLOWED_BUTTONS;
   if ((buttons & INPUT_START) == 0) {
     state.blocked = false;
@@ -80,7 +80,7 @@ HoldStartAction __not_in_flash_func(updateHoldStartHome)(HoldStartHotkeyState& s
     state.started_at = now;
   }
   if (!state.fired) {
-    if ((uint32_t)(now - state.started_at) < kHoldStartHomeMs) {
+    if ((uint32_t)(now - state.started_at) < holdMs) {
       return HoldStartAction::None;
     }
     // Timed from the first pass that sees the hold complete, so a slow pass
@@ -309,7 +309,13 @@ void __not_in_flash_func(updateHeldControllerHotkeysBeforeTransforms)() {
 
     const uint32_t physicalButtons = physicalHotkeyButtonsForController(i);
     const HoldStartAction holdStart =
-        updateHoldStartHome(holdStartState[i], holdStartEnabled, physicalButtons, now);
+        updateHoldStartHome(holdStartState[i], holdStartEnabled, physicalButtons, now,
+#if defined(PRODUCT_CLASSIC2USB)
+                            hotkeyHoldMsForSetting(menu_guide_hold_time)
+#else
+                            1000u
+#endif
+                            );
     // Some serial controller protocols can expose the two edges of a chord in
     // adjacent polls. Bridge only that one-poll transition so Down->Start and
     // Start->Down are equivalent without turning sequential taps into a latch.

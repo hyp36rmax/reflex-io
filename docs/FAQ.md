@@ -22,11 +22,15 @@ Mission Stick, on their existing profiles. See the
 
 ## What does holding Start do on the HKT-7500?
 
-Hold Start follows upstream global Hotkeys On/Off. When enabled, holding Start
-alone for 1000 ms sends Home/Guide on supported controllers, including HKT-7500.
-Hotkeys Off disables fixed Start shortcuts for every supported controller,
-not only Twin Stick. Short Start presses remain normal Start. Adjustable
-global Hold Start timing is developed on `feature/guide-hold-duration`.
+Classic2USB 1.0.3 replaces the fixed 1,000 ms threshold with one global
+Hold Start duration: 500-3,000 ms in 500 ms steps, default 2,000 ms. When
+Hotkeys is On, holding Start alone sends Home/Guide at selected duration.
+Hotkeys Off disables fixed Start shortcuts globally; short Start presses
+remain native. HKT-7500 does not have a separate timing profile.
+
+Set duration in Adapt Web > System Settings > Menus and buttons > Hold Start
+Duration, or hold MODE on hardware, open System Settings, select Guide Hold
+directly after Hotkeys, choose duration, then save.
 
 ## Where can I get firmware or build it?
 
