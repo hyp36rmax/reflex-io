@@ -661,7 +661,11 @@ inline int32_t readRecordSettingValue(const RecordT& record, SettingId id) {
         return (*field & CAPTURE_HOTKEY_ENABLED_MASK) ? 1 : 0;
       }
       if (id == SettingId::GuideHoldTime) {
+#if defined(PRODUCT_CLASSIC2USB)
         return guideHoldTimeFromRaw(*field);
+#else
+        return GUIDE_HOLD_TIME_DEFAULT;
+#endif
       }
       if (id == SettingId::HoldStartHotkey) {
         return holdStartHotkeyEnabledFromRaw(*field) ? 1 : 0;
@@ -838,11 +842,17 @@ inline void writeRecordSettingValue(RecordT& record, SettingId id, int32_t value
         break;
       }
       if (id == SettingId::CaptureHotkey) {
+#if defined(PRODUCT_CLASSIC2USB)
         *field = encodeCaptureHotkey(*field, value != 0);
+#else
+        *field = value != 0 ? 1 : 0;
+#endif
         break;
       }
       if (id == SettingId::GuideHoldTime) {
+#if defined(PRODUCT_CLASSIC2USB)
         *field = encodeGuideHoldTime(*field, static_cast<uint8_t>(value));
+#endif
         break;
       }
       if (id == SettingId::HomeScreenDebug) {
