@@ -10,13 +10,15 @@ This release adds support for the Sega Dreamcast HKT-7500 Twin Stick.
 - Adds a remappable Pause (D) control.
 - Sets Twin Stick D-pad 2 defaults for XInput and DInput. Existing Dreamcast
   A/B/X/Y, trigger, thumb, and Start mappings are retained.
-- Holding Start for 1,000 ms sends Home/Guide on an identified Twin Stick. A
-  normal Start press remains Start; other Dreamcast controllers keep their
-  existing Start behavior.
+- Dedicated OLED Home display for HKT-7500: both physical D-pads, four upper
+  buttons, Pause and Start (14 live indicators).
+- Hold Start/Guide keeps upstream global 1,000 ms behavior. Adapt Web Hotkeys
+  On/Off controls fixed shortcuts for all supported controllers, not just
+  Twin Stick. Adjustable duration is a separate feature branch.
 
 ## Validation
 
 The Classic2USB firmware build and software regression checks passed. HKT-7500
 identification and D-pad 2 routing were confirmed in earlier physical UAT.
-The Twin Stick-only Start/Home hold behavior in this release still requires
-hardware validation.
+The new OLED renderer and restored upstream hotkey behavior still require
+a fresh firmware build and physical UAT.

@@ -186,6 +186,14 @@ class TwinStickRemapTests(unittest.TestCase):
         self.assertIn("info.func_data[0] == kDreamcastTwinStickCapabilityMask", twin_stick_detection)
         self.assertIn("0x0000FEFE", detection)
 
+    def test_hold_start_remains_upstream_global(self) -> None:
+        hotkeys = read("firmware/core/controller_runtime_hotkeys.cpp")
+        self.assertIn("kHoldStartHomeMs = 1000", hotkeys)
+        self.assertIn("const bool holdStartEnabled = holdStartOn;", hotkeys)
+        self.assertNotIn("holdStartOn && isTwinStick", hotkeys)
+        self.assertNotIn("if (isTwinStick) {", hotkeys)
+        self.assertNotIn("dreamcast_twin_stick.h", hotkeys)
+
     def test_dedicated_twin_stick_oled_panel(self) -> None:
         panel = read("firmware/menu/menu_dreamcast_twin_stick_home.h")
         display = read("firmware/menu/menu_main_display_pad_render.cpp")

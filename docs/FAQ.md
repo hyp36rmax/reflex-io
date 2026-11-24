@@ -22,9 +22,11 @@ Mission Stick, on their existing profiles. See the
 
 ## What does holding Start do on the HKT-7500?
 
-When the Hold Start setting is enabled, holding Start alone for 1000 ms on a
-detected Twin Stick sends a brief Home/Guide signal. A short press remains
-Start, and standard Dreamcast controllers do not use this shortcut.
+Hold Start follows upstream global Hotkeys On/Off. When enabled, holding Start
+alone for 1000 ms sends Home/Guide on supported controllers, including HKT-7500.
+Hotkeys Off disables fixed Start shortcuts for every supported controller,
+not only Twin Stick. Short Start presses remain normal Start. Adjustable
+global Hold Start timing is developed on `feature/guide-hold-duration`.
 
 ## Where can I get firmware or build it?
 

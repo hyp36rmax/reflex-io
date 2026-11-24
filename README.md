@@ -28,7 +28,10 @@ Dreamcast A/B/X/Y, trigger, and thumb controls retain their mappings.
 | Start | Start | Existing Start |
 
 A dedicated Twin Stick OLED Home panel shows both physical D-pads,
-four upper buttons, Pause and Start. Build and hardware UAT pending.
+four upper buttons, Pause and Start. Upstream global Hotkeys On/Off controls
+the existing 1000 ms Hold Start/Guide shortcut, including Twin Stick.
+Adjustable duration is maintained on a separate branch.
+OLED build and hardware UAT pending.
 
 See the [HKT-7500 Twin Stick guide](docs/hkt-7500-twin-stick.md) for detection,
 routing, configuration, and validation details.

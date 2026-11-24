@@ -31,9 +31,13 @@ OLED remapping: select source, cycle available output destinations, confirm
 selection, then Save. Standard Dreamcast pads retain physical-button
 destination selection.
 
-With Hold Start enabled, holding Start alone for 1000 ms sends Home/Guide.
-Short press sends Start. Standard Dreamcast controllers retain normal Start
-behavior.
+Hold Start inherits upstream behavior: 1000 ms sends Home/Guide when Hotkeys
+is On. This applies globally to supported controllers, not just Twin Stick.
+Adapt Web > System Settings > Menus and buttons > Hotkeys: Off disables
+fixed Start shortcuts device-wide. A short Start press remains Start.
+
+Configurable global hold duration is developed independently on
+`feature/guide-hold-duration`. No Twin Stick-specific override exists.
 
 Both Dreamcast ports share one input/output remap pair. Initialization scans
 connected frames for HKT-7500. Directional and Pause processing stays scoped
@@ -69,7 +73,7 @@ require separate build and hardware validation.
 | D-pad routing | PASS | Independent directions, diagonals, opposing inputs, analog routing, and neutral release confirmed. |
 | XInput | PASS | D-pad 2: LB/RB/LS/RS. Pause (D): Back. Start and existing controls retained. |
 | DInput | PASS | D-pad 1: POV hat. D-pad 2: Buttons 15–18. Pause (D): Button 19. |
-| Start hold | PASS | Hold Start for 1000 ms: Home/Guide. Short press: Start. Standard pad behavior retained. |
+| Hold Start | PENDING | Restored upstream global 1000 ms behavior and Hotkeys On/Off; recheck after OLED build. |
 | Configuration | PASS | OLED, WebHID, default restoration, save/reboot persistence, and output switching. |
 | Mixed-port hardware | PASS | Both port orders, disconnect, and reconnect. |
 | Twin Stick regression | PASS | 8 host-side checks for routing, defaults, detection, and input handling. |
